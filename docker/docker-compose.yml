@@ -1,0 +1,161 @@
+
+services:
+
+  api:
+    container_name: API
+    build:
+      context: ./API
+      dockerfile: Dockerfile
+    volumes:
+      - shared_volume:/shared
+    ports:
+      - "5003:5003"
+    environment:
+      - MYSQL_HOST=mysql
+      - POSTGRES_HOST=postgres
+      - ASPNETCORE_ENVIRONMENT=Production
+      - TZ=Asia/Shanghai
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    depends_on:
+      - mysql
+      - postgres
+      - redis
+
+  autojob:
+    container_name: AutoJob
+    build:
+      context: ./AutoJob
+      dockerfile: Dockerfile
+    volumes:
+      - shared_volume:/shared
+    environment:
+      - MYSQL_HOST=mysql
+      - POSTGRES_HOST=postgres
+      - ASPNETCORE_ENVIRONMENT=Production
+      - TZ=Asia/Shanghai
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    depends_on:
+      - mysql
+      - postgres
+      - redis
+      - api
+
+  manage:
+    container_name: Manage
+    build:
+      context: ./Manage
+      dockerfile: Dockerfile
+    volumes:
+      - shared_volume:/shared
+    ports:
+      - "5002:5002"
+    environment:
+      - MYSQL_HOST=mysql
+      - POSTGRES_HOST=postgres
+      - ASPNETCORE_ENVIRONMENT=Production
+      - TZ=Asia/Shanghai
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    depends_on:
+      - mysql
+      - postgres
+      - redis
+      - autojob
+      - api
+
+  mcpserver:
+    container_name: MCPServer
+    build:
+      context: ./MCPServer
+      dockerfile: Dockerfile
+    volumes:
+      - shared_volume:/shared
+    ports:
+      - "5008:5008"
+    environment:
+      - MYSQL_HOST=mysql
+      - POSTGRES_HOST=postgres
+      - ASPNETCORE_ENVIRONMENT=Production
+      - TZ=Asia/Shanghai
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    depends_on:
+      - mysql
+      - postgres
+      - redis
+      - autojob
+      - api
+
+  mysql:
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql  # 数据持久化
+      - ./mysql/conf.d:/etc/mysql/conf.d
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+
+  postgres:
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
+    container_name: zsn_agentbrook_base
+    image: zsn-postgres:16.6
+    environment:
+      # PostgreSQL基础配置
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1q2w3e
+      
+      # 时区设置
+      TZ: Asia/Shanghai
+      
+      # PostgreSQL初始化参数
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      
+      # 性能优化参数
+      POSTGRES_SHARED_BUFFERS: 256MB
+      POSTGRES_MAX_CONNECTIONS: 200
+    ports:
+      - "5432:5432"
+    volumes:
+      # 数据持久化
+      - postgres_data:/var/lib/postgresql/data
+      
+      # 日志目录（可选）
+      # - ./postgres/logs:/var/log/postgresql
+    restart: always
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  redis:
+    image: redis:5.0.10
+    container_name: redis_5.0.10
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+
+volumes:
+  postgres_data: {}
+  mysql_data: {}
+  redis_data: {}
+  shared_volume: {}
