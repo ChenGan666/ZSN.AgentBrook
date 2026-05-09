@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <PackageReference Include="PdfPig" Version="0.1.10" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZSN.AI.Core\ZSN.AI.Core.csproj" />
+    <ProjectReference Include="..\ZSN.AI.DAL.MySql\ZSN.AI.DAL.MySql.csproj" />
+    <ProjectReference Include="..\ZSN.AI.DAL.Postgres\ZSN.AI.DAL.Postgres.csproj" />
+    <ProjectReference Include="..\ZSN.AI.DAL\ZSN.AI.DAL.csproj" />
+    <ProjectReference Include="..\ZSN.AI.Entity\ZSN.AI.Entity.csproj" />
+    <ProjectReference Include="..\ZSN.AI.BLL\ZSN.AI.BLL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Database\*.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Config\entity_type_mapping.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

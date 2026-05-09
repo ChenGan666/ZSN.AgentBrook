@@ -8,11 +8,12 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ZSN.Utils.Core.Helpers;
 using ZSN.Utils.Core.Extensions;
+using FileInfo = ZSN.AI.Entity.FileInfo;
 
 namespace ZSN.AgentBrook.API.Controllers
 {
     [ApiController]
-    [ApiExplorerSettings(GroupName = "V1-Member")]
+    [ApiExplorerSettings(GroupName = "V1-User")]
     [Route("api/[controller]/[action]")]
     public class FileController: ApiBaseController
     {
@@ -26,7 +27,7 @@ namespace ZSN.AgentBrook.API.Controllers
         [HttpPost]
         [Consumes("multipart/form-data")]
         [MemberCheck]
-        public async Task<IActionResult> Upload([FromForm] string Data)
+        public async Task<JsonMsg<FileInfo>> Upload([FromForm] string Data) 
         {
             JObject jObject = this.JsonObj;
             if (jObject.Value<int>("status") != -1)
@@ -48,12 +49,12 @@ namespace ZSN.AgentBrook.API.Controllers
 
                     FileCode = string.Join(",", resList);
                 }
-
-                return BuildSuccessResult(new { FileCode = FileCode,Url = string.Format(ConfigHelper.GetString("previewHost"), FileCode) });
+                FileInfo file = new FileInfo { FileCode = FileCode, Url = string.Format(ConfigHelper.GetString("previewHost"), FileCode) };
+                return JsonMsg<FileInfo>.OK(file);
             }
             else
             {
-                return CommonApiBaseController.GetErrorResult(ErrorCode.DataFormatError);
+                return JsonMsg<FileInfo>.Error(null,ErrorCode.DataFormatError);
             }
         }
 

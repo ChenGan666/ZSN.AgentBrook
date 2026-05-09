@@ -17,6 +17,9 @@ namespace ZSN.AI.DAL
         BaseDictionaryInfo BaseDictionaryInfo_GetModel(Int32 dicId); 
         DataSet BaseDictionaryInfo_GetList(string strWhere);
         DataSet BaseDictionaryInfo_GetChildList(string Name);
+        DataSet BaseDictionaryInfo_GetAllChildList(string name = "");
+        DataSet BaseDictionaryInfo_GetAllChildList(int DicId = 0);
+        DataSet BaseDictionaryInfo_GetAllParentList(string name = "");
         DataSet BaseDictionaryInfo_GetList(int top, string strWhere, string filedOrder);
         int BaseDictionaryInfo_GetRecordCount(string strWhere);
         DataSet BaseDictionaryInfo_GetListByPage(string strWhere, string orderBy, int startIndex, int endIndex);

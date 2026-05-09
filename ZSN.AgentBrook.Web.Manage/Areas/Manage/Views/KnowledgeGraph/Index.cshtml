@@ -1,0 +1,235 @@
+@{
+    var lst = ViewBag.MemoryList as List<ZSN.AI.Entity.ClawAI.LongTermMemoryInfo>;
+    var appId = ViewBag.AppId as string ?? "";
+    var clawId = ViewBag.ClawId as string ?? "";
+
+    // 安全的文本截断函数
+    string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return "";
+        }
+
+        if (text.Length <= maxLength)
+        {
+            return text;
+        }
+
+        return text.Substring(0, maxLength) + "...";
+    }
+}
+@section Css{
+    <style>
+        .importance-badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .importance-high { background-color: #ff5722; color: white; }
+        .importance-medium { background-color: #ff9800; color: white; }
+        .importance-low { background-color: #4caf50; color: white; }
+        .knowledge-type {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            background-color: #e0e0e0;
+            color: #333;
+        }
+    </style>
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">知识节点管理</div>
+                <div class="layui-card-body">
+                    <div class="layui-form">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">应用ID</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" name="appId" value="@appId" placeholder="请输入应用ID" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <label class="layui-form-label">节点ID</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" name="clawId" value="@clawId" placeholder="请输入节点ID" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <button class="layui-btn" lay-submit lay-filter="search">搜索</button>
+                                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-table layui-form">
+                        <colgroup>
+                            <col width="200">
+                            <col width="100">
+                            <col width="300">
+                            <col width="80">
+                            <col width="80">
+                            <col width="100">
+                            <col width="200">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>摘要</th>
+                                <th>类型</th>
+                                <th>主题</th>
+                                <th>重要性</th>
+                                <th>访问次数</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (lst != null && lst.Count > 0)
+                            {
+                                @foreach (var memory in lst)
+                                {
+                                    <tr data-mid="@memory.MemoryID">
+                                        <td title="@memory.Summary">@Truncate(memory.Summary ?? "", 30)</td>
+                                        <td>
+                                            <span class="knowledge-type">@memory.KnowledgeType</span>
+                                        </td>
+                                        <td title="@memory.Topic">@Truncate(memory.Topic ?? "", 30)</td>
+                                        <td>
+                                            <span class="importance-badge @(memory.Importance >= 80 ? "importance-high" : memory.Importance >= 50 ? "importance-medium" : "importance-low")">
+                                                @memory.Importance
+                                            </span>
+                                        </td>
+                                        <td>@memory.AccessCount</td>
+                                        <td>@memory.CreateTime.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            <nobr>
+                                                <button class="layui-btn layui-btn-xs visualize" data-id="@memory.MemoryID">
+                                                    <i class="layui-icon">&#xe64c;</i>可视化
+                                                </button>
+                                                <button class="layui-btn layui-btn-xs details" data-id="@memory.MemoryID">
+                                                    <i class="layui-icon">&#xe615;</i>详情
+                                                </button>
+                                                <button class="layui-btn layui-btn-xs layui-btn-danger del" data-id="@memory.MemoryID">
+                                                    <i class="layui-icon">&#xe640;</i>删除
+                                                </button>
+                                            </nobr>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 20px;">暂无数据</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="layui-card-body">
+                    <div class="pagination" id="pageId"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(['form', 'laypage'], function () {
+            var form = layui.form;
+            var laypage = layui.laypage;
+            form.render();
+
+            // 分页
+            laypage.render({
+                elem: 'pageId',
+                count: @ViewBag.Total,
+                limit: @ViewBag.Size,
+                curr: @ViewBag.Index,
+                layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip'],
+                jump: function (obj, first) {
+                    if (!first) {
+                        var appId = $('input[name="appId"]').val();
+                        var clawId = $('input[name="clawId"]').val();
+                        var url = '@Url.Action("Index")?index=' + obj.curr + '&size=' + obj.limit;
+                        if (appId) url += '&appId=' + appId;
+                        if (clawId) url += '&clawId=' + clawId;
+                        location.href = url;
+                    }
+                }
+            });
+
+            // 搜索
+            form.on('submit(search)', function (data) {
+                var field = data.field;
+                var url = '@Url.Action("Index")?index=1&size=@ViewBag.Size';
+                if (field.appId) url += '&appId=' + field.appId;
+                if (field.clawId) url += '&clawId=' + field.clawId;
+                location.href = url;
+                return false;
+            });
+
+            // 可视化
+            $('.visualize').click(function () {
+                var id = $(this).data('id');
+                var url = '@Url.Action("Visualize")?memoryId=' + id;
+                layer.open({
+                    type: 2,
+                    title: '知识图谱可视化',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['95%', '90%'],
+                    content: url
+                });
+            });
+
+            // 详情
+            $('.details').click(function () {
+                var id = $(this).data('id');
+                var url = '@Url.Action("Details")?memoryId=' + id;
+                layer.open({
+                    type: 2,
+                    title: '知识详情',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['80%', '80%'],
+                    content: url
+                });
+            });
+
+            // 删除
+            $('.del').click(function () {
+                var id = $(this).data('id');
+                layer.confirm("确认要删除这个知识节点吗？<br><span style='color:red;'>注意：这将同时删除所有相关的关系！</span>",
+                    { title: "删除确认" },
+                    function (index) {
+                        $.ajax({
+                            url: '@Url.Action("DeleteMemory")',
+                            type: 'POST',
+                            data: { memoryId: id },
+                            success: function (res) {
+                                if (res.success) {
+                                    layer.msg(res.msg, { icon: 1, time: 1000 }, function () {
+                                        location.reload();
+                                    });
+                                } else {
+                                    layer.msg(res.msg, { icon: 2 });
+                                }
+                            },
+                            error: function () {
+                                layer.msg('删除失败，请稍后重试', { icon: 2 });
+                            }
+                        });
+                        layer.close(index);
+                    }
+                );
+            });
+        });
+    </script>
+}

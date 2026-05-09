@@ -1,7 +1,7 @@
 ﻿@{
     var KnowledgeBase = ViewBag.KnowledgeBase as KnowledgeBaseInfo;
 
-    var KnowledgeBaseTypeList = ViewBag.KnowledgeBaseTypeList as List<BaseDictionaryInfo>;
+    var TagClass = JsonConvert.SerializeObject(ViewBag.TagClass);
     var PreprocessModeList = ViewBag.PreprocessModeList as List<LargeModelInfo>;
     var VectorModelList = ViewBag.VectorModelList as List<LargeModelInfo>;
     var PreviewHost = ViewBag.PreviewHost as string;
@@ -36,7 +36,7 @@
 
                 <div class="layui-form-item">
                     <label class="layui-form-label">
-                        <span class="x-red">*</span>知识库类型
+                        <span class="x-red">*</span>知识库标签
                     </label>
                     <div class="layui-input-block">
                         <div class="layui-col-md9">
@@ -102,7 +102,7 @@
                 </div>
                 <div class="layui-form-item">
                     <label class="layui-form-label">
-                        <span class="x-red">*</span>行切片数(300 Tokens Max)
+                        <span class="x-red">*</span>行切片数(300 Tokens Max)-已弃用-
                     </label>
                     <div class="layui-input-block">
                         <div class="layui-col-md9">
@@ -155,9 +155,9 @@
                         状态
                     </label>
                     <div class="layui-input-inline">
-                        <input type="radio" name="SystemStatus" value="0" title="未发布" @(KnowledgeBase.SystemStatus == 0 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="-1" title="屏蔽" @(KnowledgeBase.SystemStatus == -1 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="1" title="正常" @(KnowledgeBase.SystemStatus == 1 ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@KnowledgeBaseStatus.UnderReview" title="未发布" @(KnowledgeBase.SystemStatus == KnowledgeBaseStatus.UnderReview ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@KnowledgeBaseStatus.Disabled" title="屏蔽" @(KnowledgeBase.SystemStatus == KnowledgeBaseStatus.Disabled ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@KnowledgeBaseStatus.Normal" title="正常" @(KnowledgeBase.SystemStatus == KnowledgeBaseStatus.Normal ? "checked" : "")>
                     </div>
                 </div>
                 <div class="layui-form-item">
@@ -211,15 +211,33 @@
                 toolbar: {
                     show: true,
                 },
+                tree: {
+                    //以树状结构展示
+                    show: true,
+                    showFolderIcon: true,
+                    //展示虚线
+                    showLine: true,
+                    //节点间距
+                    indent: 20,
+                    strict: false, // 父子不互相关联选择
+                },
                 filterable: true,
                 height: '500px',
-                data: [
-                    @foreach (var _type in KnowledgeBaseTypeList)
-                    {
-                    @Html.Raw("  { name: '" + _type.DicName + "', value: '" + _type.DicId + "'},")
+                data: @Html.Raw(TagClass),
+                on: function (data) {
+                    let arr = data.arr; // 当前选中的值
+                    let isAdd = data.isAdd; // true: 选中；false: 取消选中
+                    if (isAdd) {
+                        let blocked = arr.filter(item => item.tag !== true);
+                        if (blocked.length > 0) {
+                            // 删除不符合规则的项
+                            xm.setValue(arr.filter(item => item.tag === true));
+                        }
                     }
-                ]
+                }
             });
+
+            
 
             if (KnowledgeBasesTypeIDList) {
                 var _setValue = [];

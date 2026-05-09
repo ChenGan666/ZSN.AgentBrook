@@ -21,9 +21,9 @@ namespace ZSN.AI.Entity
         /// </summary>
         public string MemberID { get; set; } = string.Empty;
 		/// <summary>
-        /// DesensitizedName
+        /// TopicSummary
         /// </summary>
-		public string DesensitizedName { get; set; } 
+		public string TopicSummary { get; set; } 
 		/// <summary>
         /// IsCoCreate
         /// </summary>

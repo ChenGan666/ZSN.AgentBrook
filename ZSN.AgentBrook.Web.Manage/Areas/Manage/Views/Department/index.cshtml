@@ -1,0 +1,145 @@
+﻿@{
+    var lst = ViewBag.DepartmentList as List<DepartmentInfo>;
+}
+@section Css{
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <div class="layui-input-inline layui-show-xs-block">
+                        <button class="layui-btn add_bt" >
+                            <i class="layui-icon"></i>新建
+                        </button>
+                    </div>
+                    <hr>
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-table layui-form">
+                        <colgroup>
+                            <col width="200">
+                            <col>
+                            <col width="50">
+                            <col width="200">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>说明</th>
+                                <th>状态</th>
+                                <th>设置</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Department in lst)
+                            {
+                <tr data-mid="@Department.DepartmentID">
+                    <td>@Department.DName</td>
+                    <td>@Department.DInfo</td>
+                    <td>
+                        <input type="checkbox" name="switch" lay-text="正常|屏蔽" lay-skin="switch" lay-filter="status" @(Department.DState == 0 ? "checked" : "")>
+                    </td>
+                    <td><nobr>
+    <button class="layui-btn edit_bt" >
+        编辑
+    </button>
+    <button class="layui-btn del" data-id="@Department.DepartmentID">
+        删除
+    </button>
+</nobr>
+                    </td>
+                </tr>}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="layui-card-body ">
+                    <div class="pagination" id="pageId">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(function () {
+            var form = layui.form;
+            var laypage = layui.laypage;
+            form.render();
+
+            laypage.render({
+                elem: 'pageId'
+                , count: @ViewBag.Total
+                            , limit: @ViewBag.Size
+                            , curr: @ViewBag.Index
+                            , layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip']
+                , jump: function (obj, f) {
+                    if (f)
+                        return;
+                    location.href = "@Url.Action("index")?index=" + obj.curr + "&size=" + obj.limit + "&appid=@HttpContextHelper.Request.GetParam("appid")";
+                }
+            });
+
+            /*新增*/
+            $('.add_bt').click(function () {
+                var url = '@Url.Action("Edit")';
+                layer.open({
+                    type: 2,
+                    title: '新增',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['100%', '100%'],
+                    content: url
+                });
+            });
+
+            /*编辑*/
+            $('.edit_bt').click(function () {
+                var mid = $(this).parents("tr").data('mid');
+                var url = '@Url.Action("Edit")' + "?mid=" + mid;
+                layer.open({
+                    type: 2,
+                    title: '编辑',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['100%', '100%'],
+                    content: url
+                });
+            });
+            $('.del').click(function () {
+                var id = $(this).data('id');
+
+                layer.confirm("确认要删除吗，删除后不能恢复!", { title: "删除确认" }, function (index) {
+
+                    $.ajax({
+                        url: '@Url.Action("Del")',
+                        type: 'POST',
+                        data: {
+                            mid: id
+                        },
+                        success: function (res) {
+                            layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                        }
+                    });
+
+                });
+            });
+
+            form.on('switch(status)', function (data) {
+                $.ajax({
+                    url: '@Url.Action("Status")',
+                    type: 'POST',
+                    data: {
+                        mid: $(this).parents("tr").data('mid'),
+                        status: (this.checked ? 'true' : 'false')
+                    },
+                    success: function (res) {
+                        layer.msg('Finish', { icon: 1, time: 1000 });
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using ZSN.AI.Entity.Chat;
 using ZSN.AI.Entity.Model.Enum;
+using ZSN.Utils.Core.Helpers;
 namespace ZSN.AI.Entity
 {
     /// <summary>
@@ -46,7 +48,7 @@ namespace ZSN.AI.Entity
         /// <summary>
         /// SystemStatus
         /// </summary>
-        public Int32 SystemStatus { get; set; } = (Int32)(0);
+        public LargeModelStatus SystemStatus { get; set; } = LargeModelStatus.Disabled;
         /// <summary>
         /// CreateTime
         /// </summary>
@@ -56,15 +58,31 @@ namespace ZSN.AI.Entity
         /// </summary>
         public DateTime UpdateTime { get; set; } = DateTime.Now;
 
+        /// <summary>
+        /// 系统基础模型,非=0,是=1
+        /// </summary>
+        public int IsDefaultModel { get; set; } = 0;
 
+        public bool Thinking { get; set; } = false;
 
         #endregion
     }
-
+    public enum LargeModelStatus
+    {
+        Normal = 0,
+        Disabled = 1,
+    }
     public partial class GptMsg
     {
         public GptMsg() { }
         public string role { get; set; } = string.Empty;
         public string content {  get; set; } = string.Empty;
+
+        public List<AttachmentItem> Attachments
+        {
+            get;
+            set;
+        } = new List<AttachmentItem>();
+        public dynamic AdditionalOptions { get; set; } = null;
     }
 }

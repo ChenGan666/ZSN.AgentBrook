@@ -1,7 +1,9 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text.Json.Serialization;
 namespace ZSN.AI.Entity
 {
 	/// <summary>
@@ -16,10 +18,6 @@ namespace ZSN.AI.Entity
         /// </summary>
 		public string MemberID { get; set; } = string.Empty;
 		/// <summary>
-        /// MemberCard
-        /// </summary>
-		public string MemberCard { get; set; } = string.Empty;
-		/// <summary>
         /// mPhoneNumber
         /// </summary>
 		public string MPhoneNumber { get; set; } = string.Empty;
@@ -27,10 +25,12 @@ namespace ZSN.AI.Entity
         /// mNickName
         /// </summary>
 		public string MNickName { get; set; } = string.Empty;
-		/// <summary>
+
+        /// <summary>
         /// mPWD
         /// </summary>
-		public string MPWD { get; set; } = string.Empty;
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string MPWD { get; set; } = string.Empty;
 		/// <summary>
         /// mIcon
         /// </summary>
@@ -38,6 +38,7 @@ namespace ZSN.AI.Entity
         /// <summary>
         /// mBirthday
         /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(CustomDateTimeConverter))]
         public DateTime MBirthday { get; set; } = DateTime.Now;
 		/// <summary>
         /// mState

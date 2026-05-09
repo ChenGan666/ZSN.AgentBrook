@@ -28,6 +28,18 @@ namespace ZSN.AgentBrook.API.ConfigureSwagger
                     Version = "V1-Member",
                     Description = $"ApiService HTTP API V1",
                 });
+                c.SwaggerDoc("V1-User", new OpenApiInfo
+                {
+                    Title = "V1-User",
+                    Version = "V1-User",
+                    Description = $"ApiService HTTP API V1",
+                });
+                c.SwaggerDoc("V1-Manage", new OpenApiInfo
+                {
+                    Title = "V1-Manage",
+                    Version = "V1-Manage",
+                    Description = $"ApiService HTTP API V1",
+                });
                 // 添加文件上传支持
                 c.AddSecurityDefinition("multipartForm", new OpenApiSecurityScheme
                 {

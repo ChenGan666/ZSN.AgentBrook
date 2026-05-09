@@ -1,4 +1,4 @@
-﻿@using ZSN.AI.Entity.Model.Enum
+@using ZSN.AI.Entity.Model.Enum
 @{
     var lst = ViewBag.KnowledgeBaseFileList as List<KnowledgeBaseFileInfo>;
 }
@@ -14,12 +14,15 @@
                             <i class="layui-icon"></i>上传
                         </button>
                     </div>
+                    <div class="layui-input-inline layui-show-xs-block">
+                        <button class="layui-btn layui-btn-danger delete-selected_bt">删除选中</button>
+                    </div>
                     <hr>
                 </div>
                 <div class="layui-card-body">
                     <table class="layui-table layui-form">
                         <colgroup>
-                            <col width="150">
+                            <col width="10">
                             <col>
                             <col>
                             <col width="50">
@@ -29,7 +32,9 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th>编号</th>
+                                <th style="white-space: nowrap;">
+                                    <input type="checkbox" class="check-all" lay-skin="primary" lay-filter="check-all" /> 编号
+                                </th>
                                 <th>名称</th>
                                 <th>路径</th>
                                 <th>分块数</th>
@@ -42,28 +47,30 @@
                             @foreach (var KnowledgeBaseFile in lst)
                             {
                                 <tr data-FileID="@KnowledgeBaseFile.FileID">
-                                    <td>@KnowledgeBaseFile.FileID</td>
+                                    <td style="white-space: nowrap;">
+                                        <input type="checkbox" class="check-item" value="@KnowledgeBaseFile.FileID" lay-skin="primary" lay-filter="check-item" />
+                                        <span>@KnowledgeBaseFile.FileID</span>
+                                    </td>
                                     <td>@KnowledgeBaseFile.FileName</td>
                                     <td>@KnowledgeBaseFile.FilePath</td>
                                     <td>@KnowledgeBaseFile.DataCount</td>
                                     <td>@KnowledgeBaseFile.CreateTime</td>
                                 <td>
-                                        @(KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Fail ? "失败" : KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Watting ? "等待分析" : KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Loadding ? "分析中" : KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Success ? "完成" : "")
+                                        @(KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Fail ? "失败" : KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Watting ? "未处理" : KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Loadding ? "分析中" : KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Success ? "完成" : "")
                                 </td>
-                                <td><nobr>
-                                        <button class="layui-btn do_bt" data-id="@KnowledgeBaseFile.FileID">
-                                            分块处理
-                                        </button>
+                                <td>
+                                    <div style="white-space: nowrap;">
                                         @if(KnowledgeBaseFile.SystemStatus == ImportKmsStatus.Success)
                                         {
                                             <button class="layui-btn edit_bt" data-id="@KnowledgeBaseFile.FileID">
                                                 查看分块
                                             </button>
                                         }
-                                        <button class="layui-btn del" data-id="@KnowledgeBaseFile.FileID">
-                                            删除
+                                        <button class="layui-btn tool-dropdown-file">
+                                            <span>更多</span>
+                                            <i class="layui-icon layui-icon-down layui-font-12"></i>
                                         </button>
-                                    </nobr>
+                                    </div>
                                 </td>
                             </tr>
                             }
@@ -84,7 +91,58 @@
         layui.use(function () {
             var form = layui.form;
             var laypage = layui.laypage;
+            var dropdown = layui.dropdown;
             form.render();
+
+            // 渲染下拉菜单
+            dropdown.render({
+              elem: '.tool-dropdown-file',
+              data: [{
+                title: '分块处理',
+                id: 'process'
+              },{
+                title: '删除',
+                id: 'delete'
+              }],
+              click: function(obj){
+                var $btn = $(this.elem);
+                var $tr = $btn.parents('tr');
+                var fileId = $tr.data('fileid');
+                
+                if(obj.id === 'process') {
+                  // 分块处理功能
+                  layer.confirm("文件进入分块分析处理过程中会重置该文件原有分块数据，分块过程请确保异步任务服务正常运行!", { title: "确认分块分析" }, function (index) {
+                    $.ajax({
+                      url: '@Url.Action("KnowledgeBaseFileToJob")',
+                      type: 'POST',
+                      data: {
+                        KnowledgeBaseID: '@ViewBag.KnowledgeBaseID',
+                        FileID: fileId
+                      },
+                      success: function (res) {
+                        layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                      }
+                    });
+                  });
+                } 
+                if(obj.id === 'delete') {
+                  // 删除功能
+                  layer.confirm("确认要删除吗,删除后不能恢复!", { title: "删除确认" }, function (index) {
+                    $.ajax({
+                      url: '@Url.Action("KnowledgeBaseFileDel")',
+                      type: 'POST',
+                      data: {
+                        mid: fileId,
+                        KnowledgeBaseID:'@ViewBag.KnowledgeBaseID'
+                      },
+                      success: function (res) {
+                        layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                      }
+                    });
+                  });
+                }
+              }
+            });
 
             laypage.render({
                 elem: 'pageId'
@@ -107,7 +165,7 @@
                     title: '上传文件',
                     shadeClose: true,
                     shade: 0.8,
-                    area: ['60%', '230px'],
+                    area: ['60%', '275px'],
                     content: url
                 });
             });
@@ -126,43 +184,38 @@
                 });
             });
 
-            /*添加分块任务*/
-            $('.do_bt').click(function () {
-                var FileID = $(this).data('id');
-                layer.confirm("文件进入分块分析处理过程中会重置该文件原有分块数据，分块过程请确保异步任务服务正常运行!", { title: "确认分块分析" }, function (index) {
-
-                    $.ajax({
-                        url: '@Url.Action("KnowledgeBaseFileToJob")',
-                        type: 'POST',
-                        data: {
-                            KnowledgeBaseID: '@ViewBag.KnowledgeBaseID',
-                            FileID: FileID
-                        },
-                        success: function (res) {
-                            layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
-                        }
-                    });
-
-                });
+            form.on('checkbox(check-all)', function (data) {
+                var checked = data.elem.checked;
+                $('.check-item').prop('checked', checked);
+                form.render('checkbox');
             });
 
-            $('.del').click(function () {
-                var id = $(this).data('id');
+            form.on('checkbox(check-item)', function (data) {
+                var all = $('.check-item').length;
+                var selected = $('.check-item:checked').length;
+                $('.check-all').prop('checked', all > 0 && all === selected);
+                form.render('checkbox');
+            });
 
-                layer.confirm("确认要删除吗，删除后不能恢复!", { title: "删除确认" }, function (index) {
-
+            $('.delete-selected_bt').on('click', function () {
+                var ids = $('.check-item:checked').map(function(){ return $(this).val(); }).get();
+                if(ids.length === 0){
+                    layer.msg('请先选择要删除的记录');
+                    return;
+                }
+                var fileId = ids.join(',');
+                layer.confirm("确认要删除吗,删除后不能恢复!", { title: "删除确认" }, function (index) {
                     $.ajax({
-                        url: '@Url.Action("KnowledgeBaseFileDel")',
-                        type: 'POST',
-                        data: {
-                            mid: id,
-                            KnowledgeBaseID:'@ViewBag.KnowledgeBaseID'
-                        },
-                        success: function (res) {
-                            layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
-                        }
+                      url: '@Url.Action("KnowledgeBaseFileDel")',
+                      type: 'POST',
+                      data: {
+                        mid: fileId,
+                        KnowledgeBaseID:'@ViewBag.KnowledgeBaseID'
+                      },
+                      success: function (res) {
+                        layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                      }
                     });
-
                 });
             });
 

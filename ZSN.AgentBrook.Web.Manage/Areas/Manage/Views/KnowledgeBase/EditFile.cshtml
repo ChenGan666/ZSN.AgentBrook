@@ -1,6 +1,6 @@
-﻿@{
+@{
 
-    var KnowledgeBaseFileChunkList = ViewBag.KnowledgeBaseFileChunkList as List<KnowledgeBaseFileChunkInfo>;
+    //var KnowledgeBaseFileChunkList = ViewBag.KnowledgeBaseFileChunkList as List<KnowledgeBaseFileChunkInfo>;
 
     var PreviewHost = ViewBag.PreviewHost as string;
 
@@ -11,11 +11,91 @@
 
 @section Css
 {
-<style>
-    .layui-form-label {
-    width: 120px;
-    }
-</style>
+    <script src="/lib/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+        .chunk-info-card {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #e6e6e6;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .chunk-content {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .chunk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .chunk-id {
+            font-weight: bold;
+            color: #1E9FFF;
+        }
+        .chunk-stats {
+            color: #666;
+            font-size: 12px;
+        }
+        .stats-card {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            color: white;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        .layui-tab {
+            margin: 0;
+        }
+        .layui-tab-content {
+            padding: 15px 0;
+        }
+    </style>
 }
 
 @if (FileID.IsNullOrEmpty())
@@ -29,94 +109,136 @@
                     <input type="file" name="file" class="KB_files" />
 
                 </form>
+                <div>
+                    <span>模板:&nbsp;<a href="~/assets/QA.xlsx" target="_blank">QA.xlsx</a>&nbsp;/&nbsp;<a href="~/assets/QA.txt" target="_blank">QA.txt</a></span>
+                </div>
             </div>
         </div>
     </div>
 
     @section Js
     {
-    <script src="/plugs/dropzone/dropzone.min.js"></script>
-    <link rel="stylesheet" href="/plugs/dropzone/dropzone.min.css" type="text/css" />
+        <script src="/plugs/dropzone/dropzone.min.js"></script>
+        <link rel="stylesheet" href="/plugs/dropzone/dropzone.min.css" type="text/css" />
 
-    <script src="/layuiadmin/modules/xm-select.js"></script>
-    <script>
-        layui.use(function () {
-        var form = layui.form,
-        layer = layui.layer;
-        form.render();
-        $('.KB_files').hide();
-        var KnowledgeBaseID = $('#KnowledgeBaseID').val();
+        <script src="/layuiadmin/modules/xm-select.js"></script>
+        <script>
+                layui.use(function() {
+                var form = layui.form,
+                layer = layui.layer;
+                form.render();
+                $('.KB_files').hide();
+                var KnowledgeBaseID = $('#KnowledgeBaseID').val();
 
-        Dropzone.autoDiscover = false;
-        $("#file-upload-form").dropzone({
-        url: '/Controls/UploadFiles/Save',
-        maxFilesize: 128, maxFiles: 1,
-        acceptedFiles: '.pdf,.doc,.docx,.xls,.xlsx,.txt,.md,.ppt,.pptx,.jpg,.png,.tiff',
-        init: function () {
-        this.on("success", function (file,re) {
-        if (re.data) {
-        var fileCode = re.data.FileCode;
-        $.ajax({
-        url: '@Url.Action("AddFile")',
-        type: 'POST',
-        data: { fileCode: fileCode, fileName: file.name, KnowledgeBaseID: KnowledgeBaseID },
-        success: function (rst) {
-        layer.closeAll();
-        if (rst) {
-        layer.msg(rst.ErrorDesc, { icon: 1 });
-        if (rst.Status) {
-        if (parent) {
-        parent.location.reload();
-        } else {
-        location.reload();
-        }
-        }
-        }
-        }
-        });
-        }
-        });
-        this.on("removedfile", function (file) {
-        console.log("File " + file.name + "removed");
-        });
-        }
-        });
+                Dropzone.autoDiscover = false;
+                $("#file-upload-form").dropzone({
+                    url: '/Controls/UploadFiles/Save',
+                    maxFilesize: 1280,
+                    maxFiles: 100,
+                    dictDefaultMessage: '<img src="/plugs/dropzone/upload-icon.png" alt="上传" style="width:80px;height:80px;"><div>拖拽文件到此处或点击上传<div>',
+                    acceptedFiles: '.pdf,.doc,.docx,.xls,.xlsx,.txt,.md,.ppt,.pptx,.jpg,.png,.tiff',
+                    init: function() {
+                        this.on("success",
+                        function(file, re) {
+                            if (re.data) {
+                                var fileCode = re.data.FileCode;
+                                $.ajax({
+                                    url: '@Url.Action("AddFile")',
+                                    type: 'POST',
+                                    data: {
+                                        fileCode: fileCode,
+                                        fileName: file.name,
+                                        KnowledgeBaseID: KnowledgeBaseID
+                                    },
+                                    success: function(rst) {
+                                        layer.closeAll();
+                                        if (rst) {
+                                            layer.msg(rst.ErrorDesc, {
+                                                icon: 1
+                                            });
+                                            if (rst.Status) {
+                                                if (parent) {
+                                                    parent.location.reload();
+                                                } else {
+                                                    location.reload();
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                        this.on("removedfile",
+                        function(file) {
+                            console.log("File " + file.name + "removed");
+                        });
+                    }
+                });
 
-        });
-    </script>
+            });
+        </script>
     }
 }
 else
 {
     <div class="layui-fluid">
-    <div class="layui-row layui-col-space15">
-        <div class="layui-col-md12">
-            <div class="layui-card">
-                    <div class="layui-card-body">
-                        <table class="layui-table layui-form">
-                            <colgroup>
-                                <col width="150">
-                                <col>
-                            </colgroup>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>分块内容</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var Chunk in KnowledgeBaseFileChunkList)
-                                {
-                                    <tr data-FileID="@Chunk.id">
-                                        <td>@Chunk.id</td>
-                                        <td>@Chunk.content</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+        <div class="layui-row layui-col-space15">
+            <!-- 统计信息卡片 -->
+            <div class="layui-col-md12">
+                <div class="stats-card">
+                    <h2 style="margin: 0; font-size: 20px;">📊 文件分块统计</h2>
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalChunks">-</div>
+                            <div class="stat-label">总分块数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalEntities">-</div>
+                            <div class="stat-label">实体数量</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalRelations">-</div>
+                            <div class="stat-label">关系数量</div>
+                        </div>
                     </div>
-                    <div class="layui-card-body ">
-                        <div class="pagination" id="pageId">
+                </div>
+            </div>
+
+            <!-- 标签页：分块列表和知识图谱 -->
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-tab layui-tab-brief" lay-filter="docTab">
+                        <ul class="layui-tab-title">
+                            <li class="layui-this" lay-id="chunks">📄 分块列表</li>
+                            <li lay-id="graph">🕸️ 知识图谱</li>
+                        </ul>
+                        <div class="layui-tab-content">
+                            <!-- 分块列表标签页 -->
+                            <div class="layui-tab-item layui-show">
+                                <div style="padding: 10px 0;">
+                                    <button class="layui-btn layui-btn-sm layui-btn-normal" onclick="loadChunks()">
+                                        <i class="layui-icon layui-icon-refresh"></i> 刷新
+                                    </button>
+                                </div>
+                                <div id="chunksContainer">
+                                    <div class="loading">
+                                        <i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop" style="font-size: 48px;"></i>
+                                        <p>加载中...</p>
+                                    </div>
+                                </div>
+                                <div id="paginationContainer" style="display: none; margin-top: 15px;">
+                                    <div class="pagination" id="pageId"></div>
+                                </div>
+                            </div>
+                            <!-- 知识图谱标签页 -->
+                            <div class="layui-tab-item">
+                                <div style="padding: 10px 0;">
+                                    <button class="layui-btn layui-btn-sm layui-btn-normal" onclick="loadGraph()">
+                                        <i class="layui-icon layui-icon-refresh"></i> 刷新
+                                    </button>
+                                </div>
+                                <div id="graphContainer" style="width: 100%; height: 600px; min-width: 100%; box-sizing: border-box;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -124,25 +246,424 @@ else
         </div>
     </div>
 
-    @section Js{
+    @section Js {
         <script>
-            layui.use(function () {
-                var form = layui.form;
-                var laypage = layui.laypage;
-                form.render();
+            var fileID = '@FileID';
+            var knowledgeBaseID = '@KnowledgeBaseID';
+            var currentPage = @ViewBag.Index;
+            var pageSize = @ViewBag.Size;
+            var totalCount = 0;
+            var graphChart = null; // 全局保存ECharts实例
 
-                laypage.render({
-                    elem: 'pageId'
-                    , count: @ViewBag.Total
-                                , limit: @ViewBag.Size
-                                , curr: @ViewBag.Index
-                                , layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip']
-                    , jump: function (obj, f) {
-                        if (f)
-                            return;
-            location.href = "@Url.Action("EditFile")?KnowledgeBaseID=@KnowledgeBaseID&FileID=@FileID&index=" + obj.curr + "&size=" + obj.limit;
+            layui.use(['layer', 'laypage', 'element'], function () {
+                var layer = layui.layer;
+                var laypage = layui.laypage;
+                var element = layui.element;
+
+                // 页面加载时获取数据
+                loadChunks();
+
+                // 加载分块数据
+                function loadChunks() {
+                    $('#chunksContainer').html('<div class="loading"><i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop" style="font-size: 48px;"></i><p>加载中...</p></div>');
+
+                    // 获取文件分块统计
+                    $.ajax({
+                        url: '@Url.Action("GetFileChunks")',
+                        type: 'GET',
+                        data: { fileID: fileID, index: currentPage, size: pageSize },
+                        success: function(res) {
+                            if (res.Status) {
+                                totalCount = res.Data.total;
+                                $('#totalChunks').text(res.Data.total || 0);
+
+                                // 获取当前文件的统计信息（包含实体和关系信息）
+                                $.ajax({
+                                    url: '@Url.Action("GetKnowledgeBaseStats")',
+                                    type: 'GET',
+                                    data: { knowledgeBaseID: knowledgeBaseID, fileID: fileID },
+                                    success: function(statsRes) {
+                                        if (statsRes.Status && statsRes.Data.graphStatistics) {
+                                            $('#totalEntities').text(statsRes.Data.graphStatistics.totalEntities || 0);
+                                            $('#totalRelations').text(statsRes.Data.graphStatistics.totalRelations || 0);
+                                        } else {
+                                            $('#totalEntities').text('-');
+                                            $('#totalRelations').text('-');
+                                        }
+                                    },
+                                    error: function() {
+                                        $('#totalEntities').text('-');
+                                        $('#totalRelations').text('-');
+                                    }
+                                });
+
+                                if (totalCount === 0) {
+                                    $('#chunksContainer').html('<div class="empty-state"><i class="layui-icon layui-icon-file"></i><p>该文件尚未处理或没有分块数据</p></div>');
+                                    $('#paginationContainer').hide();
+                                    return;
+                                }
+
+                                // 优先渲染向量分块数据
+                                if (res.Data.chunks && res.Data.chunks.length > 0) {
+                                    renderVectorChunks(res.Data.chunks);
+                                } else {
+                                    // 如果没有向量数据，尝试加载旧版分块数据作为降级方案
+                                    loadLegacyChunks();
+                                }
+                            } else {
+                                layer.msg(res.ErrorDesc || '获取分块信息失败', {icon: 2});
+                                $('#chunksContainer').html('<div class="empty-state"><i class="layui-icon layui-icon-error"></i><p>加载失败</p></div>');
+                            }
+                        },
+                        error: function() {
+                            layer.msg('网络错误，请稍后重试', {icon: 2});
+                            loadLegacyChunks();
+                        }
+                    });
+                }
+
+                // 渲染向量分块数据
+                function renderVectorChunks(chunks) {
+                    if (!chunks || chunks.length === 0) {
+                        $('#chunksContainer').html('<div class="empty-state"><i class="layui-icon layui-icon-file"></i><p>该文件尚未处理或没有分块数据</p></div>');
+                        $('#paginationContainer').hide();
+                        return;
                     }
-                });
+
+                    var chunksHtml = '<div class="layui-row layui-col-space15">';
+
+                    chunks.forEach(function(chunk, index) {
+                        var chunkNum = (currentPage - 1) * pageSize + index + 1;
+                        var chunkId = chunk.id ? chunk.id.substring(0, 8) : 'unknown';
+                        var tokenCount = chunk.tokenCount || 0;
+
+                        chunksHtml += '<div class="layui-col-md12">' +
+                            '<div class="chunk-info-card">' +
+                            '<div class="chunk-header">' +
+                            '<span class="chunk-id">#分块 ' + chunkNum + ' (ID: ' + chunkId + '...)</span>' +
+                            '<span class="chunk-stats">Token数: ' + tokenCount + '</span>' +
+                            '</div>' +
+                            '<div class="chunk-content">' + (chunk.content || '无内容') + '</div>' +
+                            '</div>' +
+                            '</div>';
+                    });
+
+                    chunksHtml += '</div>';
+                    $('#chunksContainer').html(chunksHtml);
+
+                    // 显示分页
+                    if (totalCount > pageSize) {
+                        renderPagination();
+                    } else {
+                        $('#paginationContainer').hide();
+                    }
+                }
+
+                // 加载旧版分块数据（降级方案）
+                function loadLegacyChunks() {
+                    $.ajax({
+                        url: '@Url.Action("EditFile")',
+                        type: 'GET',
+                        data: { KnowledgeBaseID: knowledgeBaseID, FileID: fileID, index: currentPage, size: pageSize },
+                        dataType: 'html',
+                        success: function(html) {
+                            // 从返回的HTML中提取表格内容
+                            var $html = $(html);
+                            var $tbody = $html.find('tbody');
+                            var $total = $html.find('#totalChunks');
+
+                            if ($tbody.length > 0 && $tbody.find('tr').length > 0) {
+                                var chunksHtml = '<div class="layui-row layui-col-space15">';
+
+                                $tbody.find('tr').each(function(index) {
+                                    var $tr = $(this);
+                                    var chunkId = $tr.find('td:eq(0)').text();
+                                    var chunkContent = $tr.find('td:eq(1)').text();
+
+                                    chunksHtml += '<div class="layui-col-md12">' +
+                                        '<div class="chunk-info-card">' +
+                                        '<div class="chunk-header">' +
+                                        '<span class="chunk-id">#' + chunkId + '</span>' +
+                                        '<span class="chunk-stats">分块 ' + (index + 1) + '</span>' +
+                                        '</div>' +
+                                        '<div class="chunk-content">' + chunkContent + '</div>' +
+                                        '</div>' +
+                                        '</div>';
+                                });
+
+                                chunksHtml += '</div>';
+                                $('#chunksContainer').html(chunksHtml);
+
+                                // 显示分页
+                                if (totalCount > pageSize) {
+                                    renderPagination();
+                                }
+                            } else {
+                                $('#chunksContainer').html('<div class="empty-state"><i class="layui-icon layui-icon-file"></i><p>该文件尚未处理或没有分块数据</p></div>');
+                            }
+                        },
+                        error: function() {
+                            $('#chunksContainer').html('<div class="empty-state"><i class="layui-icon layui-icon-error"></i><p>加载失败，请稍后重试</p></div>');
+                        }
+                    });
+                }
+
+                // 渲染分页
+                function renderPagination() {
+                    $('#paginationContainer').show();
+                    laypage.render({
+                        elem: 'pageId',
+                        count: totalCount,
+                        limit: pageSize,
+                        curr: currentPage,
+                        layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip'],
+                        jump: function (obj, first) {
+                            if (!first) {
+                                currentPage = obj.curr;
+                                pageSize = obj.limit;
+                                loadChunks();
+                            }
+                        }
+                    });
+                }
+
+                // 暴露给全局以便刷新按钮调用
+                window.loadChunks = loadChunks;
+
+                // 渲染知识图谱（必须在loadGraph之前定义）
+                function renderGraph(data) {
+                    console.log('[图谱渲染] 开始渲染');
+                    
+                        // 销毁旧的ECharts实例，然后重新创建
+                    if (graphChart) {
+                        console.log('[图谱渲染] 销毁旧的ECharts实例');
+                        graphChart.dispose();
+                        graphChart = null;
+                    }
+                    
+                    var container = document.getElementById('graphContainer');
+                    if (container) {
+                        console.log('[图谱渲染] 容器已准备，不清空内容');
+                        // 强制设置容器宽度为100%，确保自適应
+                        container.style.width = '100%';
+                        container.style.boxSizing = 'border-box';
+                        console.log('[图谱渲染] 已设置容器宽度为100%');
+                    }
+        
+                    // 检查ECharts是否存在
+                    if (typeof echarts === 'undefined') {
+                        console.error('[图谱渲染] ECharts库未加载');
+                        $('#graphContainer').html('<p>ECharts库未加载，请检查页面资源</p>');
+                        return;
+                    }
+                    
+                    // 检查容器是否存在
+                    if (!container) {
+                        console.error('[图谱渲染] graphContainer容器不存在');
+                        return;
+                    }
+                    
+                    // 确保容器有足够的高度
+                    if (container.offsetHeight === 0) {
+                        container.style.height = '600px';
+                        console.log('[图谱渲染] 设置容器高度为600px');
+                    }
+                    
+                    console.log('[图谱渲染] 初始化ECharts...');
+                    graphChart = echarts.init(container);
+                    console.log('[图谱渲染] ECharts初始化成功');
+                    
+                    // 初始化后立即resize，确保容器宽度正确
+                    setTimeout(function() {
+                        if (graphChart) {
+                            graphChart.resize();
+                            console.log('[图谱渲染] 已调用resize重新计算容器尺寸');
+                        }
+                    }, 100);
+                    
+                    if (!data.nodes || data.nodes.length === 0) {
+                        console.log('[图谱渲染] 节点数据为空');
+                        $('#graphContainer').html('<div class="empty-state"><i class="layui-icon layui-icon-file"></i><p>该文件尚未生成知识图谱</p></div>');
+                        return;
+                    }
+
+                    console.log('[图谱渲染] 数据有效，开始渲染');
+                    console.log('[图谱渲染] 数据详情:', {
+                        nodeCount: data.nodes.length,
+                        linkCount: data.links.length,
+                        categoryCount: data.categories ? data.categories.length : 0,
+                        firstNode: data.nodes[0],
+                        firstLink: data.links[0]
+                    });
+
+                    console.log('[图谱渲染] 准备配置项');
+
+                    // 配置项
+                    var option = {
+                        title: {
+                            text: '知识图谱',
+                            left: 'center',
+                            top: 10,
+                            textStyle: {
+                                fontSize: 16
+                            }
+                        },
+                        tooltip: {
+                            formatter: function(params) {
+                                if (params.dataType === 'node') {
+                                    return '<div style="padding: 5px;">' +
+                                        '<strong>' + params.data.name + '</strong><br/>' +
+                                        '类型: ' + params.data.category + '<br/>' +
+                                        '连接数: ' + (params.data.value || 0) +
+                                        '</div>';
+                                } else if (params.dataType === 'edge') {
+                                    return '<div style="padding: 5px;">' +
+                                        '<strong>' + params.data.source + '</strong> -> ' +
+                                        '<strong>' + params.data.target + '</strong><br/>' +
+                                        '关系: ' + params.data.name +
+                                        '</div>';
+                                }
+                                return params.name;
+                            }
+                        },
+                        legend: [{
+                            data: data.categories.map(function(a) { return a.name; }),
+                            top: 50,
+                            left: 'center'
+                        }],
+                        series: [{
+                            type: 'graph',
+                            layout: 'force',
+                            data: data.nodes,
+                            links: data.links,
+                            categories: data.categories,
+                            roam: true,
+                            label: {
+                                position: 'right',
+                                formatter: '{b}'
+                            },
+                            labelLayout: {
+                                hideOverlap: true
+                            },
+                            scaleLimit: {
+                                min: 0.4,
+                                max: 2
+                            },
+                            lineStyle: {
+                                color: 'source',
+                                curveness: 0.3
+                            },
+                            emphasis: {
+                                focus: 'adjacency',
+                                lineStyle: {
+                                    width: 10
+                                }
+                            },
+                            force: {
+                                repulsion: 200,
+                                edgeLength: 100,
+                                gravity: 0.1
+                            }
+                        }]
+                    };
+
+                    // 使用配置项显示图表
+                    try {
+                        console.log('[图谱渲染] 准备调用setOption...');
+                        console.log('[图谱渲染] option配置对象:', option);
+                        console.log('[图谱渲染] chart对象:', graphChart);
+                        
+                        graphChart.setOption(option);
+                        
+                        console.log('[图谱渲染] setOption成功，图表已渲染');
+                        console.log('[图谱渲染] 容器尺寸:', {
+                            width: container.offsetWidth,
+                            height: container.offsetHeight
+                        });
+                    } catch (e) {
+                        console.error('[图谱渲染] setOption失败:', e.message);
+                        console.error('[图谱渲染] 错误堆栈:', e.stack);
+                        $('#graphContainer').html('<p>图表渲染失败: ' + e.message + '</p>');
+                        return;
+                    }
+                    
+                    // setOption后再调用一次resize，确保图表完全适配容器
+                    setTimeout(function() {
+                        if (graphChart) {
+                            graphChart.resize();
+                            console.log('[图谱渲染] setOption后已调用resize');
+                        }
+                    }, 200);
+
+                    // 监听标签页切换事件，当切换到知识图谱时重新resize
+                    element.on('tab(docTab)', function(data){
+                        console.log('[图谱渲染] 标签页切换，当前索引:', data.index);
+                        if(data.index === 1){ // 知识图谱标签页索引为1
+                            setTimeout(function(){
+                                if (graphChart) {
+                                    console.log('[图谱渲染] 切换到知识图谱标签页，调用resize');
+                                    graphChart.resize();
+                                }
+                            }, 100);
+                        }
+                    });
+                }
+
+                // 加载知识图谱数据（在renderGraph之后定义）
+                function loadGraph() {
+                    console.log('[图谱加载] 开始加载图谱数据...', { fileID: fileID, knowledgeBaseID: knowledgeBaseID });
+                    // 注意：不在这里清空容器，避免ECharts初始化时容器被替换
+                    // 改为在renderGraph开始时清空
+
+                    $.ajax({
+                        url: '@Url.Action("GetFileGraphData")',
+                        type: 'GET',
+                        data: { fileID: fileID, knowledgeBaseID: knowledgeBaseID },
+                        timeout: 30000, // 30秒超时
+                        success: function(res) {
+                            console.log('[图谱加载] 收到响应:', res);
+                            if (res.Status && res.Data) {
+                                console.log('[图谱加载] 数据有效，开始渲染', { 
+                                    nodeCount: res.Data.nodes?.length || 0, 
+                                    linkCount: res.Data.links?.length || 0 
+                                });
+                                renderGraph(res.Data);
+                            } else {
+                                console.warn('[图谱加载] 数据无效或失败:', res.ErrorDesc);
+                                $('#graphContainer').html('<div class="empty-state"><i class="layui-icon layui-icon-error"></i><p>' + (res.ErrorDesc || '加载失败') + '</p></div>');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('[图谱加载] 请求失败:', { 
+                                status: status, 
+                                error: error, 
+                                responseText: xhr.responseText,
+                                statusCode: xhr.status 
+                            });
+                            
+                            var errorMsg = '加载失败，请稍后重试';
+                            if (status === 'timeout') {
+                                errorMsg = '请求超时，请检查网络连接或稍后重试';
+                            } else if (xhr.status === 500) {
+                                errorMsg = '服务器错误，请查看后端日志';
+                            } else if (xhr.status === 404) {
+                                errorMsg = '接口不存在，请检查路由配置';
+                            }
+                            
+                            layer.msg('获取图谱数据失败: ' + errorMsg, {icon: 2, time: 3000});
+                            $('#graphContainer').html('<div class="empty-state"><i class="layui-icon layui-icon-error"></i><p>' + errorMsg + '</p></div>');
+                        },
+                        complete: function() {
+                            console.log('[图谱加载] 请求完成');
+                        }
+                    });
+                }
+
+                // 暴露给全局以便刷新按钮调用
+                window.loadGraph = loadGraph;
+
+                // 页面加载时自动加载知识图谱
+                loadGraph();
             });
         </script>
     }

@@ -145,6 +145,24 @@ strSql.Append("UpdateTime=@UpdateTime");
             }
         }
 
+        public bool LogRecord_DeleteByWhere(string where)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("delete from ");
+            strSql.Append(LogRecordTableName);
+            strSql.Append(" where "+ where);
+            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(LogRecordConnectionName), CommandType.Text, strSql.ToString());
+            if (rows > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+
         public bool LogRecord_DeleteList(string idlist)
         {
             StringBuilder strSql = new StringBuilder();

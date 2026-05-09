@@ -1,4 +1,4 @@
-﻿@{
+@{
     var LogT = ViewBag.LogT as LogMark;
     var LogLevelList = ViewBag.LogLevelList as List<LogLevel>;
     var LogMarkClassList = ViewBag.LogMarkClassList as List<LogMarkClass>;
@@ -118,9 +118,14 @@
                                 }
                             }
                         }
+                    },
+                    error: function (xhr, status, error) {
+                        layer.msg('提交失败: ' + error, { icon: 2 });
                     }
                 });
-
+                
+                // 阻止表单默认提交行为
+                return false;
             });
         });
     </script>

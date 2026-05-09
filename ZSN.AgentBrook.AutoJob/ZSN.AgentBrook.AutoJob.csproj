@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -26,20 +26,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.12.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
     <PackageReference Include="Quartz" Version="3.13.1" />
     <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.13.1" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="Topshelf" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ZSN.AI.KnowledgeBase\ZSN.AI.KnowledgeBase.csproj" />
+    <ProjectReference Include="..\ZSN.AgentBrook.Plugins\ZSN.AgentBrook.Plugins.csproj" />
     <ProjectReference Include="..\ZSN.AI.BLL\ZSN.AI.BLL.csproj" />
     <ProjectReference Include="..\ZSN.AI.Core\ZSN.AI.Core.csproj" />
     <ProjectReference Include="..\ZSN.AI.DAL.MySql\ZSN.AI.DAL.MySql.csproj" />
     <ProjectReference Include="..\ZSN.AI.DAL.Postgres\ZSN.AI.DAL.Postgres.csproj" />
     <ProjectReference Include="..\ZSN.AI.DAL\ZSN.AI.DAL.csproj" />
     <ProjectReference Include="..\ZSN.AI.Entity\ZSN.AI.Entity.csproj" />
+    <ProjectReference Include="..\ZSN.AI.Functions\ZSN.AI.Functions.csproj" />
     <ProjectReference Include="..\ZSN.AI.Node\ZSN.AI.Node.csproj" />
+    <ProjectReference Include="..\ZSN.AI.Plugins\ZSN.AI.Plugins.csproj" />
     <ProjectReference Include="..\ZSN.AI.Service\ZSN.AI.Service.csproj" />
     <ProjectReference Include="..\ZSN.Utils.Core\ZSN.Utils.Core.csproj" />
   </ItemGroup>

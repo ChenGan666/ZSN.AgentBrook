@@ -14,11 +14,11 @@ namespace ZSN.AI.DAL.MySql
         ///表名称
         private string ApisettingsInfoTableName = "tb_apisettings_info";
         ///表字段
-        private const string ApisettingsInfoTableField = "ApiID,MemberID,AppID,SecretKey,SettingName,Remark,CreateTime,UpdateTime";
+        private const string ApisettingsInfoTableField = "ApiID,CompanyID,AppID,SecretKey,SettingName,Remark,CreateTime,UpdateTime";
         ///添加用表字段
-        private const string ApisettingsInfoTableFieldForAdd = "MemberID,AppID,SecretKey,SettingName,Remark,CreateTime,UpdateTime";
+        private const string ApisettingsInfoTableFieldForAdd = "CompanyID,AppID,SecretKey,SettingName,Remark,CreateTime,UpdateTime";
         ///添加用表字段value
-        private const string ApisettingsInfoTableFieldAltForAdd = "@MemberID,@AppID,@SecretKey,@SettingName,@Remark,@CreateTime,@UpdateTime";
+        private const string ApisettingsInfoTableFieldAltForAdd = "@CompanyID,@AppID,@SecretKey,@SettingName,@Remark,@CreateTime,@UpdateTime";
         public string SetConnectionName(string connName)
         {
             return ApisettingsInfoConnectionName = connName;
@@ -38,7 +38,7 @@ namespace ZSN.AI.DAL.MySql
             strSql.Append(")");
             strSql.Append(";select @@IDENTITY");
             MySqlParameter[] parameters = {
-			 new MySqlParameter("@MemberID", MySqlDbType.VarChar,64),
+			 new MySqlParameter("@CompanyID", MySqlDbType.Int64),
  new MySqlParameter("@AppID", MySqlDbType.VarChar,64),
  new MySqlParameter("@SecretKey", MySqlDbType.VarChar,64),
  new MySqlParameter("@SettingName", MySqlDbType.VarChar,50),
@@ -47,7 +47,7 @@ namespace ZSN.AI.DAL.MySql
  new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16)
 
 					};
-			 parameters[0].Value = model.MemberID;
+			 parameters[0].Value = model.CompanyID;
  parameters[1].Value = model.AppID;
  parameters[2].Value = model.SecretKey;
  parameters[3].Value = model.SettingName;
@@ -75,7 +75,7 @@ namespace ZSN.AI.DAL.MySql
             strSql.Append("update ");
             strSql.Append(ApisettingsInfoTableName);
             strSql.Append(" set ");
-			strSql.Append("MemberID=@MemberID,");
+			strSql.Append("CompanyID=@CompanyID,");
 strSql.Append("AppID=@AppID,");
 strSql.Append("SecretKey=@SecretKey,");
 strSql.Append("SettingName=@SettingName,");
@@ -86,7 +86,7 @@ strSql.Append("UpdateTime=@UpdateTime");
             strSql.Append(" where ApiID=@ApiID");
             MySqlParameter[] parameters = {
 				 new MySqlParameter("@ApiID", MySqlDbType.Int32,10),
- new MySqlParameter("@MemberID", MySqlDbType.VarChar,64),
+ new MySqlParameter("@CompanyID", MySqlDbType.Int64),
  new MySqlParameter("@AppID", MySqlDbType.VarChar,64),
  new MySqlParameter("@SecretKey", MySqlDbType.VarChar,64),
  new MySqlParameter("@SettingName", MySqlDbType.VarChar,50),
@@ -96,7 +96,7 @@ strSql.Append("UpdateTime=@UpdateTime");
 
 			};
 			 parameters[0].Value = model.ApiID;
- parameters[1].Value = model.MemberID;
+ parameters[1].Value = model.CompanyID;
  parameters[2].Value = model.AppID;
  parameters[3].Value = model.SecretKey;
  parameters[4].Value = model.SettingName;
@@ -243,6 +243,30 @@ strSql.Append("UpdateTime=@UpdateTime");
                 return null;
             }
         }
+        public ApisettingsInfo ApisettingsInfo_GetModelByCompanyID(int CompanyID)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("select ");
+            strSql.Append(ApisettingsInfoTableField);
+            strSql.Append(" from ");
+            strSql.Append(ApisettingsInfoTableName);
+            strSql.Append(" where CompanyID=@CompanyID");
+            strSql.Append(" limit 1");
+            MySqlParameter[] parameters = {
+                    new MySqlParameter("@CompanyID", MySqlDbType.Int64)
+            };
+            parameters[0].Value = CompanyID;
+            ApisettingsInfo model = new ApisettingsInfo();
+            DataSet ds = DbHelper.ExecuteDataset(DbConfig.GetDbInfo(ApisettingsInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+            if (ds.Tables[0].Rows.Count > 0)
+            {
+                return ApisettingsInfo_DataRowToModel(ds.Tables[0].Rows[0]);
+            }
+            else
+            {
+                return null;
+            }
+        }
         /// <summary>
         /// 得到一个对象实体
         /// </summary>
@@ -255,9 +279,9 @@ strSql.Append("UpdateTime=@UpdateTime");
                 {
                     model.ApiID = int.Parse(row["ApiID"].ToString());
                 }
-				if (row["MemberID"] != null )
+				if (row["CompanyID"] != null )
                 {
-					model.MemberID = row["MemberID"].ToString();
+                    model.CompanyID = int.Parse(row["CompanyID"].ToString());
                 }
 				if (row["AppID"] != null )
                 {

@@ -78,7 +78,6 @@ namespace NPinyin
     }
 
 
-
     /// <summary>
     /// 取中文文本的拼音
     /// </summary>
@@ -140,7 +139,6 @@ namespace NPinyin
       string text = ConvertEncoding(pinyin, encoding, Encoding.UTF8);
       return ConvertEncoding(GetChineseText(text), Encoding.UTF8, encoding);
     }
-
 
 
     /// <summary>

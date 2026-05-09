@@ -1,0 +1,157 @@
+@{
+    var skill = ViewBag.Skill as SkillInfo;
+}
+@section Css{
+    <style>
+        .layui-form-label { width: 120px; }
+    </style>
+}
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="SkillID" value="@skill.SkillID" />
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="x-red">*</span>名称</label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="SName" lay-verify="required" value="@skill.SName" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">描述</label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea name="SDescription" class="layui-input">@skill.SDescription</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">目录</label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <div class="layui-input-inline" style="width: calc(100% - 110px);">
+                                <input type="text" name="SkillDirectory" value="@skill.SkillDirectory" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-input-inline" style="width: 100px;">
+                                <button type="button" class="layui-btn layui-btn-normal layui-btn-sm" id="btnShowDir" style="margin-left:8px;">显示目录</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">上传ZIP</label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="file" id="zipFile" accept=".zip" style="display:none;" />
+                            <button type="button" class="layui-btn layui-btn-sm" id="btnUploadZip" style="margin-top:8px;">上传并解压</button>
+                            <div class="layui-word-aux">仅支持 .zip，将以压缩包 MD5 作为新文件夹名，自动解压到配置目录</div>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="CreateTime" value="@skill.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")" />
+                <input type="hidden" name="UpdateTime" value="@skill.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")" />
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-inline">
+                        <input type="checkbox" id="statusSwitch" lay-text="正常|屏蔽" lay-skin="switch" lay-filter="skillStatus" @(skill.SystemStatus==0?"checked":"")>
+                    </div>
+                    <input type="hidden" name="SystemStatus" id="SystemStatus" value="@skill.SystemStatus" />
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn save" lay-filter="save" lay-submit>保存</button>
+                    </div>
+                </div>
+            </form>
+            @await Html.PartialAsync("../Shared/DirExplorer.cshtml")
+        </div>
+    </div>
+</div>
+@section Js{
+    <script>
+        layui.use(function () {
+            var form = layui.form, layer = layui.layer;
+            form.render();
+
+            var selected = $('#SystemStatus').val() || '0';
+            setStatus(selected);
+
+            // 开关与下拉联动，同时维护隐藏字段 SystemStatus
+            function setStatus(val) {
+                $('#SystemStatus').val(val);
+                var checked = (val === '0' || val === 0);
+                var elem = $('#statusSwitch')[0];
+                if (elem) {
+                    elem.checked = checked;
+                    $(elem).attr('checked', checked);
+                    form.render('switch');
+                }
+            }
+
+            form.on('switch(skillStatus)', function (data) {
+                setStatus(this.checked ? '0' : '1');
+            });
+
+            // 上传ZIP并回填目录（统一按钮：点击弹出选择，选择后自动上传）
+            $('#btnUploadZip').on('click', function(){ $('#zipFile').click(); });
+            $('#zipFile').on('change', function(){
+                var f = this.files && this.files[0];
+                if (!f) { return; }
+                if (!/\.zip$/i.test(f.name)) { layer.msg('仅支持zip文件', { icon: 2 }); this.value=''; return; }
+                var fd = new FormData();
+                fd.append('file', f);
+                layer.load(0);
+                $.ajax({
+                    url: '@Url.Action("UploadZip","File")',
+                    type: 'POST',
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst && rst.Status) {
+                            $('input[name="SkillDirectory"]').val(rst.Data);
+                            layer.msg('上传并解压完成', { icon: 1 });
+                        } else {
+                            layer.msg(rst && rst.ErrorDesc ? rst.ErrorDesc : '上传失败', { icon: 2 });
+                        }
+                    },
+                    error: function () { layer.closeAll(); layer.msg('网络错误', { icon: 2 }); }
+                });
+                // 重置文件选择，便于重复选择同名文件也能触发 change
+                this.value = '';
+            });
+
+            // 显示目录树/文件列表
+            $('#btnShowDir').on('click', function(){
+                var folder = ($('input[name="SkillDirectory"]').val() || '').trim();
+                openDirExplorer(folder);
+            });
+
+            // 提交保存
+            form.on('submit(save)', function (obj) {
+                layer.load(0);
+                $.ajax({
+                    url: '@Url.Action("Save")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: rst.Status?1:2 });
+                            if (rst.Status) {
+                                if (parent) { parent.location.reload(); } else { location.reload(); }
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}

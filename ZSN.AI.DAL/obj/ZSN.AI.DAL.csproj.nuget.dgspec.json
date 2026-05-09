@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "W:\\AI\\ZSN.AI.Community\\ZSN.AI.DAL\\ZSN.AI.DAL.csproj": {}
+    "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/ZSN.AI.DAL.csproj": {}
   },
   "projects": {
-    "W:\\AI\\ZSN.AI.Community\\LitJSON\\LitJSON.csproj": {
+    "/Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/LitJSON.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "W:\\AI\\ZSN.AI.Community\\LitJSON\\LitJSON.csproj",
+        "projectUniqueName": "/Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/LitJSON.csproj",
         "projectName": "LitJSON",
-        "projectPath": "W:\\AI\\ZSN.AI.Community\\LitJSON\\LitJSON.csproj",
-        "packagesPath": "C:\\Users\\chengan\\.nuget\\packages\\",
-        "outputPath": "W:\\AI\\ZSN.AI.Community\\LitJSON\\obj\\",
+        "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/LitJSON.csproj",
+        "packagesPath": "/Users/chengan/.nuget/packages/",
+        "outputPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\chengan\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/chengan/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "netcoreapp3.1"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -44,7 +38,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "netcoreapp3.1": {
@@ -60,48 +54,52 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[3.1.10, 3.1.10]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[3.1.0, 3.1.0]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/RuntimeIdentifierGraph.json"
         }
       }
     },
-    "W:\\AI\\ZSN.AI.Community\\ZSN.AI.DAL\\ZSN.AI.DAL.csproj": {
+    "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/ZSN.AI.DAL.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "W:\\AI\\ZSN.AI.Community\\ZSN.AI.DAL\\ZSN.AI.DAL.csproj",
+        "projectUniqueName": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/ZSN.AI.DAL.csproj",
         "projectName": "ZSN.AI.DAL",
-        "projectPath": "W:\\AI\\ZSN.AI.Community\\ZSN.AI.DAL\\ZSN.AI.DAL.csproj",
-        "packagesPath": "C:\\Users\\chengan\\.nuget\\packages\\",
-        "outputPath": "W:\\AI\\ZSN.AI.Community\\ZSN.AI.DAL\\obj\\",
+        "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/ZSN.AI.DAL.csproj",
+        "packagesPath": "/Users/chengan/.nuget/packages/",
+        "outputPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\chengan\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/chengan/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "W:\\AI\\ZSN.AI.Community\\ZSN.AI.Entity\\ZSN.AI.Entity.csproj": {
-                "projectPath": "W:\\AI\\ZSN.AI.Community\\ZSN.AI.Entity\\ZSN.AI.Entity.csproj"
+              "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.Entity/ZSN.AI.Entity.csproj": {
+                "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.Entity/ZSN.AI.Entity.csproj"
               },
-              "W:\\AI\\ZSN.AI.Community\\ZSN.Utils.Core\\ZSN.Utils.Core.csproj": {
-                "projectPath": "W:\\AI\\ZSN.AI.Community\\ZSN.Utils.Core\\ZSN.Utils.Core.csproj"
+              "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/ZSN.Utils.Core.csproj": {
+                "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/ZSN.Utils.Core.csproj"
               }
             }
           }
@@ -116,7 +114,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net8.0": {
@@ -129,6 +127,18 @@
             "Npgsql": {
               "target": "Package",
               "version": "[9.0.2, )"
+            },
+            "SharpZipLib": {
+              "target": "Package",
+              "version": "[1.4.2, )"
+            },
+            "System.Drawing.Common": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
+            "System.Text.RegularExpressions": {
+              "target": "Package",
+              "version": "[4.3.1, )"
             }
           },
           "imports": [
@@ -142,45 +152,49 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.25, 8.0.25]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.25, 8.0.25]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "W:\\AI\\ZSN.AI.Community\\ZSN.AI.Entity\\ZSN.AI.Entity.csproj": {
+    "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.Entity/ZSN.AI.Entity.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "W:\\AI\\ZSN.AI.Community\\ZSN.AI.Entity\\ZSN.AI.Entity.csproj",
+        "projectUniqueName": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.Entity/ZSN.AI.Entity.csproj",
         "projectName": "ZSN.AI.Entity",
-        "projectPath": "W:\\AI\\ZSN.AI.Community\\ZSN.AI.Entity\\ZSN.AI.Entity.csproj",
-        "packagesPath": "C:\\Users\\chengan\\.nuget\\packages\\",
-        "outputPath": "W:\\AI\\ZSN.AI.Community\\ZSN.AI.Entity\\obj\\",
+        "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.Entity/ZSN.AI.Entity.csproj",
+        "packagesPath": "/Users/chengan/.nuget/packages/",
+        "outputPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.Entity/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\chengan\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/chengan/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "W:\\AI\\ZSN.AI.Community\\ZSN.Utils.Core\\ZSN.Utils.Core.csproj": {
-                "projectPath": "W:\\AI\\ZSN.AI.Community\\ZSN.Utils.Core\\ZSN.Utils.Core.csproj"
+              "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/ZSN.Utils.Core.csproj": {
+                "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/ZSN.Utils.Core.csproj"
               }
             }
           }
@@ -195,11 +209,25 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "SharpZipLib": {
+              "target": "Package",
+              "version": "[1.4.2, )"
+            },
+            "System.Drawing.Common": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
+            "System.Text.RegularExpressions": {
+              "target": "Package",
+              "version": "[4.3.1, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -211,45 +239,49 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.25, 8.0.25]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.25, 8.0.25]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "W:\\AI\\ZSN.AI.Community\\ZSN.Utils.Core\\ZSN.Utils.Core.csproj": {
+    "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/ZSN.Utils.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "W:\\AI\\ZSN.AI.Community\\ZSN.Utils.Core\\ZSN.Utils.Core.csproj",
+        "projectUniqueName": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/ZSN.Utils.Core.csproj",
         "projectName": "ZSN.Utils.Core",
-        "projectPath": "W:\\AI\\ZSN.AI.Community\\ZSN.Utils.Core\\ZSN.Utils.Core.csproj",
-        "packagesPath": "C:\\Users\\chengan\\.nuget\\packages\\",
-        "outputPath": "W:\\AI\\ZSN.AI.Community\\ZSN.Utils.Core\\obj\\",
+        "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/ZSN.Utils.Core.csproj",
+        "packagesPath": "/Users/chengan/.nuget/packages/",
+        "outputPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\chengan\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/chengan/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "W:\\AI\\ZSN.AI.Community\\LitJSON\\LitJSON.csproj": {
-                "projectPath": "W:\\AI\\ZSN.AI.Community\\LitJSON\\LitJSON.csproj"
+              "/Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/LitJSON.csproj": {
+                "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/LitJSON.csproj"
               }
             }
           }
@@ -264,7 +296,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net8.0": {
@@ -296,7 +328,7 @@
             },
             "Microsoft.AspNetCore.Mvc": {
               "target": "Package",
-              "version": "[2.2.0, )"
+              "version": "[2.3.0, )"
             },
             "Microsoft.Extensions.Configuration.Abstractions": {
               "target": "Package",
@@ -308,7 +340,7 @@
             },
             "NLog": {
               "target": "Package",
-              "version": "[4.6.8, )"
+              "version": "[6.0.0, )"
             },
             "QRCoder": {
               "target": "Package",
@@ -322,6 +354,14 @@
               "target": "Package",
               "version": "[16.9.104.1, )"
             },
+            "SharpZipLib": {
+              "target": "Package",
+              "version": "[1.4.2, )"
+            },
+            "SixLabors.ImageSharp": {
+              "target": "Package",
+              "version": "[3.1.12, )"
+            },
             "StackExchange.Redis": {
               "target": "Package",
               "version": "[2.1.58, )"
@@ -333,6 +373,18 @@
             "System.Diagnostics.PerformanceCounter": {
               "target": "Package",
               "version": "[8.0.0, )"
+            },
+            "System.Drawing.Common": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "System.Text.RegularExpressions": {
+              "target": "Package",
+              "version": "[4.3.1, )"
             },
             "jieba.NET": {
               "target": "Package",
@@ -354,12 +406,22 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.25, 8.0.25]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.25, 8.0.25]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

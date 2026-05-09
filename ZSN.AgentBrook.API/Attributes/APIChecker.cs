@@ -22,6 +22,8 @@ namespace ZSN.AgentBrook.API.Attributes
     /// </summary>
     public class APIChecker: ActionFilterAttribute, IExceptionFilter
     {
+
+        public int MarkId = 304;
         /// <summary>
         /// 是否进行Token认证
         /// </summary>
@@ -35,7 +37,6 @@ namespace ZSN.AgentBrook.API.Attributes
         /// </summary>
         public bool Timestamp = ConfigHelper.GetBool("CheckTimestamp", true);
         
-
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             bool token_checked = false;
@@ -106,36 +107,17 @@ namespace ZSN.AgentBrook.API.Attributes
                 }
                 else
                 {
-                    string userID = "";
+                    string AppID = "";
                     string timestamp = "";
                     string now_timestamp = TimeHelper.GetCurrentTimestamp();
 
-                    GetUserIdByToken(_Token,out userID,out timestamp);
+                    GetAPPIDIdByToken(_Token,out AppID,out timestamp);
                     
-                    if (userID != "")
+                    if (AppID != ConfigHelper.GetString("AppID"))
                     {
                         if (TimeHelper.SubtractTimestam(now_timestamp, timestamp) <= ConfigHelper.GetInt("AccessTokenTimeOut"))//Token有效时间
                         {
                             return true;
-                            //RoadFlow.Platform.Users users = new RoadFlow.Platform.Users();
-                            //RoadFlow.Data.Model.Users byAccount = users.Get(Guid.Parse(userID));
-                            /*
-                            if (byAccount != null)
-                            {
-                                if (byAccount.Status == 0)
-                                {
-                                    return true;
-                                }
-                                else
-                                {
-                                    return false;
-                                }
-                            }
-                            else
-                            {
-                                return false;
-                            }
-                            */
                         }
                         else
                         {
@@ -150,7 +132,7 @@ namespace ZSN.AgentBrook.API.Attributes
             }
             catch (Exception e)
             {
-                DefaultLogService.AddOperationLog(5, e, "", ErrorCode.TokenCheckError.ToString());
+                DefaultLogService.AddOperationLog(MarkId, e, "", ErrorCode.TokenCheckError.ToString());
                 NLogHelper.WriteException("Token校验失败", e);
                 return false;
             }
@@ -160,7 +142,8 @@ namespace ZSN.AgentBrook.API.Attributes
         {
             try
             {
-                string obj = (actionContext.Controller as ApiBaseController)?.BodyParams;
+                ApiBaseController apiBaseController = actionContext.Controller as ApiBaseController;
+                string obj = apiBaseController?.BodyParams;
 
                 if (string.IsNullOrEmpty(obj))
                 {
@@ -169,28 +152,14 @@ namespace ZSN.AgentBrook.API.Attributes
                 else
                 {
                     var rst = false;
-                    //当Access Token不存在时使用RSA签名认证
-                    string _Token = (actionContext.Controller as ApiBaseController)?.Token;
-                    if (_Token.IsNullOrEmpty())
-                    {
-                        JObject DataObj = JsonConvert.DeserializeObject<JObject>(obj);
-                        string Data = DataObj.Value<string>("Data");
-                        string oldSign = DataObj.Value<string>("Sign");
 
-                        //APISettings aPISettings = SettingsService.Current;
-                        //var PublicKey = aPISettings.PublicKey;
-                        //var Server_PrivateKey = ConfigHelper.GetString("RSAPrivateKey");
-                        //Data = EncryptHelper.RSADecrypt(Server_PrivateKey, Data);
-
-                        rst = true;// EncryptHelper.RSAVerifySign(PublicKey, oldSign, Data);
-                        if (!rst)
-                        {
-                            DefaultLogService.AddOperationLog(5, $"RSA验签失败<br/>oldSign:{oldSign}<br/>{Data}");
-                        }
-                    }
-                    else
+                    CompanyInfo _company = apiBaseController?.Company;
+                    string AccessToken = apiBaseController?.Token;
+                    string MenberToken = apiBaseController?.MemberToken;
+                    if (_company != null)
                     {
                         Dictionary<string, object> tmpDic = JsonConvert.DeserializeObject<Dictionary<string, object>>(obj);
+
                         Dictionary<string, object> dic = new Dictionary<string, object>();
                         foreach (var p in tmpDic)
                         {
@@ -211,21 +180,26 @@ namespace ZSN.AgentBrook.API.Attributes
                         string oldSign = dic["Sign"]?.ToString();
                         dic.Remove("Sign");
 
-                        var api_secret = _Token;
-                        string sign = ApiSignHelper.GetSign(dic, api_secret);
-                        rst = oldSign.ToUpper() == sign.ToUpper();
+                        string _SecretKey = !MenberToken.IsNullOrEmpty() ? MenberToken : !AccessToken.IsNullOrEmpty() ? AccessToken : _company.SecretKey;
 
+                        string sign = ApiSignHelper.GetSign(dic, _SecretKey);
+                        rst = oldSign.ToUpper() == sign.ToUpper();
                         if (!rst)
                         {
-                            DefaultLogService.AddOperationLog(5, $"AccessToken验签失败<br/>oldSign:{oldSign}<br/>sign:{sign}<br/>{JsonConvert.SerializeObject(dic, Formatting.Indented)}");
+                            DefaultLogService.AddOperationLog(MarkId, $"RSA验签失败<br/>oldSign:{oldSign}");
                         }
+                    }
+                    else
+                    {
+                        DefaultLogService.AddOperationLog(MarkId, $"AccessToken验签失败，APPInfo为空");
+
                     }
                     return rst;
                 }
             }
             catch (Exception e)
             {
-                DefaultLogService.AddOperationLog(5, e, "", "验签错误2");
+                DefaultLogService.AddOperationLog(MarkId, e, "", "验签错误2");
                 NLogHelper.WriteException("验签错误2", e);
                 return false;
             }
@@ -268,7 +242,7 @@ namespace ZSN.AgentBrook.API.Attributes
             }
             catch (Exception e)
             {
-                DefaultLogService.AddOperationLog(5, e, "", "Timestamp Error!");
+                DefaultLogService.AddOperationLog(MarkId, e, "", "Timestamp Error!");
                 NLogHelper.WriteException("Timestamp Error!", e);
                 return false;
             }

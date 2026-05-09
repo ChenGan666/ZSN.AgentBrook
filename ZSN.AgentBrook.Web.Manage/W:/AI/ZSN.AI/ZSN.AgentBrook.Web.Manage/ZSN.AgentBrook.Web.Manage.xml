@@ -1,0 +1,161 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ZSN.AgentBrook.Web.Manage</name>
+    </assembly>
+    <members>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.UploadFilesController.Save(System.String)">
+            <summary>
+            Upload file
+            </summary>
+            <param name="paramValue">
+            </param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.UploadFilesController.SaveFile(Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>
+            UploadFile
+            </summary>
+            <param name="formFile"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeBaseController.GetFileChunks(System.String,System.Int32,System.Int32)">
+            <summary>
+            获取文件的向量分块数据
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeBaseController.GetKnowledgeBaseStats(System.String,System.String)">
+            <summary>
+            获取知识库统计信息
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeBaseController.CleanupOldGraphData">
+            <summary>
+            清理没有 source_document_id 的旧数据
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeBaseController.GetFileGraphData(System.String,System.String)">
+            <summary>
+            获取文件的知识图谱可视化数据
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeBaseController.GetColorByType(System.String)">
+            <summary>
+            根据实体类型获取颜色
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.Index(System.Int32,System.Int32,System.String,System.String)">
+            <summary>
+            知识图谱列表页面（显示所有记忆节点）
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.Relations(System.Int32,System.Int32,System.String)">
+            <summary>
+            关系列表页面（显示所有关系）
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.Visualize(System.String)">
+            <summary>
+            知识图谱可视化页面（基于AntV G6）
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.GetGraphData(System.String,System.Int32,System.Int32)">
+            <summary>
+            获取知识图谱数据（用于可视化）
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.Details(System.String)">
+            <summary>
+            查看知识详情
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.DeleteMemory(System.String)">
+            <summary>
+            删除知识节点
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.DeleteRelation(System.String)">
+            <summary>
+            删除关系
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.GetStatistics(System.String)">
+            <summary>
+            获取统计数据
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.TruncateText(System.String,System.Int32)">
+            <summary>
+            截断文本
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeGraphController.GetRelationTypeLabel(System.String)">
+            <summary>
+            获取关系类型标签
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.PluginsController.GetMethodParameters(System.String,System.String,System.String)">
+            <summary>
+            获取方法参数信息
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.PluginsController.GetTypeFromLoadedAssemblies(System.String)">
+            <summary>
+            从已加载的程序集中查找类型
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.PluginsController.ConvertTypeToSimpleName(System.Type)">
+            <summary>
+            将.NET类型转换为简化的类型名称
+            </summary>
+        </member>
+        <member name="T:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.MethodParameterInfo">
+            <summary>
+            方法参数信息
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.WordTemplateController.GetTemplateLabelData(System.String)">
+            <summary>
+            读取模板文件的标签
+            </summary>
+            <param name="fileCode"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.WorkflowController.GetTesterConfig(System.String)">
+            <summary>
+             组织用于前端测试使用的测试配置信息
+            </summary>
+            <param name="workflowID"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.WorkflowController.OptimizePrompts(System.String,System.Boolean,System.String)">
+            <summary>
+            提示词扩写
+            </summary>
+            <param name="prompts"></param>
+            <param name="stream"></param>
+            <param name="PromptsType">Node:流程节点提示词优化，Skills:技能提示词优化</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.WorkflowController.stopSession(System.String)">
+            <summary>
+            强制停止工作流
+            </summary>
+            <param name="ChatSessionID"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Attributes.AdminAttributes.PermissionsCheck(System.String,System.String)">
+            <summary>
+            权限判断
+            </summary>
+            <param name="_CurrentRequestPath"></param>
+            <param name="PermissionCode"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Program">
+            <summary>
+            Auto-generated public partial Program class for top-level statement apps.
+            </summary>
+        </member>
+    </members>
+</doc>

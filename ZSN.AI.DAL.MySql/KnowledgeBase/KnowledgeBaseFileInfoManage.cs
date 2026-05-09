@@ -131,7 +131,7 @@ strSql.Append("CreateTime=@CreateTime,");
             strSql.Append("delete from ");
             strSql.Append(KnowledgeBaseFileInfoTableName);
             strSql.Append(" where FileID=@FileID;");
-            strSql.Append("delete from tb_Knowledge_Base_File_Chunk_Info where FileID=@FileID  ;");
+            strSql.Append("delete from tb_knowledge_base_file_chunk_info where FileID=@FileID  ;");
             MySqlParameter[] parameters = {
 					new MySqlParameter("@FileID", MySqlDbType.VarChar, 64)
 			};

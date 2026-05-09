@@ -31,6 +31,7 @@ namespace ZSN.AI.BLL
                 }
                 if (isOK)
                 {
+
                     string NodeIDList = String.Join(",", workFlow.Nodes.Select(n => $"'{n.NodeID}'"));
                     string EdgeIDList = String.Join(",", workFlow.Edges.Select(n => $"'{n.EdgeID}'"));
 
@@ -90,6 +91,11 @@ namespace ZSN.AI.BLL
 		public static bool DeleteList(string workflowIDlist)
 		{
             workflowIDlist = ZSN.Utils.Core.Utils.StringUtil.QuoteSeparatedItems(workflowIDlist, ',', '\'');
+            if (!workflowIDlist.IsNullOrEmpty())
+            {
+                DatabaseProvider.GetWorkflowNodeInfo(connectionName: ConnectionName).WorkflowNodeInfo_DeleteByWorkflowID(workflowIDlist);
+                DatabaseProvider.GetWorkflowEdgeInfo(connectionName: ConnectionName).WorkflowEdgeInfo_DeleteByWorkflowID(workflowIDlist);
+            }
 
             return DatabaseProvider.GetWorkflowInfo(ConnectionName).WorkflowInfo_DeleteList(workflowIDlist);
 		}
@@ -153,7 +159,7 @@ namespace ZSN.AI.BLL
         /// <param name="showName">显示字段，默认全部</param>
         /// <param name="orderKey">排序key，默认主键</param>
         /// <returns></returns>
-		public static List<WorkflowInfo> GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType = 1, string showName = "*", string orderKey = "WorkflowID")
+		public static List<WorkflowInfo> GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType = 1, string showName = "*", string orderKey = "CreateTime")
 		{
             return WorkflowInfoDataSet_ToList(DatabaseProvider.GetWorkflowInfo(ConnectionName).WorkflowInfo_GetListByPage(pageSize, pageIndex, strWhere, out pagetotal, out total, orderType, showName, orderKey));
         }

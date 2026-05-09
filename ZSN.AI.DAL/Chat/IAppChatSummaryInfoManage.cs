@@ -17,6 +17,7 @@ namespace ZSN.AI.DAL
         AppChatSummaryInfo AppChatSummaryInfo_GetModel(string summaryID);
         DataSet AppChatSummaryInfo_GetListBySessionID(string AppID, string SessionID);
         DataSet AppChatSummaryInfo_GetList(string strWhere);
+        DataSet AppChatSummaryInfo_GetList(string strWhere,string SessionID,string MemberID);
         DataSet AppChatSummaryInfo_GetList(int top, string strWhere, string filedOrder);
         int AppChatSummaryInfo_GetRecordCount(string strWhere);
         DataSet AppChatSummaryInfo_GetListByPage(string strWhere, string orderBy, int startIndex, int endIndex);

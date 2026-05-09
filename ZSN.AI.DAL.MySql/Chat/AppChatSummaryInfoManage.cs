@@ -243,6 +243,29 @@ strSql.Append("ChatLogIDList=@ChatLogIDList");
             }
             return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(AppChatSummaryInfoConnectionName), CommandType.Text,strSql.ToString());
         }
+        public DataSet AppChatSummaryInfo_GetList(string strWhere = "",string SessionID = "", string MemberID = "")
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("select ");
+            strSql.Append(AppChatSummaryInfoTableField);
+            strSql.Append(" FROM ");
+            strSql.Append(AppChatSummaryInfoTableName);
+            strSql.Append(" where 1=1 ");
+            if (strWhere.Trim() != "")
+            {
+                strSql.Append(" and " + strWhere);
+            }
+            if (SessionID.Trim() != "")
+            {
+                strSql.Append($" and ChatSessionID='{SessionID}'");
+            }
+            if (MemberID.Trim() != "")
+            {
+                strSql.Append($" and ChatSessionID=(select ChatSessionID from tb_app_chat_session_info where MemberID='{MemberID}')");
+            }
+            strSql.Append(" order by CreateTime asc");
+            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(AppChatSummaryInfoConnectionName), CommandType.Text, strSql.ToString());
+        }
         /// <summary>
         /// 获得前几行数据
         /// </summary>

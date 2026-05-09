@@ -155,17 +155,24 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
         [HttpPost]
         public IActionResult LogMarkSave(LogMark LogT)
         {
-            if (LogT.Id == 0)
+            if (LogT != null)
             {
-                LogT.CreateTime = DateTime.Now;
-                LogMarkBusiness.Add(LogT);
+                if (LogT.Id == 0)
+                {
+                    LogT.CreateTime = DateTime.Now;
+                    LogMarkBusiness.Add(LogT);
+                }
+                else
+                {
+                    LogMarkBusiness.Update(LogT);
+                }
+                return Json(new { status = true });
             }
             else
             {
-                LogMarkBusiness.Update(LogT);
+                return Json(new { status = false });
             }
-
-            return Json(new { status = true });
+            
         }
         [HttpPost]
         public IActionResult LogMarkDel(int Id)
@@ -224,17 +231,24 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
         [HttpPost]
         public IActionResult LogMarkClassSave(LogMarkClass LogC)
         {
-            if (LogC.Id == 0)
+            if (LogC != null)
             {
-                LogC.CreateTime = DateTime.Now;
-                LogMarkClassBusiness.Add(LogC);
+                if (LogC.Id == 0)
+                {
+                    LogC.CreateTime = DateTime.Now;
+                    LogMarkClassBusiness.Add(LogC);
+                }
+                else
+                {
+                    LogMarkClassBusiness.Update(LogC);
+                }
+
+                return Json(new { status = true });
             }
             else
             {
-                LogMarkClassBusiness.Update(LogC);
+                return Json(new { status = false });
             }
-
-            return Json(new { status = true });
         }
         [HttpPost]
         public IActionResult LogMarkClassDel(int Id)
@@ -244,8 +258,5 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
                 LogMarkClassBusiness.Delete(Id);
             return Json(new { status = true });
         }
-       
-
-
     }
 }

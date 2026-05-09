@@ -1,0 +1,175 @@
+@{
+    var wordTemplate = ViewBag.WordTemplate as WordTemplateInfo;
+}
+
+@section Css
+{
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+    </style>
+}
+
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="WordTemplateID" value="@wordTemplate.WordTemplateID" />
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>名称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="WName" lay-verify="required" value="@wordTemplate.WName"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>描述
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea type="text" name="WDescription" lay-verify="required"
+                                      autocomplete="off" class="layui-input">@wordTemplate.WDescription</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>文件
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="hidden" name="FileCode" value="@wordTemplate.FileCode" />
+                            <div id="file-upload-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>书签
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea type="text" name="WLabel" lay-verify="required"
+                                      autocomplete="off" class="layui-input">@wordTemplate.WLabel</textarea>
+                            <button type="button" class="layui-btn layui-btn-sm read-bookmarks">读取书签</button>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="CreateTime" value="@wordTemplate.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")" />
+                <input type="hidden" name="UpdateTime" value="@wordTemplate.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")" />
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        状态
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="SystemStatus" value="0" title="正常" @(wordTemplate.SystemStatus == 0 ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="1" title="屏蔽" @(wordTemplate.SystemStatus == 1 ? "checked" : "")>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn save" lay-filter="save" lay-submit>保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Js
+{
+    <script>
+        layui.use(function () {
+            var form = layui.form,
+                layer = layui.layer;
+            form.render();
+
+            $('.save').click(function () {
+               
+
+            });
+
+            $('.read-bookmarks').click(function () {
+                var fileCode = $('input[name="FileCode"]').val();
+                if (!fileCode) {
+                    layer.msg('请先上传文件', { icon: 2 });
+                    return;
+                }
+                $.ajax({
+                    url: '@Url.Action("GetTemplateLabelData")',
+                    type: 'POST',
+                    data: { fileCode: fileCode },
+                    success: function (rst) {
+                        if (rst && rst.Status) {
+                            $('textarea[name="WLabel"]').val(rst.Data);
+                            layer.msg('读取成功', { icon: 1 });
+                        } else {
+                            layer.msg(rst.ErrorDesc || '读取失败', { icon: 2 });
+                        }
+                    }
+                });
+            });
+
+            //提交
+            form.on('submit(save)', function (obj) {
+                layer.load(0);
+
+                $.ajax({
+                    url: '@Url.Action("Save")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: 1 });
+                            if (rst.Status) {
+                                if (parent) {
+                                    parent.location.reload();
+                                } else {
+                                    location.reload();
+                                }
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}
+@section FileUpload {
+
+    <script>
+        $(function () {
+            var form = layui.form, layer = layui.layer;
+            form.render();
+
+            var _FileCode = function () {
+                var fileCodeElement = $('input[name="FileCode"]');
+                var fileUploadContainer = $('#file-upload-container');
+
+                var options = {
+                    url: '/Controls/UploadFiles/Save',
+                    formData: {
+                        //example: 'test'
+                    },
+                };
+
+                FileUploadPlugin(fileUploadContainer, fileCodeElement, options);
+            };
+            _FileCode();
+        });
+
+    </script>
+}

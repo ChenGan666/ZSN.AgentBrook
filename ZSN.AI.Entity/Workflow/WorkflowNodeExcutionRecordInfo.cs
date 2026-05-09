@@ -6,24 +6,28 @@ using System.Data;
 using System.Linq;
 namespace ZSN.AI.Entity
 {
-    public enum ExcutionRecordStatus
+    public enum ExecutionRecordStatus
     {
+        Timeout = -2,
         Fail = -1,
         Running = 0,
-        Success = 1
+        Success = 1,
+        Waiting = 2
     }
     public enum ProcessStatus
     {
+        Timeout = -2,
         Fail = -1,
         Running = 0,
-        Success = 1
+        Success = 1,
+        Waiting = 2
     }
     /// <summary>
     /// tb_workflow_node_excution_record_info
     /// </summary>
-    public partial class WorkflowNodeExcutionRecordInfo
+    public partial class WorkflowNodeExecutionRecordInfo
     {
-        public WorkflowNodeExcutionRecordInfo() { }
+        public WorkflowNodeExecutionRecordInfo() { }
         #region AutoField
 		/// <summary>
         /// RecordID
@@ -41,10 +45,14 @@ namespace ZSN.AI.Entity
         /// WorkflowID
         /// </summary>
         public string WorkflowID { get; set; } = string.Empty;
-		/// <summary>
+        /// <summary>
+        /// TaskID
+        /// </summary>
+        public string TaskID { get; set; } = string.Empty;
+        /// <summary>
         /// NodeID
         /// </summary>
-		public string NodeID { get; set; } = string.Empty;
+        public string NodeID { get; set; } = string.Empty;
         /// <summary>
         /// NodeName
         /// </summary>
@@ -65,7 +73,7 @@ namespace ZSN.AI.Entity
         /// Status
         /// </summary>
         [JsonConverter(typeof(StringEnumConverter))]
-        public ExcutionRecordStatus Status { get; set; } 
+        public ExecutionRecordStatus Status { get; set; } 
 		/// <summary>
         /// Inputs
         /// </summary>
@@ -77,18 +85,28 @@ namespace ZSN.AI.Entity
 		/// <summary>
         /// Logs
         /// </summary>
-		public object Logs { get; set; } 
+		public object Logs { get; set; }
+        /// <summary>
+        /// 发起此节点执行的主任务ID（如ClawAI的TaskID）
+        /// </summary>
+        public string FromMainTaskID { get; set; } = string.Empty;
         #endregion
     }
 
     public partial class ProcessInfo { 
         public ProcessInfo() { }
+        public string SessionID { get; set; }
         public string ProcessID { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public ProcessStatus Status { get; set; }
 
         public object Results {  get; set; }
-        public List<WorkflowNodeExcutionRecordInfo> ExcutionRecordInfos { get; set; }
+        public List<WorkflowNodeExecutionRecordInfo> ExecutionRecordInfos { get; set; }
+
+        /// <summary>
+        /// LLM����ʽ��Ӧ��
+        /// </summary>
+        public object StreamEnvelope { get; set; }
     }
 }

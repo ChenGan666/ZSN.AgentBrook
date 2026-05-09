@@ -1,0 +1,187 @@
+﻿@{
+    var Tag = ViewBag.Tag as KnowledgeBaseTagInfo;
+
+    var TagClass = JsonConvert.SerializeObject(ViewBag.TagClass);
+
+}
+
+@section Css
+{
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+    </style>
+}
+
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="KnowledgeBaseTagID" value="@Tag.KnowledgeBaseTagID" />
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>名称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="Tag" lay-verify="required" value="@Tag.Tag"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>标签分类
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <div id="Tag_Class" class="xm-select-demo"></div>
+                            <input type="hidden" name="TagClassID" lay-verify="required" value="@Tag.TagClassID"
+                                   autocomplete="off" class="layui-input TagClassID">
+                            <input type="hidden" name="TagClassName" lay-verify="required" value="@Tag.TagClassName"
+                                   autocomplete="off" class="layui-input TagClassName">
+                        </div>
+                    </div>
+                </div>
+               
+                
+                
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red"></span>摘要
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea type="text" name="TSummary" lay-verify="required" 
+                                      autocomplete="off" class="layui-input TSummary">@Tag.TSummary</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>关联知识库数
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="TCount" lay-verify="required" value="@Tag.TCount"
+                                   autocomplete="off" class="layui-input TCount">
+                        </div>
+                    </div>
+                </div>
+                
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>创建时间
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="TAppendTime" readonly lay-verify="required" placeholder="YYYY-MM-DD HH:mm" value="@Tag.TAppendTime.ToCurrentTime()"
+                                   autocomplete="off" class="layui-input TAppendTime">
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn save" lay-filter="save" lay-submit>保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Js
+{
+    <script src="/layuiadmin/modules/xm-select.js"></script>
+    <script>
+        layui.use(function () {
+            var form = layui.form,
+                layer = layui.layer,
+                xmSelect = layui.xmSelect;
+            form.render();
+
+            form.render("select");
+
+            var TagClassStr = [@Tag.TagClassID];
+            var TagClassList = xmSelect.render({
+                el: '#Tag_Class',
+                toolbar: {
+                    show: true,
+                },
+                radio: true,
+                        //树形结构相关属性
+            tree: {
+                //以树状结构展示
+                show: true,
+                showFolderIcon: true,
+                //展示虚线
+                showLine: true,
+                //节点间距
+                indent: 20,
+            },
+                filterable: true,
+                height: '500px',
+                data: @Html.Raw(TagClass)
+                
+            });
+
+            if (TagClassStr) {
+                var _setValue = [];
+                for (var i = 0; i < TagClassStr.length; i++) {
+                    _setValue.push(TagClassStr[i]);
+                }
+                TagClassList.setValue(_setValue);
+            }
+            function Get_Class() {
+                var _value = TagClassList.getValue();
+                var _id = [];
+                var _name = [];
+                if (_value) {
+                    for (var i = 0; i < _value.length; i++) {
+                        _id.push(_value[i].value);
+                        _name.push(_value[i].name);
+                    }
+                }
+                $('.TagClassID').val(_id.join(','));
+                $('.TagClassName').val(_name.join(','));
+            }
+            
+
+            $('.save').click(function () {
+                Get_Class();
+            });
+
+            //提交
+            form.on('submit(save)', function (obj) {
+                layer.load(0);
+
+                $.ajax({
+                    url: '@Url.Action("Save")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: 1 });
+                            if (rst.Status) {
+                                if (parent) {
+                                    parent.location.reload();
+                                } else {
+                                    location.reload();
+                                }
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}

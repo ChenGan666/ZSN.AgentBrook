@@ -47,7 +47,6 @@ namespace ZSN.Utils.Core.Helpers
                     proxy = GetWebContent(ProxyUrl + $"?type={(int)type}&isWaited={isNeedWait}", timeout: 20000);
                     while (proxy.Contains("time"))
                     {
-                        Console.WriteLine("代理请求频繁，需等待" + proxy);
                         Thread.Sleep(Convert.ToInt32(proxy.Split(':')[1]));
                         proxy = isNeedWait
                             ? GetWebContent(ProxyUrl + $"?type={(int)type}&isWaited=true", timeout: 20000)
@@ -128,7 +127,6 @@ namespace ZSN.Utils.Core.Helpers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
             }
         }
 
@@ -200,7 +198,6 @@ namespace ZSN.Utils.Core.Helpers
 
         private static void DoneRequest(IAsyncResult ar)
         {
-            //Console.WriteLine("done");
         }
     }
 

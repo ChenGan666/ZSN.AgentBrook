@@ -1,4 +1,4 @@
-﻿@{
+@{
     var Plugins = ViewBag.Plugins as PluginsInfo;
 
     var PreviewHost = ViewBag.PreviewHost as string;
@@ -104,8 +104,38 @@
                     </label>
                     <div class="layui-input-block">
                         <div class="layui-col-md9">
-                            <textarea type="text" name="Config"
-                                      autocomplete="off" class="layui-input Config">@Plugins.Config</textarea>
+                            <div style="margin-bottom: 10px;">
+                                <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" id="toggleMode">
+                                    <i class="layui-icon layui-icon-code-circle"></i> 切换到列表模式
+                                </button>
+                                <button type="button" class="layui-btn layui-btn-sm layui-btn-warm" id="getParams">
+                                    <i class="layui-icon layui-icon-download-circle"></i> 获取参数
+                                </button>
+                                <button type="button" class="layui-btn layui-btn-sm" id="addParam" style="display:none;">
+                                    <i class="layui-icon layui-icon-add-1"></i> 新增参数
+                                </button>
+                            </div>
+                            
+                            <!-- 参数列表模式 -->
+                            <div id="paramListMode" style="display:none;">
+                                <table class="layui-table" lay-skin="line">
+                                    <thead>
+                                        <tr>
+                                            <th width="200">参数名称</th>
+                                            <th width="120">类型</th>
+                                            <th>默认值</th>
+                                            <th width="100">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="paramList"></tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- JSON代码模式 -->
+                            <div id="jsonCodeMode">
+                                <textarea type="text" name="Config" id="configTextarea"
+                                          autocomplete="off" class="layui-input Config" rows="10">@Plugins.Config</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -141,8 +171,8 @@
                         状态
                     </label>
                     <div class="layui-input-inline">
-                        <input type="radio" name="SystemStatus" value="0" title="正常" @(Plugins.SystemStatus == 0 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="1" title="屏蔽" @(Plugins.SystemStatus == 0 ? "" : "checked")>
+                        <input type="radio" name="SystemStatus" value="@PluginsState.Normal" title="正常" @(Plugins.SystemStatus == PluginsState.Normal ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@PluginsState.Disabled" title="屏蔽" @(Plugins.SystemStatus == PluginsState.Disabled ? "checked" : "")>
                     </div>
                 </div>
 
@@ -168,14 +198,265 @@
                 xmSelect = layui.xmSelect;
             form.render();
 
+            var isJsonMode = true; // 当前模式：true=JSON模式，false=列表模式
+            var paramData = []; // 参数数据
 
+            // 模式切换
+            $('#toggleMode').click(function () {
+                if (isJsonMode) {
+                    // 切换到列表模式：解析JSON
+                    jsonToParamList();
+                    $('#jsonCodeMode').hide();
+                    $('#paramListMode').show();
+                    $('#addParam').show();
+                    $(this).html('<i class="layui-icon layui-icon-list"></i> 切换到JSON模式');
+                    isJsonMode = false;
+                } else {
+                    // 切换到JSON模式：生成JSON
+                    paramListToJson();
+                    $('#paramListMode').hide();
+                    $('#jsonCodeMode').show();
+                    $('#addParam').hide();
+                    $(this).html('<i class="layui-icon layui-icon-code-circle"></i> 切换到列表模式');
+                    isJsonMode = true;
+                }
+            });
+
+            // JSON转参数列表
+            function jsonToParamList() {
+                var jsonStr = $('#configTextarea').val().trim();
+                paramData = [];
+                
+                if (jsonStr) {
+                    try {
+                        var jsonObj = JSON.parse(jsonStr);
+                        for (var key in jsonObj) {
+                            var item = jsonObj[key];
+                            var type = 'string';
+                            var value = '';
+                            
+                            // 判断是新格式还是旧格式
+                            if (typeof item === 'object' && item !== null && item.hasOwnProperty('type') && item.hasOwnProperty('value')) {
+                                // 新格式: { "param": { "type": "string", "value": "xxx" } }
+                                type = item.type || 'string';
+                                value = item.value;
+                                // 如果是object类型,将value转为JSON字符串显示
+                                if (type === 'object' && typeof value === 'object') {
+                                    value = JSON.stringify(value);
+                                }
+                            } else {
+                                // 旧格式: { "param": "value" } - 自动识别类型
+                                value = item;
+                                if (typeof value === 'boolean') type = 'bool';
+                                else if (typeof value === 'number') {
+                                    type = Number.isInteger(value) ? 'int' : 'decimal';
+                                } else if (typeof value === 'object' && value !== null) {
+                                    type = 'object';
+                                    value = JSON.stringify(value);
+                                }
+                            }
+                            
+                            paramData.push({ name: key, type: type, value: value });
+                        }
+                    } catch (e) {
+                        layer.msg('JSON格式错误，无法解析', { icon: 2 });
+                        return;
+                    }
+                }
+                
+                renderParamList();
+            }
+
+            // 参数列表转JSON
+            function paramListToJson() {
+                var jsonObj = {};
+                paramData.forEach(function (item) {
+                    var val = item.value;
+                    
+                    // 类型转换
+                    if (item.type === 'bool') {
+                        val = val === 'true' || val === true;
+                    } else if (item.type === 'int' || item.type === 'long') {
+                        val = parseInt(val) || 0;
+                    } else if (item.type === 'float' || item.type === 'double' || item.type === 'decimal') {
+                        val = parseFloat(val) || 0.0;
+                    } else if (item.type === 'datetime') {
+                        // datetime类型保持字符串格式
+                        val = val || '';
+                    } else if (item.type === 'object') {
+                        // object类型:将JSON字符串转为对象
+                        try {
+                            val = typeof val === 'string' ? JSON.parse(val) : val;
+                        } catch (e) {
+                            val = {}; // 解析失败时使用空对象
+                        }
+                    }
+                    
+                    // 新格式: 包含type和value
+                    jsonObj[item.name] = {
+                        type: item.type,
+                        value: val
+                    };
+                });
+                
+                var jsonStr = Object.keys(jsonObj).length > 0 ? JSON.stringify(jsonObj, null, 2) : '';
+                $('#configTextarea').val(jsonStr);
+            }
+
+            // 渲染参数列表
+            function renderParamList() {
+                var html = '';
+                paramData.forEach(function (item, index) {
+                    // 转义HTML特殊字符
+                    var escapedName = (item.name || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    var escapedValue = (item.value || '').toString().replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    
+                    html += '<tr>' +
+                        '<td><input type="text" class="layui-input param-name" value="' + escapedName + '" data-index="' + index + '"></td>' +
+                        '<td>' +
+                        '<select class="layui-input param-type" lay-filter="paramType' + index + '" data-index="' + index + '">' +
+                        '<option value="string"' + (item.type === 'string' ? ' selected' : '') + '>string</option>' +
+                        '<option value="int"' + (item.type === 'int' ? ' selected' : '') + '>int</option>' +
+                        '<option value="long"' + (item.type === 'long' ? ' selected' : '') + '>long</option>' +
+                        '<option value="float"' + (item.type === 'float' ? ' selected' : '') + '>float</option>' +
+                        '<option value="double"' + (item.type === 'double' ? ' selected' : '') + '>double</option>' +
+                        '<option value="decimal"' + (item.type === 'decimal' ? ' selected' : '') + '>decimal</option>' +
+                        '<option value="bool"' + (item.type === 'bool' ? ' selected' : '') + '>bool</option>' +
+                        '<option value="datetime"' + (item.type === 'datetime' ? ' selected' : '') + '>datetime</option>' +
+                        '<option value="object"' + (item.type === 'object' ? ' selected' : '') + '>object</option>' +
+                        '</select>' +
+                        '</td>' +
+                        '<td><input type="text" class="layui-input param-value" value="' + escapedValue + '" data-index="' + index + '"></td>' +
+                        '<td><button type="button" class="layui-btn layui-btn-danger layui-btn-xs" onclick="deleteParam(' + index + ')"><i class="layui-icon layui-icon-delete"></i></button></td>' +
+                        '</tr>';
+                });
+                
+                $('#paramList').html(html);
+                
+                // 渲染layui的select组件
+                form.render('select');
+                
+                // 绑定参数名称输入框
+                $('#paramList').off('change', '.param-name').on('change', '.param-name', function () {
+                    var index = parseInt($(this).data('index'));
+                    if (!isNaN(index) && paramData[index]) {
+                        paramData[index].name = $(this).val();
+                    }
+                });
+                
+                $('#paramList').off('input', '.param-name').on('input', '.param-name', function () {
+                    var index = parseInt($(this).data('index'));
+                    if (!isNaN(index) && paramData[index]) {
+                        paramData[index].name = $(this).val();
+                    }
+                });
+                
+                // 绑定参数值输入框
+                $('#paramList').off('change', '.param-value').on('change', '.param-value', function () {
+                    var index = parseInt($(this).data('index'));
+                    if (!isNaN(index) && paramData[index]) {
+                        paramData[index].value = $(this).val();
+                    }
+                });
+                
+                $('#paramList').off('input', '.param-value').on('input', '.param-value', function () {
+                    var index = parseInt($(this).data('index'));
+                    if (!isNaN(index) && paramData[index]) {
+                        paramData[index].value = $(this).val();
+                    }
+                });
+                
+                // 监听每个select的变化
+                paramData.forEach(function (item, idx) {
+                    form.on('select(paramType' + idx + ')', function(data){
+                        if (paramData[idx]) {
+                            paramData[idx].type = data.value;
+                            console.log('参数类型已更新:', idx, data.value, paramData[idx]);
+                        }
+                        return false;
+                    });
+                });
+            }
+
+            // 新增参数
+            $('#addParam').click(function () {
+                paramData.push({ name: 'newParam', type: 'string', value: '' });
+                renderParamList();
+            });
+
+            // 删除参数
+            window.deleteParam = function (index) {
+                layer.confirm('确定删除该参数吗?', { icon: 3 }, function (layerIndex) {
+                    paramData.splice(index, 1);
+                    renderParamList();
+                    layer.close(layerIndex);
+                });
+            };
+
+            // 获取参数
+            $('#getParams').click(function () {
+                var namespace = $('input[name="Namespace"]').val().trim();
+                var className = $('input[name="ClassName"]').val().trim();
+                var methodName = $('input[name="EntryFunctionName"]').val().trim();
+                
+                if (!namespace || !className || !methodName) {
+                    layer.msg('请先填写命名空间、类名和入口函数名', { icon: 2 });
+                    return;
+                }
+                
+                layer.load(0);
+                
+                $.ajax({
+                    url: '@Url.Action("GetMethodParameters")',
+                    type: 'POST',
+                    data: {
+                        namespace: namespace,
+                        className: className,
+                        methodName: methodName
+                    },
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst && rst.Status) {
+                            // 成功获取参数
+                            var params = rst.Data;
+                            if (params && params.length > 0) {
+                                // 构建JSON格式
+                                var jsonObj = {};
+                                params.forEach(function (param) {
+                                    jsonObj[param.Name] = {
+                                        type: param.Type,
+                                        value: param.DefaultValue || ''
+                                    };
+                                });
+                                
+                                var jsonStr = JSON.stringify(jsonObj, null, 2);
+                                $('#configTextarea').val(jsonStr);
+                                layer.msg('参数获取成功', { icon: 1 });
+                            } else {
+                                layer.msg('该方法没有参数', { icon: 0 });
+                            }
+                        } else {
+                            layer.msg(rst.ErrorDesc || '获取参数失败', { icon: 2 });
+                        }
+                    },
+                    error: function () {
+                        layer.closeAll();
+                        layer.msg('请求失败', { icon: 2 });
+                    }
+                });
+            });
 
             $('.save').click(function () {
                 
             });
 
-            //提交
+            //提交前确保数据同步
             form.on('submit(save)', function (obj) {
+                // 如果在列表模式，先转换为JSON
+                if (!isJsonMode) {
+                    paramListToJson();
+                }
+                
                 layer.load(0);
 
                 $.ajax({

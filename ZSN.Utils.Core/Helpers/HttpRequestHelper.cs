@@ -33,7 +33,6 @@ namespace ZSN.Utils.Core.Helpers
             X509Chain chain, SslPolicyErrors error)
         {
             // trust any certificate!!!
-            System.Console.WriteLine("Warning, trust any certificate");
             return true;
         }
 
@@ -658,7 +657,6 @@ namespace ZSN.Utils.Core.Helpers
         #endregion
 
         
-
         #region 异步Get
         public static async Task<(HttpStatusCode, string)> HttpGetAsync(string url, Dictionary<string, string> headers = null, Encoding encoding = null, int timeOut = 60000)
         {

@@ -14,11 +14,11 @@ namespace ZSN.AI.DAL.MySql
         ///表名称
         private string MemberInfoTableName = "tb_member_info";
         ///表字段
-        private const string MemberInfoTableField = "MemberID,MemberCard,mPhoneNumber,mNickName,mPWD,mIcon,mBirthday,mState,mPoints,mLevel,mIntroducer,mAppendTime";
+        private const string MemberInfoTableField = "MemberID,mPhoneNumber,mNickName,mPWD,mIcon,mBirthday,mState,mPoints,mLevel,mIntroducer,mAppendTime";
         ///添加用表字段
-        private const string MemberInfoTableFieldForAdd = "MemberID,MemberCard,mPhoneNumber,mNickName,mPWD,mIcon,mBirthday,mState,mPoints,mLevel,mIntroducer,mAppendTime";
+        private const string MemberInfoTableFieldForAdd = "MemberID,mPhoneNumber,mNickName,mPWD,mIcon,mBirthday,mState,mPoints,mLevel,mIntroducer,mAppendTime";
         ///添加用表字段value
-        private const string MemberInfoTableFieldAltForAdd = "@MemberID,@MemberCard,@mPhoneNumber,@mNickName,@mPWD,@mIcon,@mBirthday,@mState,@mPoints,@mLevel,@mIntroducer,@mAppendTime";
+        private const string MemberInfoTableFieldAltForAdd = "@MemberID,@mPhoneNumber,@mNickName,@mPWD,@mIcon,@mBirthday,@mState,@mPoints,@mLevel,@mIntroducer,@mAppendTime";
         public string SetConnectionName(string connName)
         {
             return MemberInfoConnectionName = connName;
@@ -39,7 +39,6 @@ namespace ZSN.AI.DAL.MySql
             strSql.Append(";");
             MySqlParameter[] parameters = {
 			 new MySqlParameter("@MemberID", MySqlDbType.VarChar,64),
- new MySqlParameter("@MemberCard", MySqlDbType.VarChar,50),
  new MySqlParameter("@mPhoneNumber", MySqlDbType.VarChar,50),
  new MySqlParameter("@mNickName", MySqlDbType.VarChar,50),
  new MySqlParameter("@mPWD", MySqlDbType.VarChar,32),
@@ -53,17 +52,16 @@ namespace ZSN.AI.DAL.MySql
 
 					};
 			 parameters[0].Value = model.MemberID;
- parameters[1].Value = model.MemberCard;
- parameters[2].Value = model.MPhoneNumber;
- parameters[3].Value = model.MNickName;
- parameters[4].Value = model.MPWD;
- parameters[5].Value = model.MIcon;
- parameters[6].Value = model.MBirthday;
- parameters[7].Value = model.MState;
- parameters[8].Value = model.MPoints;
- parameters[9].Value = model.MLevel;
- parameters[10].Value = model.MIntroducer;
- parameters[11].Value = model.MAppendTime;
+ parameters[1].Value = model.MPhoneNumber;
+ parameters[2].Value = model.MNickName;
+ parameters[3].Value = model.MPWD;
+ parameters[4].Value = model.MIcon;
+ parameters[5].Value = model.MBirthday;
+ parameters[6].Value = model.MState;
+ parameters[7].Value = model.MPoints;
+ parameters[8].Value = model.MLevel;
+ parameters[9].Value = model.MIntroducer;
+ parameters[10].Value = model.MAppendTime;
 
             object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(MemberInfoConnectionName), CommandType.Text,strSql.ToString(), parameters);
             if (obj == null)
@@ -84,7 +82,6 @@ namespace ZSN.AI.DAL.MySql
             strSql.Append("update ");
             strSql.Append(MemberInfoTableName);
             strSql.Append(" set ");
-			strSql.Append("MemberCard=@MemberCard,");
 strSql.Append("mPhoneNumber=@mPhoneNumber,");
 strSql.Append("mNickName=@mNickName,");
 strSql.Append("mPWD=@mPWD,");
@@ -99,7 +96,6 @@ strSql.Append("mAppendTime=@mAppendTime");
             strSql.Append(" where MemberID=@MemberID");
             MySqlParameter[] parameters = {
 				 new MySqlParameter("@MemberID", MySqlDbType.VarChar,64),
- new MySqlParameter("@MemberCard", MySqlDbType.VarChar,50),
  new MySqlParameter("@mPhoneNumber", MySqlDbType.VarChar,50),
  new MySqlParameter("@mNickName", MySqlDbType.VarChar,50),
  new MySqlParameter("@mPWD", MySqlDbType.VarChar,32),
@@ -113,17 +109,16 @@ strSql.Append("mAppendTime=@mAppendTime");
 
 			};
 			 parameters[0].Value = model.MemberID;
- parameters[1].Value = model.MemberCard;
- parameters[2].Value = model.MPhoneNumber;
- parameters[3].Value = model.MNickName;
- parameters[4].Value = model.MPWD;
- parameters[5].Value = model.MIcon;
- parameters[6].Value = model.MBirthday;
- parameters[7].Value = model.MState;
- parameters[8].Value = model.MPoints;
- parameters[9].Value = model.MLevel;
- parameters[10].Value = model.MIntroducer;
- parameters[11].Value = model.MAppendTime;
+ parameters[1].Value = model.MPhoneNumber;
+ parameters[2].Value = model.MNickName;
+ parameters[3].Value = model.MPWD;
+ parameters[4].Value = model.MIcon;
+ parameters[5].Value = model.MBirthday;
+ parameters[6].Value = model.MState;
+ parameters[7].Value = model.MPoints;
+ parameters[8].Value = model.MLevel;
+ parameters[9].Value = model.MIntroducer;
+ parameters[10].Value = model.MAppendTime;
 
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(MemberInfoConnectionName),CommandType.Text,strSql.ToString(), parameters);
             if (rows > 0)
@@ -247,10 +242,7 @@ strSql.Append("mAppendTime=@mAppendTime");
                 {
 					model.MemberID = row["MemberID"].ToString();
                 }
-				if (row["MemberCard"] != null )
-                {
-					model.MemberCard = row["MemberCard"].ToString();
-                }
+				
 				if (row["mPhoneNumber"] != null )
                 {
 					model.MPhoneNumber = row["mPhoneNumber"].ToString();

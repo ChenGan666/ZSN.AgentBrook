@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "zsn-knowbase": {
+      "command": "node",
+      "args": [],
+      "env": {
+        "MCP_SERVER_URL": "http://localhost:5008/mcp"
+      }
+    }
+  }
+}

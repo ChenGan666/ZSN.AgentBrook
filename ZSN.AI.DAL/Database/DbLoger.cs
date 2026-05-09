@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,16 +24,32 @@ namespace ZSN.AI.DAL
                 NLogHelper.WriteCustom(logStr, "/SQL/");
                 return;
             }
-            var log = HttpContextHelper.Session.Get<string>(SqlKey);
-            log = log.IsNullOrEmpty() ? "" : log;
-            var logList = log.Split(SqlSplitKey).ToList();
-            logList.Add(logStr);
-            HttpContextHelper.Session.Set(SqlKey, string.Join(SqlSplitKey, logList));
+            
+            try
+            {
+                var log = HttpContextHelper.Session.Get<string>(SqlKey);
+                log = log.IsNullOrEmpty() ? "" : log;
+                var logList = log.Split(SqlSplitKey).ToList();
+                logList.Add(logStr);
+                HttpContextHelper.Session.Set(SqlKey, string.Join(SqlSplitKey, logList));
+            }
+            catch (System.InvalidOperationException)
+            {
+                // MCP调用时响应已开始，无法设置Session，使用NLog记录
+                NLogHelper.WriteCustom(logStr, "/SQL/");
+            }
         }
 
         public static void InitLog()
         {
-            HttpContextHelper.Session?.Set(SqlKey, "");
+            try
+            {
+                HttpContextHelper.Session?.Set(SqlKey, "");
+            }
+            catch (System.InvalidOperationException)
+            {
+                // MCP调用时响应已开始，无法设置Session，忽略
+            }
         }
 
         public static string GetLog()

@@ -10,7 +10,8 @@ namespace ZSN.AI.DAL
         #region log_record
         int LogRecord_Add(LogRecord model);
         bool LogRecord_Update(LogRecord model);
-        bool LogRecord_Delete(Int64 id); 
+        bool LogRecord_Delete(Int64 id);
+        bool LogRecord_DeleteByWhere(string where);
         bool LogRecord_DeleteList(string idlist);
         LogRecord LogRecord_DataRowToModel(DataRow row);
         LogRecord LogRecord_GetModel(Int64 id); 

@@ -1,4 +1,4 @@
-﻿@{
+@{
 
     var lst = ViewBag.AppList as List<WorkflowInfo>;
 
@@ -15,6 +15,9 @@
                             <i class="layui-icon"></i>新建
                         </button>
                     </div>
+                    <div class="layui-input-inline layui-show-xs-block">
+                        <button class="layui-btn layui-btn-danger delete-selected_bt">删除选中</button>
+                    </div>
                     <hr>
                 </div>
                 <div class="layui-card-body">
@@ -30,7 +33,9 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th>编号</th>
+                                <th style="white-space: nowrap;">
+                                    <input type="checkbox" class="check-all" lay-skin="primary" lay-filter="check-all" /> 编号
+                                </th>
                                 <th>名称</th>
                                 <th>描述</th>
                                 <th>创建时间</th>
@@ -44,24 +49,28 @@
 
                             {
                                 <tr data-id="@Workflow.WorkflowID" data-type="@Workflow.MainType" data-mainid="@Workflow.MainID" data-name="@Workflow.WorkflowName">
-                                    <td>@Workflow.WorkflowID</td>
+                                    <td style="white-space: nowrap;">
+                                        <input type="checkbox" class="check-item" value="@Workflow.WorkflowID" lay-skin="primary" lay-filter="check-item" />
+                                        <span>@Workflow.WorkflowID</span>
+                                    </td>
                                     <td>@Workflow.WorkflowName</td>
                                     <td>@Workflow.Description</td>
 
                                     <td>@Workflow.CreateTime</td>
                                     <td>@Workflow.LastUpdateTime</td>
                                     <td>
-                                        <input type="checkbox" name="switch" lay-text="正常|屏蔽" lay-skin="switch" lay-filter="status" @(Workflow.SystemStatus == 0 ? "checked" : "")>
+                                        <input type="checkbox" name="switch" lay-text="正常|屏蔽" lay-skin="switch" lay-filter="status" @(Workflow.SystemStatus == WorkflowStatus.Normal ? "checked" : "")>
                                     </td>
                                     <td>
-                                        <nobr>
+                                        <div class="layui-btn-container" style="white-space: nowrap;">
                                             <button class="layui-btn edit_bt">
                                                 编辑
                                             </button>
-                                            <button class="layui-btn del" data-id="@Workflow.WorkflowID">
-                                                删除
+                                            <button class="layui-btn tool-dropdown-base">
+                                                <span>更多</span>
+                                                <i class="layui-icon layui-icon-down layui-font-12"></i>
                                             </button>
-                                        </nobr>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -83,6 +92,71 @@
             var form = layui.form;
             var laypage = layui.laypage;
             form.render();
+
+                    var dropdown = layui.dropdown;
+
+        // 渲染
+
+        dropdown.render({
+          elem: '.tool-dropdown-base', 
+          data: [{
+            title: '复制',
+            id: 'copy'
+          },{
+            title: '删除',
+            id: 'delete'
+          }],
+          click: function(obj){
+            var $btn = $(this.elem);
+            var $tr = $btn.parents('tr');
+            var workflowId = $tr.data('id');
+            
+            if(obj.id === 'copy') {
+              // 复制功能
+              layer.prompt({
+                title: '请输入新工作流的名称',
+                formType: 0,
+                value: ''
+              }, function (value, index, elem) {
+                if (!value || value.trim() === '') {
+                  layer.msg('工作流名称不能为空', { icon: 2 });
+                  return false;
+                }
+                
+                $.ajax({
+                  url: '@Url.Action("Copy")',
+                  type: 'POST',
+                  data: {
+                    mid: workflowId,
+                    name: value.trim()
+                  },
+                  success: function (res) {
+                    layer.close(index);
+                    layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                  },
+                  error: function () {
+                    layer.msg('复制失败', { icon: 2 });
+                  }
+                });
+              });
+            } 
+            if(obj.id === 'delete') {
+              // 删除功能
+              layer.confirm("确认要删除吗,删除后不能恢复!", { title: "删除确认" }, function (index) {
+                $.ajax({
+                  url: '@Url.Action("Del")',
+                  type: 'POST',
+                  data: {
+                    mid: workflowId
+                  },
+                  success: function (res) {
+                    layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                  }
+                });
+              });
+            }
+          }
+        });
 
             laypage.render({
                 elem: 'pageId'
@@ -133,31 +207,49 @@
                 });
                 */
             });
-            $('.del').click(function () {
-                var id = $(this).data('id');
-
-                layer.confirm("确认要删除吗，删除后不能恢复!", { title: "删除确认" }, function (index) {
-
-                    $.ajax({
-                        url: '@Url.Action("Del")',
-                        type: 'POST',
-                        data: {
-                            mid: id
-                        },
-                        success: function (res) {
-                            layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
-                        }
-                    });
-
-                });
+            
+            // 全选/反选（Layui 事件）
+            form.on('checkbox(check-all)', function (data) {
+                var checked = data.elem.checked;
+                $('.check-item').prop('checked', checked);
+                form.render('checkbox');
             });
 
+            form.on('checkbox(check-item)', function (data) {
+                var all = $('.check-item').length;
+                var selected = $('.check-item:checked').length;
+                $('.check-all').prop('checked', all > 0 && all === selected);
+                form.render('checkbox');
+            });
+
+            // 批量删除
+            $('.delete-selected_bt').on('click', function () {
+                var ids = $('.check-item:checked').map(function(){ return $(this).val(); }).get();
+                if(ids.length === 0){
+                    layer.msg('请先选择要删除的记录');
+                    return;
+                }
+                var mids = ids.join(',');
+                layer.confirm("确认要删除吗,删除后不能恢复!", { title: "删除确认" }, function (index) {
+                    $.ajax({
+                      url: '@Url.Action("Del")',
+                      type: 'POST',
+                      data: {
+                        mid: mids
+                      },
+                      success: function (res) {
+                        layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                      }
+                    });
+                });
+            });
+            
             form.on('switch(status)', function (data) {
                 $.ajax({
                     url: '@Url.Action("Status")',
                     type: 'POST',
                     data: {
-                        mid: $(this).parents("tr").data('mid'),
+                        mid: $(this).parents("tr").data('id'),
                         status: (this.checked ? 'true' : 'false')
                     },
                     success: function (res) {

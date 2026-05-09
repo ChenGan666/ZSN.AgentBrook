@@ -24,6 +24,7 @@
                             <col width="100">
                             <col width="50">
                             <col width="50">
+                            <col width="50">
                             <col width="200">
                         </colgroup>
                         <thead>
@@ -34,6 +35,7 @@
                                 <th>类型</th>
                                 <th>创建时间</th>
                                 <th>状态</th>
+                                <th>系统基础模型</th>
                                 <th>设置</th>
                             </tr>
                         </thead>
@@ -48,6 +50,9 @@
                                 <td>@LargeModel.CreateTime</td>
                                 <td>
                                     <input type="checkbox" name="switch" lay-text="正常|屏蔽" lay-skin="switch" lay-filter="status" @(LargeModel.SystemStatus == 0 ? "checked" : "")>
+                                </td>
+                                <td>
+                                        <input type="checkbox" name="switch" lay-text="普通|系统" lay-skin="switch" lay-filter="IsDefaultModel" @(LargeModel.IsDefaultModel == 1 ? "checked" : "")>
                                 </td>
                                 <td><nobr>
                                         <button class="layui-btn edit_bt" >
@@ -147,6 +152,22 @@
                     },
                     success: function (res) {
                         layer.msg('Finish', { icon: 1, time: 1000 });
+                    }
+                });
+            });
+
+            form.on('switch(IsDefaultModel)', function (data) {
+                $.ajax({
+                    url: '@Url.Action("LargeModelIsDefaultModel")',
+                    type: 'POST',
+                    data: {
+                        mid: $(this).parents("tr").data('mid'),
+                        status: (this.checked ? 'true' : 'false')
+                    },
+                    success: function (res) {
+                        layer.msg('Finish', { icon: 1, time: 1000 }, function () {
+                          location.reload();
+                        });
                     }
                 });
             });

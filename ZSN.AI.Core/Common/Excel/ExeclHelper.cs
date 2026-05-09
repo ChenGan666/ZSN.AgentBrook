@@ -243,6 +243,12 @@ namespace ZSN.AI.Core.Common.Excel
         }
 
         /// <summary>
+        /// Excel 转换为对象列表
+        /// </summary>
+        /// <typeparam name="TResult">目标对象类型</typeparam>
+        /// <param name="stream">Excel 文件流</param>
+        /// <returns>对象列表</returns>
+        /// <summary>
         /// excel转list
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
@@ -344,7 +350,6 @@ namespace ZSN.AI.Core.Common.Excel
                 throw;
             }
         }
-
 
         public static IEnumerable<TResult> ExcelToListFileName<TResult>(Stream stream, string fileName) where TResult : new()
         {

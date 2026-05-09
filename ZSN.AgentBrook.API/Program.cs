@@ -1,4 +1,4 @@
-using System.Net;
+ï»¿using System.Net;
 using System.Runtime.InteropServices;
 using ZSN.Utils.Core.Helpers;
 using Microsoft.AspNetCore.Hosting;
@@ -30,7 +30,7 @@ namespace ZSN.AgentBrook.API
                 });
             }).ConfigureWebHostDefaults(webBuilder =>
             {
-                var port = ConfigHelper.GetInt("ServicePort");//ÉèÖÃ·þÎñ¶Ë¿Ú
+                var port = ConfigHelper.GetInt("ServicePort");//è®¾ç½®æœåŠ¡ç«¯å£
                 webBuilder.ConfigureKestrel(serverOptions =>
                 {
                     serverOptions.Listen(IPAddress.Any, port);

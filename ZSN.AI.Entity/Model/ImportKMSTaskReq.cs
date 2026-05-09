@@ -13,7 +13,6 @@ namespace ZSN.AI.Entity.Model
 
         public string Url { get; set; } = "";
 
-
         public string Text { get; set; } = "";
 
         public string FilePath { get; set; } = "";
@@ -35,6 +34,19 @@ namespace ZSN.AI.Entity.Model
         Url = 2,
         Text = 3,
         Excel=4
+    }
+
+    public class ImportKMSCommon
+    { 
+        public static ImportType GetImportType(string fileType)
+        {
+            switch (fileType) { 
+                case "text/plain": return ImportType.Text;
+                case "application/vnd.ms-excel": return ImportType.Excel;
+                case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": return ImportType.Excel;
+                default: return ImportType.File;
+            }
+        }
     }
 
     public class QAModel

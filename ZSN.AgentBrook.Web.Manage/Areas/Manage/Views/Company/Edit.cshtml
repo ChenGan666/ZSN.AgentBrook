@@ -1,0 +1,190 @@
+﻿@{
+    var Company = ViewBag.Company as CompanyInfo;
+
+    var PreviewHost = ViewBag.PreviewHost as string;
+}
+
+@section Css
+{
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+    </style>
+}
+
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="CompanyID" value="@Company.CompanyID" />
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>企业全称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="CFullName" lay-verify="required" value="@Company.CFullName"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>企业简称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="CTitle" lay-verify="required" value="@Company.CTitle"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>统一社会信用代码
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="CIDCode" lay-verify="required" value="@Company.CIDCode"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>企业Logo
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="CLogo" lay-verify="required" value="@Company.CLogo"
+                                   autocomplete="off" class="layui-input CLogo">
+                            <div id="file-upload-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>企业规模
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="CScale" lay-verify="required" value="@Company.CScale"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red"></span>简介
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea type="text" name="CInfo" lay-verify="required"
+                                      autocomplete="off" class="layui-input CInfo">@Company.CInfo</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>API:AppID
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="AppID" readonly  value="@Company.AppID"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>API:SecretKey
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="SecretKey"  value="@Company.SecretKey"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <input type="hidden" name="CAppendTime" id="CAppendTime" value="@Company.CAppendTime" />
+                        <button class="layui-btn save" lay-filter="save" lay-submit>保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Js
+{
+    <script src="/layuiadmin/modules/xm-select.js"></script>
+    <script>
+        layui.use(function () {
+            var form = layui.form,
+                layer = layui.layer;
+            form.render();
+
+            $('.save').click(function () {
+               
+            });
+
+            //提交
+            form.on('submit(save)', function (obj) {
+                layer.load(0);
+
+                $.ajax({
+                    url: '@Url.Action("Save")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: 1 });
+                            
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}
+@section FileUpload {
+
+    <script>
+        $(function () {
+            var form = layui.form, layer = layui.layer;
+            form.render();
+
+            var _CLogo = function () {
+                var fileCodeElement = $('.CLogo');
+                var fileUploadContainer = $('#file-upload-container');
+
+                var options = {
+                    url: '/Controls/UploadFiles/Save',
+                    previewType: 'img',
+                    previewHost: '@PreviewHost',
+                    previewW: 150,
+                    previewH: 150,
+                    setPicW: 300,
+                    setPicH: 300,
+                    layui: layui,
+                    formData: {
+                        //example: 'test'
+                    },
+                };
+
+                FileUploadPlugin(fileUploadContainer, fileCodeElement, options);
+            };
+            _CLogo();
+        });
+
+    </script>
+}

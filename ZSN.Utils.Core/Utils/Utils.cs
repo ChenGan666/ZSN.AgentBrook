@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Diagnostics;
 using System.IO;
@@ -236,7 +236,6 @@ namespace ZSN.Utils.Core.Utils
                 return false;
 
 
-
             string Data = "";
 
             StreamReader reader = null;
@@ -289,8 +288,6 @@ namespace ZSN.Utils.Core.Utils
 
 
         }
-
-
 
 
         #endregion
@@ -540,7 +537,6 @@ namespace ZSN.Utils.Core.Utils
                         p_Length = bsSrcString.Length - p_StartIndex;
                         p_TailString = "";
                     }
-
 
 
                     int nRealLength = p_Length;
@@ -1097,7 +1093,6 @@ namespace ZSN.Utils.Core.Utils
         {
             return ToDataTable<T>(list, null);
         }
-
 
 
         /// <summary>
@@ -2646,6 +2641,65 @@ namespace ZSN.Utils.Core.Utils
             return null; // 或者 return ""; 或者 throw new ArgumentException("Invalid MIME type.");
         }
         #endregion
+
+        /// <summary>
+        /// 从大模型生成的文本中提取并修复JSON字符串
+        /// </summary>
+        /// <param name="raw">原始文本</param>
+        /// <param name="json">提取并格式化后的JSON字符串</param>
+        /// <returns>是否成功提取有效的JSON</returns>
+        public static bool TryExtractStrictJson(string raw, out string json)
+        {
+            json = string.Empty;
+            if (string.IsNullOrWhiteSpace(raw)) return false;
+
+            IJsonFixer fixer = new DefaultJsonFixer();
+            var result = fixer.Fix(raw, new JsonFixOptions(Mode: RecoveryMode.Balanced));
+            if (result.IsSuccess)
+            {
+                json = result.FixedText;
+                return true;
+            }
+
+            // JsonFixer失败时,尝试手动移除代码围栏标记
+            var trimmed = raw.Trim();
+            if (trimmed.StartsWith("```"))
+            {
+                // 移除开头的```json或```
+                var firstNewLine = trimmed.IndexOf('\n');
+                if (firstNewLine > 0)
+                {
+                    trimmed = trimmed.Substring(firstNewLine + 1);
+                }
+                else
+                {
+                    // 没有换行,可能是```json{...}格式,移除```json或```
+                    if (trimmed.StartsWith("```json"))
+                        trimmed = trimmed.Substring(7);
+                    else if (trimmed.StartsWith("```"))
+                        trimmed = trimmed.Substring(3);
+                }
+                
+                // 移除结尾的```
+                trimmed = trimmed.TrimEnd();
+                if (trimmed.EndsWith("```"))
+                {
+                    trimmed = trimmed.Substring(0, trimmed.Length - 3);
+                }
+                
+                trimmed = trimmed.Trim();
+                
+                // 再次尝试用JsonFixer处理清理后的内容
+                result = fixer.Fix(trimmed, new JsonFixOptions(Mode: RecoveryMode.Balanced));
+                if (result.IsSuccess)
+                {
+                    json = result.FixedText;
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     public class LockBitmap

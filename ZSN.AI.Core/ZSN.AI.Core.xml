@@ -117,10 +117,10 @@
             <param name="firstcol"></param>
             <param name="lastcol"></param>
         </member>
-        <member name="P:ZSN.AI.Core.Other.KMExcelHandler.StepName">
+        <member name="P:ZSN.AI.Core.Handler.KMExcelHandler.StepName">
             <inheritdoc />
         </member>
-        <member name="M:ZSN.AI.Core.Other.KMExcelHandler.InvokeAsync(Microsoft.KernelMemory.Pipeline.DataPipeline,System.Threading.CancellationToken)">
+        <member name="M:ZSN.AI.Core.Handler.KMExcelHandler.InvokeAsync(Microsoft.KernelMemory.Pipeline.DataPipeline,System.Threading.CancellationToken)">
             <inheritdoc />
         </member>
         <member name="P:ZSN.AI.Core.Handler.QAHandler.StepName">

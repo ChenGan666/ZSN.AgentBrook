@@ -182,6 +182,23 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
                 return false;
             }
         }
+        public bool WorkflowEdgeInfo_DeleteByWorkflowID( string WorkflowID)
+        {
+            if (WorkflowID.IsNullOrEmpty()) { return false; }
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("delete from ");
+            strSql.Append(WorkflowEdgeInfoTableName);
+            strSql.Append(" where WorkflowID in(" + WorkflowID + ")  ");
+            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(WorkflowEdgeInfoConnectionName), CommandType.Text, strSql.ToString());
+            if (rows > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
         /// <summary>
         /// 得到一个对象实体
         /// </summary>

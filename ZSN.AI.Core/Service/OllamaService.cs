@@ -1,5 +1,4 @@
-﻿using NLog.Fluent;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -43,7 +42,6 @@ namespace ZSN.AI.Core.Service
                 };
                 process.OutputDataReceived += (sender, eventArgs) =>
                 {
-                    Log.Info($"{eventArgs.Data.ConvertToString()}");
                     if (!eventArgs.Data.ConvertToString().Contains("The handle is invalid"))
                     {
                         OnLogMessageReceived(eventArgs.Data.ConvertToString());
@@ -51,7 +49,6 @@ namespace ZSN.AI.Core.Service
                 };
                 process.ErrorDataReceived += (sender, eventArgs) =>
                 {
-                    Log.Error($"{eventArgs.Data.ConvertToString()}");
                     if (!eventArgs.Data.ConvertToString().Contains("The handle is invalid"))
                     {
                         OnLogMessageReceived(eventArgs.Data.ConvertToString());

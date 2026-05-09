@@ -1,36 +1,36 @@
-﻿
-using ZSN.AI.Core.Interface;
+
 using DocumentFormat.OpenXml.Drawing.Diagrams;
+using DocumentFormat.OpenXml.EMMA;
+using Elastic.Transport;
 using LLama;
 using Markdig;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.AI;
+using Microsoft.KernelMemory.AI.Ollama;
 using Microsoft.KernelMemory.Configuration;
 using Microsoft.KernelMemory.DataFormats;
+using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
 using Microsoft.KernelMemory.Postgres;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 
+using ZSN.AI.BLL;
 using ZSN.AI.Core.Common.DependencyInjection;
+using ZSN.AI.Core.Interface;
+using ZSN.AI.Core.Utils;
+using ZSN.AI.DAL;
+using ZSN.AI.Entity;
 using ZSN.AI.Entity.Model.Constant;
 using ZSN.AI.Entity.Object;
-using ZSN.AI.Core.Utils;
-using DocumentFormat.OpenXml.EMMA;
-using NLog.Fluent;
-using ZSN.AI.Entity;
 using ZSN.AI.Entity.Options;
-using ZSN.AI.BLL;
-using Elastic.Transport;
-using Microsoft.KernelMemory.AI.Ollama;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.KernelMemory.AI;
-using ServiceLifetime = ZSN.AI.Core.Common.DependencyInjection.ServiceLifetime;
 using ZSN.Utils.Core.Helpers;
-using ZSN.AI.DAL;
+using ServiceLifetime = ZSN.AI.Core.Common.DependencyInjection.ServiceLifetime;
 
 namespace ZSN.AI.Core.Service
 {
@@ -96,14 +96,8 @@ namespace ZSN.AI.Core.Service
            
 
             var memoryBuild = new KernelMemoryBuilder()
-                  .WithSearchClientConfig(searchClientConfig)
-                  //.WithCustomTextPartitioningOptions(new TextPartitioningOptions
-                  //{
-                  //    MaxTokensPerLine = app.MaxTokensPerLine,
-                  //    MaxTokensPerParagraph = kms.MaxTokensPerParagraph,
-                  //    OverlappingTokens = kms.OverlappingTokens
-                  //})
-                  ;
+                  .WithSearchClientConfig(searchClientConfig);
+
             //加载会话模型
             WithTextGenerationByAIType(memoryBuild, chatModel.Model, chatHttpClient);
             //加载向量模型
@@ -111,7 +105,6 @@ namespace ZSN.AI.Core.Service
             //加载向量库
             WithMemoryDbByVectorDB(memoryBuild, KnowledgeBaseID);
 
-            //_memory = memoryBuild.Build<MemoryServerless>();
             _memory = memoryBuild.AddSingleton<IKernelService>(_kernelService).Build<MemoryServerless>();
             return _memory;
         }
@@ -131,7 +124,7 @@ namespace ZSN.AI.Core.Service
             var memoryBuild = new KernelMemoryBuilder()
                 .WithCustomTextPartitioningOptions(new TextPartitioningOptions
                 {
-                    MaxTokensPerLine = kms.LineSliceCount,
+                    //MaxTokensPerLine = kms.LineSliceCount,
                     MaxTokensPerParagraph = kms.ParagraphSlice,
                     OverlappingTokens = kms.OverlapSection
                 });
@@ -144,6 +137,7 @@ namespace ZSN.AI.Core.Service
             WithMemoryDbByVectorDB(memoryBuild, KnowledgeBaseID);
 
             _memory = memoryBuild.AddSingleton<IKernelService>(_kernelService).Build<MemoryServerless>();
+            
             return _memory;
 
         }
@@ -157,17 +151,28 @@ namespace ZSN.AI.Core.Service
                     memory.WithOpenAITextEmbeddingGeneration(new OpenAIConfig()
                     {
                         APIKey = embedModel.ModelKey,
-                        EmbeddingModel = embedModel.ModelName
+                        EmbeddingModel = embedModel.ModelName,
+                        Endpoint = embedModel.EndPoint
                     }, null, false, embeddingHttpClient);
                     break;
                     
-                case ZSN.AI.Entity.Model.Enum.AIType.OllamaEmbedding:
+                case ZSN.AI.Entity.Model.Enum.AIType.Ollama:
                     var config = new OllamaConfig
                     {
                         Endpoint = embedModel.EndPoint,
                         EmbeddingModel = new OllamaModelConfig(embedModel.ModelName, 2048)
                     };
                     memory.WithOllamaTextEmbeddingGeneration(config, new CL100KTokenizer());
+                    break;
+
+                default:
+                    // 处理其他兼容 OpenAI API 的嵌入模型，如 Bigmodel, QWen, DeepSeek 等
+                    memory.WithOpenAITextEmbeddingGeneration(new OpenAIConfig()
+                    {
+                        APIKey = embedModel.ModelKey,
+                        EmbeddingModel = embedModel.ModelName,
+                        Endpoint = embedModel.EndPoint
+                    }, null, false, embeddingHttpClient);
                     break;
                     
             }
@@ -183,12 +188,23 @@ namespace ZSN.AI.Core.Service
                     memory.WithOpenAITextGeneration(new OpenAIConfig()
                     {
                         APIKey = chatModel.ModelKey,
-                        TextModel = chatModel.ModelName
+                        TextModel = chatModel.ModelName,
+                        Endpoint = chatModel.EndPoint
                     }, null, chatHttpClient);
                     break;
 
                 case ZSN.AI.Entity.Model.Enum.AIType.Ollama:
                     memory.WithOllamaTextGeneration(chatModel.ModelName, chatModel.EndPoint);
+                    break;
+
+                default:
+                    // 处理其他兼容 OpenAI API 的模型，如 Bigmodel, QWen, DeepSeek 等
+                    memory.WithOpenAITextGeneration(new OpenAIConfig()
+                    {
+                        APIKey = chatModel.ModelKey,
+                        TextModel = chatModel.ModelName,
+                        Endpoint = chatModel.EndPoint
+                    }, null, chatHttpClient);
                     break;
             }
         }
@@ -199,13 +215,20 @@ namespace ZSN.AI.Core.Service
             string VectorDb = dbInfo.DbType;
             string ConnectionString = dbInfo.ConnectionString;
             string TableNamePrefix = dbInfo.TableNamePrefix;
+
             switch (VectorDb)
             {
                 case "Postgres":
                     memory.WithPostgresMemoryDb(new PostgresConfig()
                     {
                         ConnectionString = ConnectionString,
+                        Schema = "public",
                         TableNamePrefix = TableNamePrefix + KnowledgeBaseID,
+                    });
+                    memory.WithSimpleFileStorage(new SimpleFileStorageConfig
+                    { 
+                        StorageType = FileSystemTypes.Disk, 
+                        Directory = Path.Combine(AppContext.BaseDirectory, "km-files")
                     });
                     break;
 
@@ -222,6 +245,18 @@ namespace ZSN.AI.Core.Service
                         StorageType = FileSystemTypes.Volatile
                     });
                     break;
+
+                case "Qdrant":
+                    var qdrantConfig = ConnectionString.Split("|");
+                    memory.WithQdrantMemoryDb(qdrantConfig[0], qdrantConfig[1]);
+                    break;
+
+                case "Redis":
+                    memory.WithRedisMemoryDb(new RedisConfig()
+                    {
+                        ConnectionString = ConnectionString,
+                    });
+                    break;
             }
         }
 
@@ -236,15 +271,17 @@ namespace ZSN.AI.Core.Service
             {
                 foreach (var memoryDb in memoryDbs)
                 {
-                    var items = await memoryDb.GetListAsync(memoryIndex.Name, new List<MemoryFilter>() { new MemoryFilter().ByDocument(fileId) }, 1000, true).ToListAsync();
-                    docTextList.AddRange(items.Select(item => new KMFile()
+                    await foreach (var item in memoryDb.GetListAsync(memoryIndex.Name, new List<MemoryFilter>() { new MemoryFilter().ByDocument(fileId) }, 1000, true))
                     {
-                        DocumentId = item.GetDocumentId(),
-                        Text = item.GetPartitionText(),
-                        Url = item.GetWebPageUrl(KmsConstantcs.KmsIndex),
-                        LastUpdate = item.GetLastUpdate().LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                        File = item.GetFileName()
-                    }));
+                        docTextList.Add(new KMFile()
+                        {
+                            DocumentId = item.GetDocumentId(),
+                            Text = item.GetPartitionText(),
+                            Url = item.GetWebPageUrl(KmsConstantcs.KmsIndex),
+                            LastUpdate = item.GetLastUpdate().LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                            File = item.GetFileName()
+                        });
+                    }
                 }
             }
 
@@ -301,12 +338,10 @@ namespace ZSN.AI.Core.Service
             var validTypes = types.Contains(file.Type) || exceptExts.Contains(file.Ext);
             if (!validTypes && file.Ext != ".md")
             {
-                Log.Error("文件格式错误,请重新选择!");
             }
             var IsLt500K = file.Size < 1024 * 1024 * 100;
             if (!IsLt500K)
             {
-                Log.Error("文件需不大于100MB!");
             }
 
             return validTypes && IsLt500K;

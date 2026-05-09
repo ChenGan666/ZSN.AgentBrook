@@ -1,0 +1,107 @@
+﻿@{
+    var Department = ViewBag.Department as DepartmentInfo;
+
+    var PreviewHost = ViewBag.PreviewHost as string;
+}
+
+@section Css
+{
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+    </style>
+}
+
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="DepartmentID" value="@Department.DepartmentID" />
+
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>名称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="DName" lay-verify="required" value="@Department.DName"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>说明
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="DInfo" lay-verify="required" value="@Department.DInfo"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+
+                
+ 
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        状态
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="DState" value="0" title="正常" @(Department.DState == 0 ? "checked" : "")>
+                        <input type="radio" name="DState" value="1" title="屏蔽" @(Department.DState == 1 ? "checked" : "")>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-filter="save" lay-submit>保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Js
+{
+    <script>
+        layui.use(function () {
+            var form = layui.form,
+                layer = layui.layer;
+            form.render();
+
+            layui.laydate.render({
+                elem: '.MBirthday',
+                type: 'datetime'
+            });
+
+            //提交
+            form.on('submit(save)', function (obj) {
+                layer.load(0);
+                $.ajax({
+                    url: '@Url.Action("Save")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: 1 });
+                            if (rst.Status) {
+                                if (parent) {
+                                    parent.location.reload();
+                                } else {
+                                    location.reload();
+                                }
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}

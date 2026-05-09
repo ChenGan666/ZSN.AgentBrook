@@ -2,7 +2,6 @@
 using ZSN.AI.Core.Interface;
 using ZSN.AI.Entity.Model;
 using ZSN.AI.Entity.Model.Constant;
-using ZSN.AI.Entity.Model.Excel;
 using ZSN.AI.Entity.Model.KmsDetail;
 
 using ZSN.AI.Core.Repositories;
@@ -10,10 +9,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Handlers;
 using System.Text;
-using ZSN.AI.Core.Other;
-using ZSN.AI.Core.Common.Excel;
 using ZSN.AI.Core.Handler;
+using ZSN.AI.Core.Common.Excel;
 using ZSN.AI.BLL;
+using System.Threading.Tasks;
 
 namespace ZSN.AI.Core.Service
 {
@@ -26,7 +25,7 @@ namespace ZSN.AI.Core.Service
         ) : IImportKMSService
     {
 
-        public void ImportKMSTask(ImportKMSTaskReq req)
+        public async Task<ImportKMSTaskReq> ImportKMSTask(ImportKMSTaskReq req)
         {
             var km = KnowledgeBaseInfoBussiness.GetModel(req.KmsId);
             try
@@ -56,9 +55,9 @@ namespace ZSN.AI.Core.Service
                                 var importResult = _memory.ImportDocumentAsync(new Document(fileid)
                                 .AddFile(req.FilePath)
                                 .AddTag(KmsConstantcs.KmsIdTag, req.KmsId)
-                                ,index: KmsConstantcs.KmsIndex ,steps: step.ToArray()).Result;
+                                , index: KmsConstantcs.KmsIndex, steps: step.ToArray()).Result;
                             }
-                            else 
+                            else
                             {
                                 var importResult = _memory.ImportDocumentAsync(new Document(fileid)
                                  .AddFile(req.FilePath)
@@ -66,7 +65,7 @@ namespace ZSN.AI.Core.Service
                              , index: KmsConstantcs.KmsIndex).Result;
                             }
                             //查询文档数量
-                            var docTextList = _kMService.GetDocumentByFileID(km.KnowledgeBaseID, fileid).Result;
+                            var docTextList = await _kMService.GetDocumentByFileID(km.KnowledgeBaseID, fileid);
                             string fileGuidName = Path.GetFileName(req.FilePath);
                             //req.KnowledgeBaseFile.FileName = req.FileName;
                             req.KnowledgeBaseFile.DataCount = docTextList.Count;
@@ -78,16 +77,16 @@ namespace ZSN.AI.Core.Service
                             //导入url                  
                             if (req.IsQA)
                             {
-                                var importResult = _memory.ImportWebPageAsync(req.Url, fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
-                                , index: KmsConstantcs.KmsIndex, steps: step.ToArray()).Result;
+                                var importResult = await _memory.ImportWebPageAsync(req.Url, fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
+                                , index: KmsConstantcs.KmsIndex, steps: step.ToArray());
                             }
-                            else 
+                            else
                             {
-                                var importResult = _memory.ImportWebPageAsync(req.Url, fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
-                                , index: KmsConstantcs.KmsIndex).Result;
-                            }  
+                                var importResult = await _memory.ImportWebPageAsync(req.Url, fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
+                                , index: KmsConstantcs.KmsIndex);
+                            }
                             //查询文档数量
-                            var docTextList = _kMService.GetDocumentByFileID(km.KnowledgeBaseID, fileid).Result;
+                            var docTextList = await _kMService.GetDocumentByFileID(km.KnowledgeBaseID, fileid);
                             req.KnowledgeBaseFile.Url = req.Url;
                             req.KnowledgeBaseFile.DataCount = docTextList.Count;
                         }
@@ -95,27 +94,29 @@ namespace ZSN.AI.Core.Service
                     case ImportType.Text:
                         //导入文本
                         {
+                            string? importResult = req.KnowledgeBaseFile.FileID;
                             if (req.IsQA)
                             {
-                                var importResult = _memory.ImportTextAsync(req.Text, fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
-                                , index: KmsConstantcs.KmsIndex, steps: step.ToArray()).Result;
+                                importResult = await _memory.ImportTextAsync(req.Text, fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
+                               , index: KmsConstantcs.KmsIndex, steps: step.ToArray());
                             }
-                            else 
+                            else
                             {
-                                var importResult = _memory.ImportTextAsync(req.Text, fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
-                                   , index: KmsConstantcs.KmsIndex).Result;
-                            }                  
+                                importResult = await _memory.ImportTextAsync(req.Text, fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
+                                  , index: KmsConstantcs.KmsIndex);
+                            }
                             //查询文档数量
-                            var docTextList = _kMService.GetDocumentByFileID(km.KnowledgeBaseID, fileid).Result;
+                            var docTextList = await _kMService.GetDocumentByFileID(km.KnowledgeBaseID, fileid);
                             req.KnowledgeBaseFile.Url = req.Url;
                             req.KnowledgeBaseFile.DataCount = docTextList.Count;
 
+                            req.KnowledgeBaseFile.FileID = importResult;
                         }
                         break;
                     case ImportType.Excel:
                         using (var fs = File.OpenRead(req.FilePath))
                         {
-                            var excelList= ExeclHelper.ExcelToList<KMSExcelModel>(fs);           
+                            var excelList = ExeclHelper.ExcelToList<KMSExcelModel>(fs);
                             _memory.Orchestrator.AddHandler<TextExtractionHandler>("extract_text");
                             _memory.Orchestrator.AddHandler<KMExcelHandler>("excel_split");
                             _memory.Orchestrator.AddHandler<GenerateEmbeddingsHandler>("generate_embeddings");
@@ -124,9 +125,9 @@ namespace ZSN.AI.Core.Service
                             StringBuilder text = new StringBuilder();
                             foreach (var item in excelList)
                             {
-                                text.AppendLine(@$"Question:{item.Question}{Environment.NewLine}Answer:{item.Answer}{KmsConstantcs.KMExcelSplit}");                            
+                                text.AppendLine(@$"Question:{item.Question}{Environment.NewLine}Answer:{item.Answer}{KmsConstantcs.KMExcelSplit}");
                             }
-                            var importResult = _memory.ImportTextAsync(text.ToString(), fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
+                            var importResult = await _memory.ImportTextAsync(text.ToString(), fileid, new TagCollection() { { KmsConstantcs.KmsIdTag, req.KmsId } }
                                   , index: KmsConstantcs.KmsIndex,
                                   steps: new[]
                                   {
@@ -135,12 +136,13 @@ namespace ZSN.AI.Core.Service
                                         "generate_embeddings",
                                         "save_memory_records"
                                   }
-                                  ).Result;
+                                  );
                             req.KnowledgeBaseFile.FileName = req.FileName;
                             string fileGuidName = Path.GetFileName(req.FilePath);
 
                             req.KnowledgeBaseFile.DataCount = excelList.Count();
-                        }                        
+
+                        }
                         break;
                 }
                 req.KnowledgeBaseFile.SystemStatus = ZSN.AI.Entity.Model.Enum.ImportKmsStatus.Success;
@@ -157,6 +159,7 @@ namespace ZSN.AI.Core.Service
 
                 _logger.LogError("后台导入任务异常:" + ex.Message);
             }
+            return req;
         }
     }
 }

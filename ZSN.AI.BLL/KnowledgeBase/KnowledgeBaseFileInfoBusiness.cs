@@ -88,7 +88,7 @@ namespace ZSN.AI.BLL
         /// <param name="showName">显示字段，默认全部</param>
         /// <param name="orderKey">排序key，默认主键</param>
         /// <returns></returns>
-		public static List<KnowledgeBaseFileInfo> GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType = 1, string showName = "*", string orderKey = "FileID")
+		public static List<KnowledgeBaseFileInfo> GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType = 1, string showName = "*", string orderKey = "CreateTime")
 		{
             return KnowledgeBaseFileInfoDataSet_ToList(DatabaseProvider.GetKnowledgeBaseFileInfo(ConnectionName).KnowledgeBaseFileInfo_GetListByPage(pageSize, pageIndex, strWhere, out pagetotal, out total, orderType, showName, orderKey));
         }

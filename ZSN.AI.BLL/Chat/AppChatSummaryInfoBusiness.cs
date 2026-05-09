@@ -59,6 +59,10 @@ namespace ZSN.AI.BLL
         {
             return AppChatSummaryInfoDataSet_ToList(DatabaseProvider.GetAppChatSummaryInfo(ConnectionName).AppChatSummaryInfo_GetList(strWhere).Tables[0]);
         }
+        public static List<AppChatSummaryInfo> GetList(string strWhere = "", string SessionID = "", string MemberID = "")
+        {
+            return AppChatSummaryInfoDataSet_ToList(DatabaseProvider.GetAppChatSummaryInfo(ConnectionName).AppChatSummaryInfo_GetList(strWhere, SessionID, MemberID).Tables[0]);
+        }
         /// <summary>
         /// 获得前几行数据
         /// </summary>

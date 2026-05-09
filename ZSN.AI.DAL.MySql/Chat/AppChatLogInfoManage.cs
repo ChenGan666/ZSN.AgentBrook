@@ -276,6 +276,34 @@ strSql.Append("Content=@Content,");
             parameters[1].Value = AppID;
             return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(AppChatLogInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
         }
+        public DataSet AppChatLogInfo_GetList(string strWhere = "",string SessionID="",string MemberID="")
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("SELECT ");
+            strSql.Append(" c.ChatLogID,c.ChatSessionID,c.Direction,c.LargeModelID,c.Content,c.CreateTime,c.LogOrder,c.AppID,c.Role ");
+            strSql.Append(" FROM ");
+            strSql.Append(AppChatLogInfoTableName);
+            strSql.Append(" c JOIN tb_app_chat_session_info s ON c.ChatSessionID = s.ChatSessionID WHERE 1=1 ");
+
+            if (!string.IsNullOrWhiteSpace(strWhere))
+            {
+                strSql.Append(" AND " + strWhere);
+            }
+
+            if (!string.IsNullOrWhiteSpace(SessionID))
+            {
+                strSql.Append($" AND c.ChatSessionID='{SessionID}'");
+            }
+
+            if (!string.IsNullOrWhiteSpace(MemberID))
+            {
+                strSql.Append($" AND s.MemberID='{MemberID}'");
+            }
+
+            strSql.Append(" ORDER BY c.CreateTime ASC");
+
+            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(AppChatLogInfoConnectionName), CommandType.Text, strSql.ToString());
+        }
         /// <summary>
         /// 获得前几行数据
         /// </summary>

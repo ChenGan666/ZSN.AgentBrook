@@ -14,7 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ZSN.AI.Core.Utils;
 
-namespace ZSN.AI.Core.Other
+namespace ZSN.AI.Core.Handler
 {
     public class KMExcelHandler: IPipelineStepHandler
     {

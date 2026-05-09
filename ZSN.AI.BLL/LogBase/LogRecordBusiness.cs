@@ -27,8 +27,11 @@ namespace ZSN.AI.BLL
 		{
 			return DatabaseProvider.GetLogRecord(ConnectionName).LogRecord_Delete(id);
 		}
-
-		public static bool DeleteList(string idlist)
+        public static bool DeleteByWhere(string where)
+        {
+            return DatabaseProvider.GetLogRecord(ConnectionName).LogRecord_DeleteByWhere(where);
+        }
+        public static bool DeleteList(string idlist)
 		{
 			return DatabaseProvider.GetLogRecord(ConnectionName).LogRecord_DeleteList(idlist);
 		}

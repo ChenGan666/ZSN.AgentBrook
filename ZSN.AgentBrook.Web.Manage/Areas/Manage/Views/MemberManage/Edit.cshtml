@@ -1,0 +1,283 @@
+﻿@{
+    var member = ViewBag.Member as MemberInfo;
+
+    var DepartmentList = ViewBag.DepartmentList as List<DepartmentInfo>;
+    var StaffInfo = ViewBag.StaffInfo as StaffInfo;
+    var PreviewHost = ViewBag.PreviewHost as string;
+}
+
+@section Css
+{
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+    </style>
+}
+
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="MemberID" value="@member.MemberID" />
+
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>手机号码(登录账号)
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="MPhoneNumber" lay-verify="required" value="@member.MPhoneNumber"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>昵称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="MNickName" lay-verify="required" value="@member.MNickName"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>头像
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="MIcon" lay-verify="required" value="@member.MIcon"
+                                   autocomplete="off" class="layui-input MIcon">
+                            <div id="file-upload-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>出生年月
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="MBirthday" lay-verify="required" placeholder="yyyy-MM-dd" value="@member.MBirthday.ToShortDateString()"
+                                   autocomplete="off" class="layui-input MBirthday">
+                        </div>
+                    </div>
+                </div>
+ 
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>部门
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <select class="Department" name="Department" lay-verify="required">
+                                <option value="">请选择一个类型</option>
+                                @foreach (DepartmentInfo _dep in DepartmentList)
+                                {
+                                    <option value="@_dep.DepartmentID">@_dep.DName</option>
+                                }
+                            </select>
+                            <input type="hidden" name="DepartmentID" value="@Convert.ToInt32(StaffInfo.DepartmentID)"
+                                   autocomplete="off" class="layui-input DepartmentID">
+                            <input type="hidden" name="dName" value="@StaffInfo.DName"
+                                   autocomplete="off" class="layui-input dName">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>员工编号
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="sCode" lay-verify="required" value="@StaffInfo.SCode"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>姓名
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="sName" lay-verify="required" value="@StaffInfo.SName"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red"></span>头衔
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="sTitle" lay-verify="required" value="@StaffInfo.STitle"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>入职时间
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="sEntryTime" lay-verify="required" placeholder="yyyy-MM-dd" value="@StaffInfo.SEntryTime.ToShortDateString()"
+                                   autocomplete="off" class="layui-input sEntryTime">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>Email
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="sEmail" lay-verify="required" value="@StaffInfo.SEmail"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>手机号码
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="sPhone" lay-verify="required" value="@StaffInfo.SPhone"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        状态
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="MState" value="0" title="正常" @(member.MState == 0 ? "checked" : "")>
+                        <input type="radio" name="MState" value="1" title="屏蔽" @(member.MState == 0 ? "" : "checked")>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <input type="hidden" name="MPWD" id="MPWD" value="@member.MPWD" />
+                        <input type="hidden" name="StaffID" id="StaffID" value="@StaffInfo.StaffID" />
+                        <input type="hidden" name="UserID" id="UserID" value="@StaffInfo.UserID" />
+                        <button class="layui-btn save" lay-filter="save" lay-submit>保存</button>
+                        @if (!member.MemberID.IsNullOrEmpty())
+                        {
+                            <button class="layui-btn resetPwd" lay-filter="resetPwd">重置密码</button>
+                        }
+                        
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Js
+{
+    <script>
+        layui.use(function () {
+            var form = layui.form,
+                layer = layui.layer;
+            form.render();
+
+            layui.laydate.render({
+                elem: '.MBirthday',
+                type: 'datetime'
+            });
+            layui.laydate.render({
+                elem: '.sEntryTime',
+                type: 'datetime'
+            });
+
+            $(".Department").val("@StaffInfo.DepartmentID");
+            form.render("select");
+
+             function CheckValue() {
+                $('.DepartmentID').val($(".Department option:selected").val());
+                $('.dName').val($(".Department option:selected").text());
+
+            }
+            $('.save').click(function () {
+                CheckValue();
+            });
+            $('.resetPwd').click(function () {
+                layer.load(0);
+                $.ajax({
+                    url: '@Url.Action("ResetPwd")',
+                    type: 'POST',
+                    data: {'mid':'@member.MemberID'},
+                    success: function (rst) {
+                        layer.closeAll();
+                        layer.msg(rst.ErrorDesc, { icon: 1 });
+                    }
+                });
+                return false;
+            });
+            //提交
+            form.on('submit(save)', function (obj) {
+                layer.load(0);
+                $.ajax({
+                    url: '@Url.Action("Save")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: 1 });
+                            if (rst.Status) {
+                                if (parent) {
+                                    parent.location.reload();
+                                } else {
+                                    location.reload();
+                                }
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}
+@section FileUpload{
+
+    <script>
+        $(function () {
+            var _MIcon = function () {
+                var fileCodeElement = $('.MIcon');
+                var fileUploadContainer = $('#file-upload-container');
+
+                var options = {
+                    url: '/Controls/UploadFiles/Save',
+                    previewType: 'img',
+                    previewHost: '@PreviewHost',
+                    previewW: 150,
+                    previewH: 150,
+                    formData: {
+                        //example: 'test'
+                    },
+                };
+
+                FileUploadPlugin(fileUploadContainer, fileCodeElement, options);
+            };
+            _MIcon();
+        });
+
+    </script>
+}

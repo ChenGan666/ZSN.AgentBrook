@@ -1,4 +1,4 @@
-﻿using ZSN.Utils.Core;
+using ZSN.Utils.Core;
 using ZSN.Utils.Core.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +32,6 @@ namespace ZSN.AI.Service.Controllers
         private string _memberToken { get; set; } = null;
 
         
-
         public static DateTime UnixTimeStampStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public static long DateTimeToTimeStamp(DateTime dateTime)
         {
@@ -43,6 +42,8 @@ namespace ZSN.AI.Service.Controllers
 
             if (HttpContextHelper.Current != null)
             {
+                // 已启用 EnableBuffering，现在可以安全地多次读取请求体
+                // 在构造函数中读取 BodyParams 并设置到 Session，供 SettingsService 使用
                 var _x = this.BodyParams;
 
                 try
@@ -55,8 +56,17 @@ namespace ZSN.AI.Service.Controllers
                     _token = "";
                     _memberToken = "";
                 }
-                HttpContextHelper.Session.SetString("Token", _token == null ? "" : _token);
-                HttpContextHelper.Session.SetString("MemberToken", _memberToken == null ? "" : _memberToken);
+                
+                // 尝试设置Session，如果失败（如MCP调用时响应已开始）则忽略
+                try
+                {
+                    HttpContextHelper.Session.SetString("Token", _token == null ? "" : _token);
+                    HttpContextHelper.Session.SetString("MemberToken", _memberToken == null ? "" : _memberToken);
+                }
+                catch (System.InvalidOperationException)
+                {
+                    // MCP调用时响应已开始，无法设置Session，忽略此异常
+                }
             }
         }
 
@@ -68,15 +78,36 @@ namespace ZSN.AI.Service.Controllers
                 if (this.PostFile != null)
                 {
                     _bodyParams = HttpContextHelper.Current.Request.Form["Data"];
-                    HttpContextHelper.Session.SetString("BodyParams", _bodyParams);
+                    if (_bodyParams != null)
+                    {
+                        // 尝试设置Session，如果失败则忽略
+                        try
+                        {
+                            HttpContextHelper.Session.SetString("BodyParams", _bodyParams);
+                        }
+                        catch (System.InvalidOperationException)
+                        {
+                            // MCP调用时响应已开始，无法设置Session，忽略此异常
+                        }
+                    }
                 }
                 else
                 {
                     if (_bodyParams.IsNullOrEmpty())
                     {
                         _bodyParams = HttpContextHelper.GetBodyParams(HttpContextHelper.Current);
-                        HttpContextHelper.Session.SetString("BodyParams", _bodyParams);
-
+                        if(_bodyParams != null)
+                        {
+                            // 尝试设置Session，如果失败则忽略
+                            try
+                            {
+                                HttpContextHelper.Session.SetString("BodyParams", _bodyParams);
+                            }
+                            catch (System.InvalidOperationException)
+                            {
+                                // MCP调用时响应已开始，无法设置Session，忽略此异常
+                            }
+                        }
                     }
                 }
                 return _bodyParams;
@@ -96,22 +127,23 @@ namespace ZSN.AI.Service.Controllers
         {
             get
             {
-                // 确保当前上下文为HTTP请求
-                if (HttpContextHelper.Request.HasFormContentType)
+                try
                 {
-                    if (HttpContextHelper.Current != null && HttpContextHelper.Current.Request.Form.Files.Count > 0)
+                    // 确保当前上下文为HTTP请求
+                    if (HttpContextHelper.Request != null && HttpContextHelper.Request.HasFormContentType)
                     {
-                        return HttpContextHelper.Current.Request.Form.Files;
-                    }
-                    else
-                    {
-                        return null;
+                        if (HttpContextHelper.Current != null && HttpContextHelper.Current.Request.Form.Files.Count > 0)
+                        {
+                            return HttpContextHelper.Current.Request.Form.Files;
+                        }
                     }
                 }
-                else
+                catch
                 {
-                    return null;
+                    // 对于JSON请求体或其他无法读取Form的情况，返回null
                 }
+                
+                return null;
             }
         }
         /// <summary>
@@ -169,6 +201,14 @@ namespace ZSN.AI.Service.Controllers
         }
         public static string GetTokenByAPPID(string AppID) {
             return (AppID + "|" + DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut")))).DesEncrypt();
+        }
+        public static void GetAPPIDIdByToken(string Token, out string AppID, out string timestamp)
+        {
+            Token = Token.DesDecrypt();
+
+            string[] _obj = Token.Split("|");
+            AppID = _obj[0];
+            timestamp = _obj[1];
         }
         /// <summary>
         /// 解析AccessToken

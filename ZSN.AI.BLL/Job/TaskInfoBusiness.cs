@@ -5,24 +5,59 @@ using System.Linq;
 using ZSN.AI.Entity;
 using ZSN.AI.DAL;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 using Senparc.CO2NET.Extensions;
 namespace ZSN.AI.BLL
 {
     public partial class TaskInfoBussiness
     {
-        #region »ù´¡ĞÅÏ¢
+        #region åŸºç¡€ä¿¡æ¯
         private const string ConnectionName = "JobDb";
         #endregion
+
         #region tb_task_info
         /// <summary>
-        /// Ôö¼ÓÒ»ÌõÊı¾İ
+        /// è§£æsourceIdï¼Œå¦‚æœåŒ…å«å­å‚æ•°ï¼Œåˆ™æå–åŸºç¡€sourceIdå’ŒjsonPathï¼Œæ”¯æŒè¿‡æ»¤å‰ç¼€
+        /// </summary>
+        public static (string baseSourceId, string jsonPath) ParseSourceId(string sourceId)
+        {
+            if (string.IsNullOrEmpty(sourceId)) return (sourceId, null);
+            string jsonPath = null;
+            // å…ˆæå–jsonPath
+            var bracketMatch = Regex.Match(sourceId, @"^(.+?)\((.+)\)$");
+            if (bracketMatch.Success)
+            {
+                sourceId = bracketMatch.Groups[1].Value;
+                jsonPath = bracketMatch.Groups[2].Value;
+            }
+            // è¿‡æ»¤å‰ç¼€ï¼šå‡è®¾å‰ç¼€æ˜¯UUID_æ ¼å¼ï¼Œæ‰¾åˆ°ç¬¬ä¸€ä¸ªUUIDåè·ŸéUUIDçš„éƒ¨åˆ†
+            var parts = sourceId.Split('_');
+            int startIndex = 0;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (Regex.IsMatch(parts[i], @"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))
+                {
+                    // å¦‚æœä¸‹ä¸€ä¸ªä¸æ˜¯UUIDï¼Œåˆ™ä»è¿™é‡Œå¼€å§‹
+                    if (i + 1 >= parts.Length || !Regex.IsMatch(parts[i + 1], @"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+            }
+            string actualSourceId = string.Join("_", parts.Skip(startIndex));
+            return (actualSourceId, jsonPath);
+        }
+        /// <summary>
+        /// å¢åŠ ä¸€æ¡æ•°æ®
         /// </summary>
         public static string Add(TaskInfo model)
         {
             return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_Add(model);
         }
         /// <summary>
-        /// ¸üĞÂÒ»ÌõÊı¾İ
+        /// æ›´æ–°ä¸€æ¡æ•°æ®
         /// </summary>
         public static bool Update(TaskInfo model)
         {
@@ -30,31 +65,39 @@ namespace ZSN.AI.BLL
         }
 
         /// <summary>
-        /// ÅúÁ¿ĞŞ¸Ä×´Ì¬Öµ
+        /// æ‰¹é‡ä¿®æ”¹çŠ¶æ€å€¼
         /// </summary>
         /// <param name="TaskID"></param>
         /// <param name="ToState"></param>
         /// <returns></returns>
-        public static bool SetState(List<string> TaskID, int ToState)
+        public static bool SetState(List<string> TaskID, TaskState ToState)
         {
             return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_SetState(TaskID, ToState);
         }
+        public static bool DeleteBySessionID(string SessionID)
+        {
+            return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_DeleteBySessionID(SessionID);
+        }
         /// <summary>
-        /// É¾³ıÒ»ÌõÊı¾İ
+        /// åˆ é™¤ä¸€æ¡æ•°æ®
         /// </summary>
         public static bool Delete(string taskID)
         {
             return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_Delete(taskID);
         }
+        public static bool DeleteByWhere(string where)
+        {
+            return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_DeleteByWhere(where);
+        }
         /// <summary>
-        /// ÅúÁ¿É¾³ıÊı¾İ
+        /// æ‰¹é‡åˆ é™¤æ•°æ®
         /// </summary>
 		public static bool DeleteList(string taskIDlist)
         {
             return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_DeleteList(taskIDlist);
         }
         /// <summary>
-        /// µÃµ½Ò»¸ö¶ÔÏóÊµÌå
+        /// å¾—åˆ°ä¸€ä¸ªå¯¹è±¡å®ä½“
         /// </summary>
 		public static ZSN.AI.Entity.TaskInfo GetModel(string taskID)
         {
@@ -64,6 +107,10 @@ namespace ZSN.AI.BLL
         {
             return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetModelByFromTaskID(FromTaskID);
         }
+        public  static List<TaskInfo> GetList(NodeType nodeType, string WorkflowID)
+        {
+            return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList( nodeType,  WorkflowID).Tables[0]);
+        }
         public static List<TaskInfo> GetList(int State, NodeType nodeType, DateTime StartTime, int ToState = 1, int length = 100)
         {
             return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList(State, (int)nodeType, StartTime, ToState, length).Tables[0]);
@@ -72,6 +119,21 @@ namespace ZSN.AI.BLL
         {
             string nodeTypeStr = string.Join(",", nodeType.Select(x => (int)x).ToList());
             return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList(State, nodeTypeStr, StartTime, ToState, length).Tables[0]);
+        }
+        public static List<TaskInfo> GetListBySessionID(string SessionID)
+        {
+            string strWhere = $" SessionID='{SessionID}' ";
+            return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList(strWhere).Tables[0]);
+        }
+        public static List<TaskInfo> GetListBySessionIDProcessesID(string SessionID,string ProcessesID)
+        {
+            string strWhere = $" SessionID='{SessionID}' and ProcessesID LIKE '{ProcessesID}%' ";
+            return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList(strWhere).Tables[0]);
+        }
+        public static List<TaskInfo> GetListByWorkflowID(string WorkflowID)
+        {
+            string strWhere = $" WorkflowID='{WorkflowID}'";
+            return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList(strWhere).Tables[0]);
         }
         public static List<TaskInfo> GetListByFromTaskID(string FromTaskID)
         {
@@ -84,44 +146,44 @@ namespace ZSN.AI.BLL
             return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList(strWhere).Tables[0]);
         }
         /// <summary>
-        /// »ñµÃÊı¾İÁĞ±í
+        /// è·å¾—æ•°æ®åˆ—è¡¨
         /// </summary>
         public static List<TaskInfo> GetList(string strWhere = "")
         {
             return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList(strWhere).Tables[0]);
         }
         /// <summary>
-        /// »ñµÃÇ°¼¸ĞĞÊı¾İ
+        /// è·å¾—å‰å‡ è¡Œæ•°æ®
         /// </summary>
 		public static List<TaskInfo> GetList(int top, string strWhere, string filedOrder)
         {
             return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetList(top, strWhere, filedOrder).Tables[0]);
         }
         /// <summary>
-        /// »ñÈ¡¼ÇÂ¼×ÜÊı
+        /// è·å–è®°å½•æ€»æ•°
         /// </summary>
 		public static int GetRecordCount(string strWhere = "")
         {
             return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetRecordCount(strWhere);
         }
         /// <summary>
-        /// ·ÖÒ³»ñÈ¡Êı¾İÁĞ±í
+        /// åˆ†é¡µè·å–æ•°æ®åˆ—è¡¨
         /// </summary>
 		public static List<TaskInfo> GetListByPage(string strWhere, string orderBy, int startIndex, int endIndex)
         {
             return TaskInfoDataSet_ToList(DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_GetListByPage(strWhere, orderBy, startIndex, endIndex).Tables[0]);
         }
         /// <summary>
-        /// ·ÖÒ³»ñÈ¡Êı¾İÁĞ±í
+        /// åˆ†é¡µè·å–æ•°æ®åˆ—è¡¨
         /// </summary>
-        /// <param name="pageSize">Ã¿Ò³´óĞ¡</param>
-        /// <param name="pageIndex">Ò³±ê</param>
-        /// <param name="strWhere">²éÑ¯Ìõ¼ş</param>
-        /// <param name="pagetotal">×ÜÒ³Êı</param>
-        /// <param name="total">×ÜÊı</param>
-        /// <param name="orderType">ÅÅĞò¹æÔò£¬ Ä¬ÈÏ½µĞò£¬1½µĞò£¬0ÉıĞò</param>
-        /// <param name="showName">ÏÔÊ¾×Ö¶Î£¬Ä¬ÈÏÈ«²¿</param>
-        /// <param name="orderKey">ÅÅĞòkey£¬Ä¬ÈÏÖ÷¼ü</param>
+        /// <param name="pageSize">æ¯é¡µå¤§å°</param>
+        /// <param name="pageIndex">é¡µæ ‡</param>
+        /// <param name="strWhere">æŸ¥è¯¢æ¡ä»¶</param>
+        /// <param name="pagetotal">æ€»é¡µæ•°</param>
+        /// <param name="total">æ€»æ•°</param>
+        /// <param name="orderType">æ’åºè§„åˆ™ï¼Œ é»˜è®¤é™åºï¼Œ1é™åºï¼Œ0å‡åº</param>
+        /// <param name="showName">æ˜¾ç¤ºå­—æ®µï¼Œé»˜è®¤å…¨éƒ¨</param>
+        /// <param name="orderKey">æ’åºkeyï¼Œé»˜è®¤ä¸»é”®</param>
         /// <returns></returns>
         public static List<TaskInfo> GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType = 1, string showName = "*", string orderKey = "TaskID")
         {
@@ -140,27 +202,27 @@ namespace ZSN.AI.BLL
         #endregion
 
         /// <summary>
-        /// ´´½¨½ÚµãÒì²½ÈÎÎñ
+        /// åˆ›å»ºèŠ‚ç‚¹å¼‚æ­¥ä»»åŠ¡
         /// </summary>
-        /// <param name="SourceNode">ÉÏÒ»½Úµã</param>
-        /// <param name="CurrentNode">µ±Ç°½Úµã</param>
+        /// <param name="SourceNode">ä¸Šä¸€èŠ‚ç‚¹</param>
+        /// <param name="CurrentNode">å½“å‰èŠ‚ç‚¹</param>
         /// <param name="outputs"></param>
         /// <param name="AppID"></param>
         /// <param name="SessionID"></param>
-        /// <param name="ProcessesID">ĞÂÈÎÎñ±êÊ¶</param>
-        /// <param name="FromTaskID">Ô´±êÊ¶</param>
+        /// <param name="ProcessesID">æ–°ä»»åŠ¡æ ‡è¯†</param>
+        /// <param name="FromTaskID">æºæ ‡è¯†</param>
         /// <param name="AgentNodeID"></param>
         /// <returns></returns>
-        public static string toTask(NodeConfig SourceNode, List<Output> outputs, NodeConfig CurrentNode, string AppID, string SessionID, string ProcessesID, string FromTaskID = "", string FromMainTaskID = "", string AgentNodeID = "")
+        public static string toTask(NodeConfig SourceNode, List<Output> outputs, NodeConfig CurrentNode, string AppID, string SessionID, string ProcessesID, string FromTaskID = "", string FromMainTaskID = "", string AgentNodeID = "",string WorkflowID="")
         {
             string TaskID = Guid.NewGuid().ToString();
 
             NodeType nodeType = CurrentNode.type;
 
 
-            NodeConfig nodeConfig = JsonConvert.DeserializeObject<NodeConfig>(CurrentNode.data.ToString());
+            NodeConfig nodeConfig = JsonConvert.DeserializeObject<NodeConfig>(JsonConvert.SerializeObject(CurrentNode.data));
 
-#pragma warning disable CS8600 // ½« null ×ÖÃæÁ¿»ò¿ÉÄÜÎª null µÄÖµ×ª»»Îª·Ç null ÀàĞÍ¡£
+#pragma warning disable CS8600 // å°† null å­—é¢é‡æˆ–å¯èƒ½ä¸º null çš„å€¼è½¬æ¢ä¸ºé null ç±»å‹ã€‚
             List<Inputs> inputs = nodeType switch
             {
                 NodeType.Start => JsonConvert.DeserializeObject<StartData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
@@ -173,41 +235,176 @@ namespace ZSN.AI.BLL
                 NodeType.Plugins => JsonConvert.DeserializeObject<PluginsData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
                 NodeType.End => JsonConvert.DeserializeObject<EndData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
                 NodeType.AgentEnd => JsonConvert.DeserializeObject<AgentEndData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.Merge => JsonConvert.DeserializeObject<MergeData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.MCP => JsonConvert.DeserializeObject<MCPData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.FileToMarkdown => JsonConvert.DeserializeObject<FileToMarkdownData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.HumanInTheLoop => JsonConvert.DeserializeObject<HumanInTheLoopData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.SkillAgent => JsonConvert.DeserializeObject<SkillAgentData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.ImageGeneration => JsonConvert.DeserializeObject<ImageGenerationData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.VideoGeneration => JsonConvert.DeserializeObject<VideoGenerationData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.ClawAI => JsonConvert.DeserializeObject<ClawAIData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.ClawAIWorkflowStep => JsonConvert.DeserializeObject<ClawAIData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.ServiceDesk => JsonConvert.DeserializeObject<ServiceDeskData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+
                 _ => new List<Inputs>()
             };
-#pragma warning restore CS8600 // ½« null ×ÖÃæÁ¿»ò¿ÉÄÜÎª null µÄÖµ×ª»»Îª·Ç null ÀàĞÍ¡£
+#pragma warning restore CS8600 // å°† null å­—é¢é‡æˆ–å¯èƒ½ä¸º null çš„å€¼è½¬æ¢ä¸ºé null ç±»å‹ã€‚
 
 
-
-            //ÉÏ½ÚµãµÄÊä³ö£¬Æ¥Åäµ±Ç°½ÚµãµÄÊäÈë,SourceNode.type = NodeType.Agent,Ê±Ö»ĞèÒªÆ¥Åävarname
+            //ä¸ŠèŠ‚ç‚¹çš„è¾“å‡ºï¼ŒåŒ¹é…å½“å‰èŠ‚ç‚¹çš„è¾“å…¥,SourceNode.type = NodeType.Agent,æ—¶åªéœ€è¦åŒ¹é…varname
+            // å¦‚æœåŒ¹é…å¤±è´¥ï¼Œå°†å°è¯•ä»å†å²æ‰§è¡Œè®°å½•ä¸­è·å–å€¼
             var updatedInputsList = inputs.GroupJoin(
                 outputs,
-                input => SourceNode != null && SourceNode.type != NodeType.Agent ? input.sourceId.IsNullOrEmpty() ? input.varname : input.sourceId : input.varname ,
-                output => SourceNode != null && SourceNode.type != NodeType.Agent ? $"{SourceNode.id}_{output.varname}" : output.varname,
-                (input, matchingOutputs) => new Inputs
-                {
-                    sourceId = input.sourceId,
-                    varname = input.varname,
-                    value = matchingOutputs.FirstOrDefault()?.value ?? input.value, // Æ¥ÅäÔò¸üĞÂ value£¬·ñÔò±£ÁôÔ­Ê¼Öµ
-                    type = input.type,
-                    txt = input.txt
+                input => {
+                    var (baseSourceId, _) = ParseSourceId(input.sourceId.IsNullOrEmpty() ? input.varname : input.sourceId);
+                    return SourceNode != null //&& SourceNode.type != NodeType.Agent 
+                        ? baseSourceId : input.varname;
+                },
+                
+                output => {
+                    // ï¼ˆMergeNode è¾“å‡ºç‰¹æœ‰ï¼‰
+                    if (!string.IsNullOrEmpty(output.sourceId))
+                    {
+                        var (baseSourceId, _) = ParseSourceId(output.sourceId);
+                        return baseSourceId;
+                    }
+                    // æ ‡å‡†èŠ‚ç‚¹è¾“å‡º
+                    return SourceNode != null //&& SourceNode.type != NodeType.Agent
+                        ? $"{SourceNode.id}_{output.varname}" 
+                        : output.varname;
+                },
+                (input, matchingOutputs) => {
+                    var output = matchingOutputs.FirstOrDefault();
+                    var value = output?.value ?? input.value;
+                    var (_, jsonPath) = ParseSourceId(input.sourceId);
+                    if (jsonPath != null && output != null)
+                    {
+                        try
+                        {
+                            var jToken = JToken.Parse(value);
+                            var extracted = jToken.SelectToken(jsonPath);
+                            value = extracted?.ToString() ?? value;
+                        }
+                        catch
+                        {
+                            // å¦‚æœè§£æå¤±è´¥ï¼Œä¿ç•™åŸå€¼
+                        }
+                    }
+                    return new Inputs
+                    {
+                        sourceId = input.sourceId,
+                        varname = input.varname,
+                        value = value,
+                        type = input.type,
+                        txt = input.txt
+                    };
                 }
             ).ToList();
 
-            // Ìí¼ÓÎ´Æ¥ÅäµÄ outputs µ½ inputs ÁĞ±í
+            // å¤„ç†æœªåŒ¹é…çš„è¾“å…¥ï¼šå½“sourceIdä¸åœ¨å½“å‰outputsä¸­æ—¶ï¼Œä»SessionIDä¸‹çš„å†å²æ‰§è¡Œè®°å½•è·å–å€¼
+            var matchedSourceIds = new HashSet<string>(
+                updatedInputsList.Where(ui => !string.IsNullOrEmpty(ui.sourceId) && 
+                    inputs.Any(i => i.sourceId == ui.sourceId && i.value != ui.value))
+                .Select(ui => ui.sourceId)
+            );
+            var unmatchedInputs = inputs.Where(i => !string.IsNullOrEmpty(i.sourceId) && !matchedSourceIds.Contains(i.sourceId)).ToList();
+            if (unmatchedInputs.Any())
+            {
+                // æ”¶é›†éœ€è¦æŸ¥è¯¢çš„èŠ‚ç‚¹IDï¼Œä»è¿‡æ»¤åçš„baseSourceIdæå–
+                var nodeIDList = unmatchedInputs.Select(i => {
+                    var (baseSourceId, _) = ParseSourceId(i.sourceId);
+                    return baseSourceId.Split('_')[0];
+                }).Distinct().ToList();
+                try
+                {
+                    var workflowNodeExcutionRecords = !string.IsNullOrEmpty(ProcessesID)
+                        ? WorkflowNodeExecutionRecordInfoBussiness.GetListByNodeId(SessionID, nodeIDList, ProcessesID)
+                        : WorkflowNodeExecutionRecordInfoBussiness.GetListByNodeId(SessionID, nodeIDList);
+                    var outputsDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var record in workflowNodeExcutionRecords)
+                    {
+                        if (record.Outputs == null) continue;
+                        List<Output> recordOutputs = null;
+                        try
+                        {
+                            recordOutputs = JsonConvert.DeserializeObject<List<Output>>(record.Outputs.ToString());
+                        }
+                        catch
+                        {
+                            recordOutputs = null;
+                        }
+                        if (recordOutputs == null) continue;
+                        foreach (var output in recordOutputs)
+                        {
+                            if (string.IsNullOrEmpty(output?.sourceId)) continue;
+                            outputsDict[output.sourceId] = output.value ?? string.Empty;
+                        }
+                    }
+                    // æ›´æ–°unmatchedInputsçš„å€¼ï¼Œæ”¯æŒJSONPathæå–
+                    foreach (var input in unmatchedInputs)
+                    {
+                        var (baseSourceId, jsonPath) = ParseSourceId(input.sourceId);
+                        string rawValue = null;
+                        if (outputsDict.TryGetValue(input.sourceId, out var v))
+                        {
+                            rawValue = v;
+                        }
+                        else if (outputsDict.TryGetValue(baseSourceId, out var v2))
+                        {
+                            rawValue = v2;
+                        }
+                        if (rawValue != null)
+                        {
+                            if (jsonPath != null)
+                            {
+                                try
+                                {
+                                    var jToken = JToken.Parse(rawValue);
+                                    var extracted = jToken.SelectToken(jsonPath);
+                                    rawValue = extracted?.ToString() ?? rawValue;
+                                }
+                                catch
+                                {
+                                    // JSONPathè§£æå¤±è´¥ï¼Œä¿ç•™åŸå€¼
+                                }
+                            }
+                            // æ›´æ–°updatedInputsListä¸­çš„å€¼
+                            var updatedInput = updatedInputsList.FirstOrDefault(ui => ui.sourceId == input.sourceId);
+                            if (updatedInput != null)
+                            {
+                                updatedInput.value = rawValue;
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // å®¹é”™ï¼šè·å–å†å²è¾“å‡ºå¤±è´¥ï¼Œä¿ç•™åŸå€¼
+                }
+            }
+
+            // æ·»åŠ æœªåŒ¹é…çš„ outputs åˆ° inputs åˆ—è¡¨
             var matchedKeys = new HashSet<string>(
-                inputs.Select(input => input.sourceId.IsNullOrEmpty() ? input.varname : input.sourceId)
+                inputs.Select(input => {
+                    var (baseSourceId, _) = ParseSourceId(input.sourceId.IsNullOrEmpty() ? input.varname : input.sourceId);
+                    return baseSourceId;
+                })
             );
 
             var unmatchedOutputs = outputs.Where(output =>
-                !matchedKeys.Contains(SourceNode != null
-                    ? $"{SourceNode.id}_{output.varname}"
-                    : $"{output.varname}")
-            );
+            {
+                string matchKey = !string.IsNullOrEmpty(output.sourceId)
+                    ? ParseSourceId(output.sourceId).baseSourceId
+                    : (SourceNode != null ? $"{SourceNode.id}_{output.varname}" : $"{output.varname}");
+
+                return !matchedKeys.Contains(matchKey);
+            });
 
             updatedInputsList.AddRange(unmatchedOutputs.Select(output => new Inputs
             {
-                sourceId = SourceNode != null ? $"{SourceNode.id}_{output.varname}" : $"{output.varname}",
+                sourceId = !string.IsNullOrEmpty(output.sourceId) 
+                    ? output.sourceId 
+                    : (SourceNode != null ? $"{SourceNode.id}_{output.varname}" : $"{output.varname}"),
                 varname = output.varname,
                 value = output.value,
                 type = output.type,
@@ -215,6 +412,7 @@ namespace ZSN.AI.BLL
             }));
 
             nodeConfig.fromNodeType = SourceNode.type;
+            nodeConfig.fromNodeId = SourceNode.id;
 
             TaskInfo taskInfo = new TaskInfo();
             taskInfo.TaskID = TaskID;
@@ -229,6 +427,10 @@ namespace ZSN.AI.BLL
             taskInfo.UpdateTime = DateTime.Now;
             taskInfo.FromTaskID = FromTaskID;
             taskInfo.FromMainTaskID = FromMainTaskID;
+            taskInfo.WorkflowID = WorkflowID;
+            taskInfo.SessionID = SessionID;
+            taskInfo.ProcessesID = ProcessesID;
+            taskInfo.State = TaskState.Waiting;
 
             TaskInfoBussiness.Add(taskInfo);
 
@@ -240,6 +442,33 @@ namespace ZSN.AI.BLL
         public static bool updateTask(string taskID, TaskState state, Results results)
         {
             return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_Update(taskID, state, results);
+        }
+
+        /// <summary>
+        /// å°†ä»»åŠ¡çŠ¶æ€ä»Processingå›é€€åˆ°Waiting
+        /// ç”¨äºRediså…¥é˜Ÿå¤±è´¥æ—¶çš„æ¢å¤æœºåˆ¶
+        /// </summary>
+        public static void ResetTasksToWaiting(List<string> taskIds)
+        {
+            if (taskIds == null || taskIds.Count == 0) return;
+            
+            try
+            {
+                foreach (var taskId in taskIds)
+                {
+                    var task = GetModel(taskId);
+                    if (task != null && task.State == TaskState.Processing)
+                    {
+                        task.State = TaskState.Waiting;
+                        task.UpdateTime = DateTime.Now;
+                        Update(task);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
     }
 }

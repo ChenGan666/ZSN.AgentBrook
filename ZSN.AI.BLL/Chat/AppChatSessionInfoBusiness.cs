@@ -33,6 +33,14 @@ namespace ZSN.AI.BLL
 		{
 			return DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_Delete(chatSessionID);
 		}
+        public static bool Delete(string chatSessionID,string MemberID)
+        {
+            return DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_Delete(chatSessionID, MemberID);
+        }
+        public static bool CleanUp(string MemberID)
+        {
+            return DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_CleanUp(MemberID);
+        }
         /// <summary>
         /// 批量删除数据
         /// </summary>

@@ -7,12 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ClawAI\**" />
+    <EmbeddedResource Remove="ClawAI\**" />
+    <None Remove="ClawAI\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="App\" />
     <Folder Include="Member\" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MySql.Data" Version="8.0.33" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 
   <ItemGroup>

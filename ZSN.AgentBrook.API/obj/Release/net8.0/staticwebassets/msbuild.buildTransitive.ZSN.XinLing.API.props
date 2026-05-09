@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\ZSN.XinLing.API.props" />
-</Project>

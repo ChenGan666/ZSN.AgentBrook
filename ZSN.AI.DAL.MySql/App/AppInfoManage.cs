@@ -296,7 +296,7 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
 
                 if (row["SystemStatus"] != null )
                 {
-                    model.SystemStatus = int.Parse(row["SystemStatus"].ToString());
+                    model.SystemStatus = (ZSN.AI.Entity.AppStatus) int.Parse(row["SystemStatus"].ToString());
                 }
 				if (row["CreateTime"] != null )
                 {

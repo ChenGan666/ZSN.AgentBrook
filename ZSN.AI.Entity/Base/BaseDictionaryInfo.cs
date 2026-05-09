@@ -59,6 +59,10 @@ namespace ZSN.AI.Entity
         /// UpdateTime
         /// </summary>
 		public DateTime UpdateTime { get; set; } 
+
+        public int TagCount { get; set; }
+        public int KnowledgeBaseCount { get; set; }
+        public string Icon { get; set; } = string.Empty;
         #endregion
     }
     /// <summary>

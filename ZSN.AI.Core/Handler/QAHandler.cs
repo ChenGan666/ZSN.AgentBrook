@@ -16,6 +16,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using ZSN.AI.Core.Utils;
+using Microsoft.SemanticKernel.Text;
 
 namespace ZSN.AI.Core.Handler
 {
@@ -96,12 +97,12 @@ namespace ZSN.AI.Core.Handler
                                 string content = partitionContent.ToString();
 
                                 var kernel = _kernelService.GetKernelByAIModelID(int.Parse(StepName));
-#pragma warning disable KMEXP00 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
-                                var lines = TextChunker.SplitPlainTextLines(content, 299);
-#pragma warning restore KMEXP00 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
-#pragma warning disable KMEXP00 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
-                                var paragraphs = TextChunker.SplitPlainTextParagraphs(lines, 3000);
-#pragma warning restore KMEXP00 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
+#pragma warning disable SKEXP0050 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
+                                var lines = Microsoft.SemanticKernel.Text.TextChunker.SplitPlainTextLines(content, 299);
+#pragma warning restore SKEXP0050 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
+#pragma warning disable SKEXP0050 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
+                                var paragraphs = Microsoft.SemanticKernel.Text.TextChunker.SplitPlainTextParagraphs(lines, 3000);
+#pragma warning restore SKEXP0050 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
                                 KernelFunction jsonFun = kernel.Plugins.GetFunction("KMSPlugin", "QA");
 
                                 List<string> qaList = new List<string>();

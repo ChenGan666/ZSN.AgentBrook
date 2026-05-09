@@ -5,6 +5,7 @@ using System.Linq;
 using ZSN.AI.Entity;
 using ZSN.AI.DAL;
 using ZSN.Utils.Core.Extensions;
+using NPOI.SS.Formula.Functions;
 namespace ZSN.AI.BLL
 {
     public partial class AppInfoBussiness
@@ -21,17 +22,7 @@ namespace ZSN.AI.BLL
         public static string Add(AppInfo model)
 		{
             string Appid = DatabaseProvider.GetAppInfo(ConnectionName).AppInfo_Add(model);
-            if (!Appid.IsNullOrEmpty())
-            {
-                ApisettingsInfo apisettings = new ApisettingsInfo();
-                apisettings.AppID = Appid;
-                apisettings.MemberID = model.MemberID.IsNullOrEmpty() ? "" : model.MemberID;
-                apisettings.SecretKey = model.SecretKey;
-                apisettings.SettingName = model.Name;
-                apisettings.CreateTime = DateTime.Now;
-                apisettings.UpdateTime = DateTime.Now;
-                ApisettingsInfoBussiness.Add(apisettings);
-            }
+            
             return Appid;
 		}
 		/// <summary>
@@ -39,33 +30,8 @@ namespace ZSN.AI.BLL
         /// </summary>
 		public static bool Update(AppInfo model)
 		{
-            if (DatabaseProvider.GetAppInfo(ConnectionName).AppInfo_Update(model))
-            {
-                ApisettingsInfo apisettings = ApisettingsInfoBussiness.GetModelByAppID(model.AppID);
-                if (apisettings != null)
-                {
-                    apisettings.SecretKey = model.SecretKey;
-                    apisettings.UpdateTime = DateTime.Now;
-
-                    return ApisettingsInfoBussiness.Update(apisettings);
-                }
-                else
-                {
-                    apisettings = new ApisettingsInfo();
-                    apisettings.AppID = model.AppID;
-                    apisettings.MemberID = model.MemberID.IsNullOrEmpty()?"": model.MemberID;
-                    apisettings.SecretKey = model.SecretKey;
-                    apisettings.SettingName = model.Name;
-                    apisettings.CreateTime = DateTime.Now;
-                    apisettings.UpdateTime = DateTime.Now;
-                    return ApisettingsInfoBussiness.Add(apisettings) > 0;
-                }
-                
-            }
-            else
-            {
-                return false;
-            }
+            return DatabaseProvider.GetAppInfo(ConnectionName).AppInfo_Update(model);
+            
 			
 		}
         /// <summary>
@@ -90,6 +56,7 @@ namespace ZSN.AI.BLL
 		public static ZSN.AI.Entity.AppInfo GetModel(string appID)
 		{
             AppInfo _app = DatabaseProvider.GetAppInfo(ConnectionName).AppInfo_GetModel(appID);
+            
 
             WorkflowInfo _workflow = DatabaseProvider.GetWorkflowInfo(ConnectionName_WorkflowDb).WorkflowInfo_GetModelByMainID(appID,1);
             _app.WorkFlowID = _workflow?.WorkflowID;

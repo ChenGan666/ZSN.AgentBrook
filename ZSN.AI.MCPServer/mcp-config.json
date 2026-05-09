@@ -1,0 +1,211 @@
+{
+  "mcpServers": {
+    "zsn-knowbase-mcp": {
+      "name": "ZSN Knowbase MCP Server",
+      "description": "知识库管理系统的MCP服务器，提供文件转换、知识库管理等功能",
+      "transport": {
+        "type": "http",
+        "url": "http://localhost:5008/mcp"
+      },
+      "capabilities": {
+        "tools": true,
+        "prompts": false,
+        "resources": false
+      },
+      "metadata": {
+        "version": "1.0.0",
+        "author": "ZSN.AI",
+        "serverPort": 5008,
+        "httpsPort": 5009
+      }
+    }
+  },
+  "tools": {
+    "MCPTest": {
+      "name": "MCPTest",
+      "description": "测试MCP服务是否正常工作，并验证参数传递是否成功",
+      "endpoint": "/MCPTest",
+      "method": "GET",
+      "parameters": {
+        "message": {
+          "type": "string",
+          "description": "测试消息",
+          "required": false,
+          "default": "Hello MCP"
+        },
+        "number": {
+          "type": "integer",
+          "description": "测试数字",
+          "required": false,
+          "default": 100
+        },
+        "flag": {
+          "type": "boolean",
+          "description": "测试标志",
+          "required": false,
+          "default": true
+        }
+      }
+    },
+    "FileToMarkdown": {
+      "name": "FileToMarkdown",
+      "description": "将文件转换为Markdown格式，支持多种文档和媒体文件",
+      "endpoint": "/FileToMarkdown",
+      "method": "POST",
+      "contentType": "multipart/form-data",
+      "parameters": {
+        "file": {
+          "type": "file",
+          "description": "要转换的文件",
+          "required": true
+        },
+        "extractImages": {
+          "type": "boolean",
+          "description": "是否提取图片",
+          "required": false,
+          "default": true
+        },
+        "imageSaveMode": {
+          "type": "string",
+          "description": "图片保存模式: local(本地), base64, url",
+          "required": false,
+          "default": "local"
+        }
+      }
+    },
+    "FileToImage": {
+      "name": "FileToImage",
+      "description": "将文件转换为图片格式",
+      "endpoint": "/FileToImage",
+      "method": "POST",
+      "contentType": "multipart/form-data",
+      "parameters": {
+        "file": {
+          "type": "file",
+          "description": "要转换的文件",
+          "required": true
+        }
+      }
+    },
+    "ToMarkdownSync": {
+      "name": "ToMarkdownSync",
+      "description": "同步方法将文件转换为Markdown格式",
+      "endpoint": "/ToMarkdown/sync",
+      "method": "POST",
+      "contentType": "multipart/form-data",
+      "parameters": {
+        "file": {
+          "type": "file",
+          "description": "要转换的文件",
+          "required": true
+        }
+      }
+    },
+    "ToMarkdownAsync": {
+      "name": "ToMarkdownAsync",
+      "description": "异步方法将文件转换为Markdown格式",
+      "endpoint": "/ToMarkdown/async",
+      "method": "POST",
+      "contentType": "multipart/form-data",
+      "parameters": {
+        "file": {
+          "type": "file",
+          "description": "要转换的文件",
+          "required": true
+        },
+        "callbackUrl": {
+          "type": "string",
+          "description": "转换完成后的回调URL",
+          "required": false
+        }
+      }
+    },
+    "KnowledgeBase": {
+      "name": "KnowledgeBase",
+      "description": "将文件、URL、文本或QA格式的Excel内容保存到知识库管理系统",
+      "endpoint": "/KnowledgeBase",
+      "method": "POST",
+      "parameters": {
+        "content": {
+          "type": "string",
+          "description": "要保存的内容",
+          "required": true
+        },
+        "contentType": {
+          "type": "string",
+          "description": "内容类型: file, url, text, qa-excel",
+          "required": true
+        },
+        "knowledgeBaseId": {
+          "type": "string",
+          "description": "知识库ID",
+          "required": true
+        },
+        "metadata": {
+          "type": "object",
+          "description": "附加元数据",
+          "required": false
+        }
+      }
+    }
+  },
+  "examples": {
+    "testConnection": {
+      "tool": "MCPTest",
+      "description": "测试MCP服务器连接",
+      "request": {
+        "message": "测试连接",
+        "number": 123,
+        "flag": true
+      }
+    },
+    "convertWordToMarkdown": {
+      "tool": "FileToMarkdown",
+      "description": "将Word文档转换为Markdown",
+      "request": {
+        "file": "document.docx",
+        "extractImages": true,
+        "imageSaveMode": "local"
+      }
+    },
+    "saveTextToKnowledgeBase": {
+      "tool": "KnowledgeBase",
+      "description": "保存文本到知识库",
+      "request": {
+        "content": "这是要保存的知识内容",
+        "contentType": "text",
+        "knowledgeBaseId": "kb-12345"
+      }
+    }
+  },
+  "configuration": {
+    "serverUrl": "http://localhost:5008",
+    "mcpEndpoint": "/mcp",
+    "timeout": 300000,
+    "retryAttempts": 3,
+    "retryDelay": 1000,
+    "logging": {
+      "enabled": true,
+      "level": "info"
+    }
+  },
+  "dependencies": {
+    "required": [
+      "Pandoc 3.8+",
+      "LibreOffice 25.8+",
+      "Ghostscript 10.06+"
+    ],
+    "optional": [
+      "PostgreSQL (用于知识库存储)",
+      "MySQL (用于任务管理)"
+    ]
+  },
+  "notes": [
+    "此MCP服务器使用HTTP传输协议",
+    "默认监听端口: 5008 (HTTP), 5009 (HTTPS)",
+    "支持CORS跨域访问",
+    "文件转换依赖Pandoc、LibreOffice和Ghostscript",
+    "临时文件存储在系统临时目录下的ZSN.Knowbase.FileConversions文件夹",
+    "媒体文件默认保存在FileConversions/Media目录"
+  ]
+}

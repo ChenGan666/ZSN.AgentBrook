@@ -47,6 +47,10 @@ namespace ZSN.AI.BLL
 		{
 			return DatabaseProvider.GetLargeModelInfo(ConnectionName).LargeModelInfo_GetModel(largeModelID);
 		}
+        public static ZSN.AI.Entity.LargeModelInfo GetDefaultModel()
+        {
+            return DatabaseProvider.GetLargeModelInfo(ConnectionName).LargeModelInfo_GetDefaultModel();
+        }
         /// <summary>
         /// 获得数据列表
         /// </summary>

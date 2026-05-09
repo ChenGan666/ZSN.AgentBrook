@@ -55,6 +55,10 @@ namespace ZSN.AI.BLL
         {
             return DatabaseProvider.GetWorkflowEdgeInfo(ConnectionName).WorkflowEdgeInfo_DeleteAbsentList(edgeID, WorkflowID);
         }
+        public static bool DeleteByWorkflowID(string edgeID, string WorkflowID)
+        {
+            return DatabaseProvider.GetWorkflowEdgeInfo(ConnectionName).WorkflowEdgeInfo_DeleteByWorkflowID( WorkflowID);
+        }
         /// <summary>
         /// 得到一个对象实体
         /// </summary>
@@ -62,9 +66,19 @@ namespace ZSN.AI.BLL
 		{
 			return DatabaseProvider.GetWorkflowEdgeInfo(ConnectionName).WorkflowEdgeInfo_GetModel(edgeID);
 		}
+        /// <summary>
+        /// 获取来源是NodeId的边列表
+        /// </summary>
+        /// <param name="NodeId"></param>
+        /// <returns></returns>
         public static List<WorkflowEdgeInfo>  GetListBySourceNodeId(string NodeId) {
             return WorkflowEdgeInfoDataSet_ToList(DatabaseProvider.GetWorkflowEdgeInfo(ConnectionName).WorkflowEdgeInfo_GetListBySourceNodeId(NodeId).Tables[0]);
         }
+        /// <summary>
+        /// 获取去目标是NodeId的边列表
+        /// </summary>
+        /// <param name="NodeId"></param>
+        /// <returns></returns>
         public static List<WorkflowEdgeInfo> GetListByTargetNodeId(string NodeId) {
             return WorkflowEdgeInfoDataSet_ToList(DatabaseProvider.GetWorkflowEdgeInfo(ConnectionName).WorkflowEdgeInfo_GetListByTargetNodeId(NodeId).Tables[0]);
         }

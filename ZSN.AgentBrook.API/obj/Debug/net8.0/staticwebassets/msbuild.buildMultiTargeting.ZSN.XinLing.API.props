@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\ZSN.XinLing.API.props" />
-</Project>

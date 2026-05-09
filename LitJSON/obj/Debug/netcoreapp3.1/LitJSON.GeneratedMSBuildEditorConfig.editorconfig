@@ -1,6 +1,6 @@
 is_global = true
 build_property.RootNamespace = LitJSON
-build_property.ProjectDir = W:\AI\ZSN.AI.Community\LitJSON\
+build_property.ProjectDir = /Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.CsWinRTUseWindowsUIXamlProjections = false

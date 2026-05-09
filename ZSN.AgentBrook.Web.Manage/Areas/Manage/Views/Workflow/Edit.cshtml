@@ -1,8 +1,11 @@
 ﻿@{
+    Layout = "~/Views/Shared/_LayoutWithoutLayui.cshtml";
+
     var Workflow = ViewBag.Workflow as WorkflowInfo;
     var MainName = ViewBag.MainName as string;
     var MainID = ViewBag.MainID as string;
     var MainType = ViewBag.MainType as int?;
+    var APIAppID = ViewBag.APIAppID as string;
 
     var PreviewHost = ViewBag.PreviewHost as string;
 }
@@ -14,78 +17,329 @@
             width: 120px;
         }
 
-        .no_padding{padding:0;}
+        .no_padding {
+            padding: 0;
+        }
 
         #container {
             width: 100%;
             min-height: calc(100vh);
-            
         }
 
-            #container .workflow {
-                width: 100%;
-                min-height: calc(100vh);
-                border:1px solid #f0f0f0;
-            }
+        #container .workflow {
+                display: flex;
+                flex-direction: column;
+                height: calc(100vh);
+                overflow: hidden;
+        }
+
+       #workflow-app .workflow .basic-flow {
+            flex: 1;
+            width: 100%;
+        }
+        /* 只在本页覆盖 vue-flow 的 position */
+        #workflow-app .vue-flow {
+            /*position: static !important;*/
+        }
+        /* 只在本页覆盖 node-runner-log 的定位，让它跟 workflow 区域走 */
+        #workflow-app .node-runner-log {
+            /* position: absolute !important; */
+        }
     </style>
+    <link rel="stylesheet" crossorigin href="/chatbox/assets/index.css">
+    <link rel="stylesheet" href="/workflow/assets/index.css" />
 }
 
 <div class="layui-row">
     <div class="layui-card">
         <div class="layui-card-body no_padding">
-            <form class="layui-form">
                 <input type="hidden" name="WorkFlowID" value="@Workflow.WorkflowID" />
                 <input type="hidden" name="MainName" value="@MainName" />
                 <input type="hidden" name="MainID" value="@MainID" />
                 <input type="hidden" name="MainType" value="@MainType" />
                 <div class="layui-card-body no_padding">
                     <div id="container">
-                        <iframe class="workflow" src="/workflow/index.html?WorkFlowID=@Workflow.WorkflowID&MainID=@MainID&MainType=@MainType"></iframe>
+                        <div id="workflow-app" class="workflow"></div>
                     </div>
                 </div>
                 
-            </form>
         </div>
     </div>
 </div>
+<!-- ChatBox 应用容器 -->
+<div id="chatbox-app"></div>
 
 @section Js
 {
     <script>
-        layui.use(function () {
-            var form = layui.form,
-                layer = layui.layer,
-                xmSelect = layui.xmSelect;
-            form.render();
+        // Workflow 配置，供 App.vue 通过 window.WorkFlowConfig.config 使用
+        window.WorkFlowConfig = {
+            config: {
+                APIAppID:'@APIAppID',
+                WorkFlowID: '@Workflow.WorkflowID',
+                MainID: '@MainID',
+                MainType: '@MainType',
+                baseURL: ''
+            },
+            onGetBaseConfig(info) {
+                if (info.success) {
+                    console.log('获取基础配置成功', info.data, info.response);
+                } else {
+                    console.error('获取基础配置失败', info.error);
+                }
+            },
+            onFetchTesterConfig(info) {
+                if (info && info.success && info.data) {
+                    var d = info.data || {};
+                    window.ChatBoxConfig = window.ChatBoxConfig || {};
+                    window.ChatBoxConfig.api = window.ChatBoxConfig.api || {};
+                    if (d.API) window.ChatBoxConfig.api.baseURL = d.API;
+                    window.ChatBoxConfig.api.apiAppID = window.WorkFlowConfig.config.APIAppID;
+                    if (d.AppID) window.ChatBoxConfig.api.appID = d.AppID;
+                    if (d.SecretKey) window.ChatBoxConfig.api.apiSecretKey = d.SecretKey;
+                    if (d.MemberID) window.ChatBoxConfig.api.memberId = d.MemberID;
+                    if (d.AccessToken) window.ChatBoxConfig.api.accessToken = d.AccessToken;
+                    if (d.MemberToken) window.ChatBoxConfig.api.memberToken = d.MemberToken;
+                    if (d.RefreshToken) window.ChatBoxConfig.api.refreshToken = d.RefreshToken;
+                    if (d.ExpirationDate) window.ChatBoxConfig.api.expirationDate = d.ExpirationDate;
+                    if (d.WorkflowID) window.ChatBoxConfig.api.workflowID = d.WorkflowID;
+                    try { window.dispatchEvent(new CustomEvent('chatbox-config-updated')); } catch (e) {}
+                    console.log('获取 TesterConfig 成功', info.data, info.response);
+                } else {
+                    console.warn('获取 TesterConfig 失败或返回异常', (info && (info.response || info.error)) || info);
+                }
+            },
+            onGetWorkFlow(info){
+                if (info && info.success && info.data) {
+                    var d = info.data || {};
+                    window.ChatBoxConfig = window.ChatBoxConfig || {};
+                    window.ChatBoxConfig.info = window.ChatBoxConfig.info || {};
+                    window.ChatBoxConfig.window = window.ChatBoxConfig.window ||{};
 
-            $('.save').click(function () {
+                    window.ChatBoxConfig.window.defaultMinimized = true;
+                    if(d.Info) window.ChatBoxConfig.info.title = d.Info.WorkflowName;
+                    if(d.Info) window.ChatBoxConfig.info.subtitle = d.Info.Description;
 
-            });
+                    try { window.dispatchEvent(new CustomEvent('chatbox-config-updated')); } catch (e) {}
+                    console.log('获取 WorkFlow 成功', info.data, info.response);
+                }else{
+                    console.warn('获取 WorkFlow 失败或返回异常', (info && (info.response || info.error)) || info);
+                }
+            },
+            onNodeRunner(info) {
+              console.log("调试开始", info);
+              // 在此触发宿主系统的逻辑，例如记录日志或联动其他模块
+              try {
+                if (!window.ChatBoxDebugger || typeof window.ChatBoxDebugger.reloadNodeExecution !== 'function') {
+                  console.warn('ChatBoxDebugger.reloadNodeExecution 未就绪，请确认 ChatBox 已加载');
+                  return;
+                }
 
-            //提交
-            form.on('submit(save)', function (obj) {
-                layer.load(0);
+               var sessionId =
+                  (info && (info.sessionID || info.SessionID)) ||
+                  (info && info.data && (info.data.sessionID || info.data.SessionID)) ||
+                  '';
 
-                $.ajax({
-                    url: '@Url.Action("Save")',
-                    type: 'POST',
-                    data: obj.field,
-                    success: function (rst) {
-                        layer.closeAll();
-                        if (rst) {
-                            layer.msg(rst.ErrorDesc, { icon: 1 });
-                            if (rst.Status) {
-                                if (parent) {
-                                    parent.location.reload();
-                                } else {
-                                    location.reload();
-                                }
-                            }
-                        }
-                    }
-                });
-                return false;
-            });
-        });
+               var processesId =
+                  (info && (info.processesID || info.ProcessesID)) ||
+                  (info && info.data && (info.data.processesID || info.data.ProcessesID)) ||
+                  '';
+
+               var workflowId =
+                  (info && (info.workflowId || info.WorkflowID)) ||
+                  (info && info.data && (info.data.workflowId || info.data.WorkflowID)) ||
+                  '';
+
+                try {
+                  window.ChatBoxConfig = window.ChatBoxConfig || {};
+                  window.ChatBoxConfig.api = window.ChatBoxConfig.api || {};
+                  if (sessionId) window.ChatBoxConfig.api.sessionID = sessionId;
+                  if (processesId) window.ChatBoxConfig.api.processesID = processesId;
+
+                  if (
+                    (!window.ChatBoxConfig.api.workflowID || window.ChatBoxConfig.api.workflowID === '') &&
+                    window.WorkFlowConfig && window.WorkFlowConfig.config && window.WorkFlowConfig.config.WorkFlowID
+                  ) {
+                    window.ChatBoxConfig.api.workflowID = window.WorkFlowConfig.config.WorkFlowID;
+                  }
+
+                  try { window.dispatchEvent(new CustomEvent('chatbox-config-updated')); } catch (e) {}
+                } catch (syncErr) {
+                  console.warn('同步 ChatBoxConfig 失败：', syncErr);
+                }
+
+                if (sessionId && processesId) {
+                  window.ChatBoxDebugger.reloadNodeExecution({
+                    sessionId: sessionId,
+                    processesId: processesId,
+                    workflowId: workflowId
+                  });
+                } else {
+                  window.ChatBoxDebugger.reloadNodeExecution({});
+                }
+              } catch (e) {
+                console.error('onNodeRunner 处理失败:', e);
+              }
+            },
+            onNodeRunnerStop(info) {
+              console.log("调试停止", info);
+              // 在此处理停止事件，例如清理状态、通知其他系统等
+            }
+
+        };
     </script>
+
+    <script>
+        window.ChatBoxConfig = {
+            api: {
+                // API 基础地址（对应 VITE_API_BASE_URL）
+                baseURL: '',
+                // API AppID（对应 VITE_API_APP_ID）
+                apiAppID: '',
+                // API SecretKey（对应 VITE_API_SECRET_KEY）
+                apiSecretKey: '',
+                // 应用 AppID（对应 VITE_APP_ID）
+                appID: '',
+                // 默认会员手机号（对应 VITE_MEMBER_PHONE）
+                memberPhone: '',
+                // 默认会员密码（对应 VITE_MEMBER_PWD）
+                memberPwd: '',
+                // 外部注入的会员 ID（可选）
+                memberId: '',
+                // 外部注入的 AccessToken（可选）
+                accessToken: '',
+                // 外部注入的 MemberToken（可选）
+                memberToken: '',
+                // 外部注入的 RefreshToken（可选）
+                refreshToken: '',
+                // 外部注入的过期时间字符串，例如 "2025-11-16 17:42:25"（可选）
+                expirationDate: '',
+                // 外部注入的默认会话/进程/工作流 ID（可选）
+                sessionID: '',
+                processesID: '',
+                workflowID: ''
+            },
+            window:{
+                defaultWidth:420,
+                defaultMinimized:true,
+                displayMode:'float',
+                sidePosition:'right',
+                sideModeBehavior:'push'
+            },
+            floatingButton: {
+              // 是否启用浮动按钮
+              enabled: true,
+              // 位置
+              position: {
+                right: 20,
+                bottom: 50
+              },
+              // 大小（像素）
+              size: 48
+            }
+        };
+    </script>
+    <script>
+        // 宿主页面：接收 ChatBox 侧边布局变化
+
+        window.ChatBoxHost = {
+            /**
+             * ChatBox 用户输入回调
+             **/
+            onChatBoxRun:function (SessionID, ProcessesID) {
+                console.log('[ChatBoxConfig.onChatBoxRun]', {
+                    SessionID: SessionID,
+                    ProcessesID: ProcessesID
+                });
+                // 联动 Workflow
+                if (window.WorkFlowConfig && typeof window.WorkFlowConfig.onChatBoxRun === 'function') {
+                    try {
+                        window.WorkFlowConfig.onChatBoxRun(SessionID, ProcessesID);
+                    } catch (e) {
+                        console.warn('WorkFlowConfig.onChatBoxRun 调用异常:', e);
+                    }
+                }
+            },
+            /**
+             * ChatBox 侧边布局变化回调
+             */
+            onSideLayoutChange: function (info) {
+                console.log('[ChatBoxHost] side layout change:', info);  // ← 临时日志
+
+                if (!info || info.mode !== 'side') return;
+
+                var container = document.getElementById('container');
+                if (!container) return;
+
+                // 计算容器目标宽度
+                var targetWidth;
+                if (info.minimized) {
+                    // 最小化：恢复全宽
+                    targetWidth = '100%';
+                } else {
+                    // 展开：为 ChatBox 预留侧边宽度
+                    var w = info.width || 400;
+                    targetWidth = 'calc(100% - ' + w + 'px)';
+                }
+
+                // 1）container 宽度
+                container.style.width = targetWidth;
+                /*
+                // 2）workflow-app 宽度（跟 container 一致）
+                var workflowApp = document.getElementById('workflow-app');
+                if (workflowApp) {
+                    workflowApp.style.width = '100%'; // 填满 container
+                }
+
+                // 3）vue-flow 画布宽度（用容器的实际像素）
+                var vueFlowEl = document.querySelector('#workflow-app .vue-flow');
+                if (vueFlowEl) {
+                    var containerPxWidth = container.clientWidth || container.offsetWidth;
+                    if (containerPxWidth > 0) {
+                        vueFlowEl.style.width = containerPxWidth + 'px';
+                    }
+                }
+
+                // 4）node-runner-log 宽度（跟 vue-flow 一致）
+                var runnerLog = document.querySelector('#workflow-app .node-runner-log');
+                if (runnerLog) {
+                    var containerPxWidth2 = container.clientWidth || container.offsetWidth;
+                    if (containerPxWidth2 > 0) {
+                        runnerLog.style.width = containerPxWidth2 + 'px';
+                    }
+                }
+                */
+                // 通知内部组件容器尺寸已变化
+                window.dispatchEvent(new Event('resize'));
+
+                // 如果 Workflow 暴露了全局适配接口，则显式触发一次 fitView
+                if (window.WorkflowHost && typeof window.WorkflowHost.fitView === 'function') {
+                    setTimeout(function () {
+                        window.WorkflowHost.fitView();
+                    }, 50);
+                }
+            }
+        };
+    </script>
+
+    <script type="module" crossorigin src="/chatbox/assets/index.js"></script>
+    <script type="module" src="/workflow/assets/index.js"></script>
+
+    <script>
+        // 宿主页面显式挂载 ChatBox（稳定时机）
+        if (window.mountChatBox) {
+            window.mountChatBox('#chatbox-app');
+        }
+
+        // 宿主页面显式挂载 Workflow
+        (function waitForWorkflow() {
+        if (window.mountWorkflow) {
+            window.mountWorkflow('#workflow-app');
+        } else {
+            setTimeout(waitForWorkflow, 50);
+        }
+    })();
+    </script>
+
+    
 }

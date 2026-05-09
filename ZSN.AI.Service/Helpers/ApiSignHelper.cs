@@ -18,14 +18,23 @@ namespace ZSN.AI.Service.Helpers
             //var dicKeyList = dic.OrderBy(k => k.Key).Select(k => k.Key).ToList();
             var dicKeyList = dic.OrderBy(k => k.Key.ToLower()).Select(k => k.Key).ToList();
             var tempStr = "";
+            var sb = new StringBuilder();
+
             foreach (string key in dicKeyList)
             {
-                // 将布尔类型值转换为小写字符串 "true" 或 "false"
-                tempStr += key.Trim() + (dic.ContainsKey(key) ? (dic[key] != null
-                    ? (dic[key] is bool ? dic[key].ToString().ToLower() : dic[key].ToString())
-                    : "")
-                : "").Trim();
+                string trimmedKey = key.Trim();
+                sb.Append(trimmedKey);
+
+                if (dic.TryGetValue(key, out var val) && val != null)
+                {
+                    if (val is bool b)
+                        sb.Append(b.ToString().ToLower());
+                    else
+                        sb.Append(val.ToString());
+                }
             }
+
+            tempStr = sb.ToString().Trim();
             var resultStr2 = tempStr + "AppKEY" + api_secret;
 
             return EncryptHelper.MD5Encrypt(resultStr2).ToUpper();

@@ -48,7 +48,15 @@ namespace ZSN.Utils.Core.Helpers
                 {
                     if ((_connMultiplexer == null || !_connMultiplexer.IsConnected))
                     {
-                        _connMultiplexer = ConnectionMultiplexer.Connect(ConnectionString);
+                        var options = ConfigurationOptions.Parse(ConnectionString);
+options.AbortOnConnectFail = false;
+options.ConnectRetry = 3;
+options.ConnectTimeout = 10000;
+options.SyncTimeout = 15000;
+options.AsyncTimeout = 15000;
+options.KeepAlive = 30;
+options.ReconnectRetryPolicy = new ExponentialRetry(5000);
+_connMultiplexer = ConnectionMultiplexer.Connect(options);
                     }
                 }
             }
@@ -79,7 +87,15 @@ namespace ZSN.Utils.Core.Helpers
             {
                 try
                 {
-                    _connMultiplexer = ConnectionMultiplexer.Connect(ConnectionString);
+                    var options = ConfigurationOptions.Parse(ConnectionString);
+options.AbortOnConnectFail = false;
+options.ConnectRetry = 3;
+options.ConnectTimeout = 10000;
+options.SyncTimeout = 15000;
+options.AsyncTimeout = 15000;
+options.KeepAlive = 30;
+options.ReconnectRetryPolicy = new ExponentialRetry(5000);
+_connMultiplexer = ConnectionMultiplexer.Connect(options);
                     RegisterEvent();
                     DefaultKey = ConfigHelper.GetString("Redis.DefaultKey");
                 }

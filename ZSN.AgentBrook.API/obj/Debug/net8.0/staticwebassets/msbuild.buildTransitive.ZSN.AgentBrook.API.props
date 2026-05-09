@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\ZSN.AgentBrook.API.props" />
-</Project>

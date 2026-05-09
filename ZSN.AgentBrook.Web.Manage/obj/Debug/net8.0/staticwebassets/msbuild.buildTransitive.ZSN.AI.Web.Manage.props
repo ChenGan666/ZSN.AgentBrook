@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\ZSN.AI.Web.Manage.props" />
-</Project>

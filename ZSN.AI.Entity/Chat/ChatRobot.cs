@@ -32,7 +32,10 @@ namespace ZSN.AI.Entity.Chat
         public string AppID { get; set; }
         public string SessionID { get; set; }
         public string ProcessesID {  get; set; }
+        public string TaskID { get; set; }
         public string Content {  get; set; }
+        public string Role { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.Now;
 
     }
 }

@@ -42,7 +42,7 @@ namespace ZSN.AI.Entity
         public int VectorModelID { get; set; }
         public string VectorModelName { get; set; } = string.Empty;
         /// <summary>
-        /// ParagraphSlice
+        /// ParagraphSlice,分块长度
         /// </summary>
         public int ParagraphSlice { get; set; } = 1000;
         /// <summary>
@@ -50,13 +50,13 @@ namespace ZSN.AI.Entity
         /// </summary>
         public int LineSliceCount { get; set; } = 1000;
         /// <summary>
-        /// OverlapSection
+        /// OverlapSection,适合需要上下文连续性的场景,0=不重叠
         /// </summary>
         public int OverlapSection { get; set; } = 20;
         /// <summary>
         /// SystemStatus
         /// </summary>
-        public int SystemStatus { get; set; } = 0;
+        public KnowledgeBaseStatus SystemStatus { get; set; } = KnowledgeBaseStatus.UnderReview;
         /// <summary>
         /// MemberID
         /// </summary>
@@ -74,5 +74,12 @@ namespace ZSN.AI.Entity
         /// </summary>
         public DateTime LastUpdateTime { get; set; } = DateTime.Now;
         #endregion
+    }
+
+    public enum KnowledgeBaseStatus
+    {
+        Disabled = -1,
+        UnderReview = 0,
+        Normal = 1,
     }
 }

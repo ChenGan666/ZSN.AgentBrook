@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using ZSN.AI.DAL;
 using ZSN.AI.Entity;
+using ZSN.Utils.Core.Extensions;
 namespace ZSN.AI.BLL
 {
     public partial class KnowledgeBaseFileChunkInfoBussiness
@@ -19,9 +20,21 @@ namespace ZSN.AI.BLL
         /// </summary>
 		public static bool Delete(string chunkID, string KnowledgeBaseID)
 		{
+            string[] chunkIDArr = (chunkID ?? string.Empty).Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var raw in chunkIDArr)
+            {
+                var id = raw.Trim().Trim('\'');
+                if (id.IsNullOrEmpty() == false)
+                {
+                    if (!DatabaseProvider.GetKnowledgeBaseFileChunkInfo(ConnectionName).KnowledgeBaseFileChunkInfo_Delete(id, KnowledgeBaseID))
+                    {
+                        break;
+                    }
+                }
+            }
+            return true;
 
-			return DatabaseProvider.GetKnowledgeBaseFileChunkInfo(ConnectionName).KnowledgeBaseFileChunkInfo_Delete(chunkID, KnowledgeBaseID);
-		}
+        }
 
         /// <summary>
         /// 分页获取数据列表

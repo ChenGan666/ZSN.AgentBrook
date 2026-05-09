@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -35,6 +35,12 @@ namespace ZSN.Utils.Core.Helpers
             try
             {
                 System.IO.Stream s = context.Request.GetRequestMemoryStream();
+                // 启用 EnableBuffering 后需要重置流位置，以便多次读取
+                if (s.CanSeek)
+                {
+                    s.Position = 0;
+                }
+                
                 int count = 0;
                 byte[] buffer = new byte[1024];
                 StringBuilder builder = new StringBuilder();
@@ -42,9 +48,18 @@ namespace ZSN.Utils.Core.Helpers
                 {
                     builder.Append(Encoding.UTF8.GetString(buffer, 0, count));
                 }
-                s.Flush();
-                s.Close();
-                s.Dispose();
+                
+                // 读取完成后重置流位置，允许后续再次读取（例如 [FromBody] 参数绑定）
+                if (s.CanSeek)
+                {
+                    s.Position = 0;
+                }
+                
+                // 不要关闭和释放流，因为后续还需要使用
+                // s.Flush();
+                // s.Close();
+                // s.Dispose();
+                
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -52,7 +67,13 @@ namespace ZSN.Utils.Core.Helpers
                 throw ex; 
             }
         }
-
+        /// <summary>
+        /// 获取 QueryString 参数
+        /// </summary>
+        public static string? GetQuery(string key)
+        {
+            return ContextAccessor?.HttpContext?.Request?.Query[key].ToString();
+        }
         public static bool IsLocalIP()
         {
             var ip = Current?.GetClientUserIp() ?? "127.0.0.1";

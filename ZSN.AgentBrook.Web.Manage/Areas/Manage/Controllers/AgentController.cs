@@ -28,7 +28,7 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
         public JsonMsg<string> Status(string mid, bool status)
         {
             var App = AgentInfoBussiness.GetModel(mid);
-            App.SystemStatus = status ? 0 : 1;
+            App.SystemStatus = status ? AgentStatus.Normal : AgentStatus.Disable;
 
             AgentInfoBussiness.Update(App);
             return JsonMsg<string>.OK("更新成功");
@@ -49,6 +49,7 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
             //ViewBag.KnowledgeBases = KnowledgeBaseInfoBussiness.GetList(" SystemStatus = 0 ");
             return View();
         }
+
         [HttpPost]
         public JsonMsg<string> Save(AgentInfo Agent, string KnowledgeBases)
         {

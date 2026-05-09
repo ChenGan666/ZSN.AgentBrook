@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -44,6 +45,18 @@ namespace ZSN.AI.Entity
         /// LogOrder
         /// </summary>
         public int LogOrder { get; set; }
+
+        public GptMsg ContentToGptMsg
+        {
+            get
+            {
+                if (Content != null)
+                {
+                    return JsonConvert.DeserializeObject<GptMsg>(Content.ToString());
+                }
+                return null;
+            }
+        }
         #endregion
     }
     public partial class ChatLog

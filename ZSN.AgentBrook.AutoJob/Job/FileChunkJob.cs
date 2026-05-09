@@ -26,7 +26,6 @@ namespace ZSN.AgentBrook.AutoJob
         }
         public async Task<int> Auto()
         {
-            Console.WriteLine("ZSN.AI.AutoJob.Job![JobEvent_FileChunkJob]");
             int num = 0;
             try
             {
@@ -65,7 +64,7 @@ namespace ZSN.AgentBrook.AutoJob
                     
                     ImportKMSTaskReq importKMSTask = fileChunkConfig.ImportKMSTask;
 
-                    _importKMSService.ImportKMSTask(importKMSTask);
+                    await _importKMSService.ImportKMSTask(importKMSTask);
 
                     KnowledgeBaseFileInfoBussiness.Update(importKMSTask.KnowledgeBaseFile);
 
@@ -77,6 +76,7 @@ namespace ZSN.AgentBrook.AutoJob
             {
                 task.Results = new Results() { Data = ex};
                 task.State = TaskState.Failure;
+                DefaultLogService.AddOperationLog(ErrorId, ex.Message);
             }
             task.UpdateTime = DateTime.Now;
             TaskInfoBussiness.Update(task);

@@ -11,6 +11,12 @@ using Microsoft.AspNetCore.DataProtection;
 using System.IO;
 using Microsoft.AspNetCore.Rewrite;
 using System;
+using ZSN.AI.Service.Helpers;
+using ZSN.AI.Core.Common.DependencyInjection;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+using ZSN.AI.Core.Utils;
+using ZSN.AI.Core.Service;
 
 namespace ZSN.AgentBrook.API
 {
@@ -26,46 +32,90 @@ namespace ZSN.AgentBrook.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // æ·»åŠ CORSæœåŠ¡
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    });
+            });
+
             System.DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss", System.Globalization.DateTimeFormatInfo.InvariantInfo);
             services.AddDistributedMemoryCache();
             services.AddSession(options =>
             {
-                options.Cookie.Name = "ZSNAppSession"; // SessionµÄCookieÃû³Æ
-                options.IdleTimeout = TimeSpan.FromSeconds(3600); // Session¹ıÆÚÊ±¼ä
-                options.Cookie.HttpOnly = true; // Ö»Í¨¹ıHTTP·ÃÎÊSession Cookie
+                options.Cookie.Name = "ZSNAppSession"; // Sessionçš„Cookieåç§°
+                options.IdleTimeout = TimeSpan.FromSeconds(3600); // Sessionè¿‡æœŸæ—¶é—´
+                options.Cookie.HttpOnly = true; // åªé€šè¿‡HTTPè®¿é—®Session Cookie
             });
             //services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
 
             services.AddRazorPages().AddRazorRuntimeCompilation();
             services.AddControllersWithViews();
+
+            services.AddServicesFromAssemblies("ZSN.AI.Core");
+            services.AddServicesFromAssemblies("ZSN.AI.Plugins");
+
+            // æ³¨å†Œæ“ä½œæ—¥å¿—æœåŠ¡
+            services.AddScoped<ZSN.AI.BLL.IOperationLogService, ZSN.AI.Service.WebHelpers.OperationLogService>();
+
+            // æ³¨å†Œ Claw AI æœåŠ¡
+            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.ITaskPlanningService, ZSN.AI.Node.Claw.Services.TaskPlanningService>();
+            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IMemoryService, ZSN.AI.Node.Claw.Services.MemoryService>();
+            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IReflectionService, ZSN.AI.Node.Claw.Services.ReflectionService>();
+            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IAgentOrchestrationService, ZSN.AI.Node.Claw.Services.AgentOrchestrationService>();
+            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IPersonalityService, ZSN.AI.Node.Claw.Services.PersonalityService>();
+            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IResultParserService, ZSN.AI.Node.Claw.Services.ResultParserService>();
+            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IKnowledgeExtractionService, ZSN.AI.Node.Claw.Services.KnowledgeExtractionService>();
+            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IMasterControlService, ZSN.AI.Node.Claw.Services.MasterControlService>();
+
+            // ServiceDesk æœåŠ¡æ³¨å†Œ
+            services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IRequestClassifier, ZSN.AI.Node.ServiceDesk.Services.RequestClassifier>();
+            services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IKnowledgeRetriever, ZSN.AI.Node.ServiceDesk.Services.KnowledgeRetriever>();
+            services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IResponseGenerator, ZSN.AI.Node.ServiceDesk.Services.ResponseGenerator>();
+            services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.ISessionStateManager, ZSN.AI.Node.ServiceDesk.Services.SessionStateManager>();
+            services.AddScoped<ZSN.AI.Node.ExecutionServiceDesk>();
+
+            services.AddSingleton(sp => new FunctionService(sp, [typeof(ZSN.AI.Plugins.BasePlugin).Assembly]));
+            services.AddSingleton<TaskManager>();
+
             services.AddSignalR();
-            //×¢²áSwagger·şÎñ
+            //æ³¨å†ŒSwaggeræœåŠ¡
             services.ConfigureSwaggerUp();
             services.AddControllers().ConfigureApiBehaviorOptions(options =>
             {
-                options.SuppressConsumesConstraintForFormFileParameters = true;
+                options.SuppressConsumesConstraintForFormFileParameters = false;
                 options.SuppressInferBindingSourcesForParameters = true;
                 options.SuppressModelStateInvalidFilter = true;
                 options.SuppressMapClientErrors = true;
                 //options.ClientErrorMapping[StatusCodes.Status404NotFound].Link = "https://httpstatuses.com/404";
             });
 
-            //È«¾ÖÅäÖÃJsonĞòÁĞ»¯´¦Àí
+            //å…¨å±€é…ç½®Jsonåºåˆ—åŒ–å¤„ç†
             services.AddMvc().AddNewtonsoftJson(options =>
             {
-                //ºöÂÔÑ­»·ÒıÓÃ
+                //å¿½ç•¥å¾ªç¯å¼•ç”¨
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                //²»Ê¹ÓÃÍÕ·åÑùÊ½µÄkey
+                //ä¸ä½¿ç”¨é©¼å³°æ ·å¼çš„key
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver();
-                //ÉèÖÃÊ±¼ä¸ñÊ½
+                //è®¾ç½®æ—¶é—´æ ¼å¼
                 options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
 
             });
 
             services.AddMvc().AddJsonOptions(options =>
             {
-                //JSONÊ××ÖÄ¸Ğ¡Ğ´½â¾ö
+                //JSONé¦–å­—æ¯å°å†™è§£å†³
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                //æ­¤è®¾å®šè§£å†³JsonResultä¸­æ–‡è¢«ç¼–ç çš„é—®é¢˜
+                options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
+
+                options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
+                options.JsonSerializerOptions.Converters.Add(new DateTimeNullableConvert());
             });
 
             StartupHelper.ServicesInit(services);
@@ -75,29 +125,35 @@ namespace ZSN.AgentBrook.API
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseDeveloperExceptionPage();
-            //if (env.IsDevelopment())
-            //{
-            //    app.UseDeveloperExceptionPage();
-            //}
-            //else
-            //{
-            //    app.UseExceptionHandler("/Home/Error");
-            //}
 
             app.UseSwagger();
             app.UseSwaggerUI(c => {
                 c.SwaggerEndpoint($"/swagger/V1-Public/swagger.json", "V1-Public");
                 c.SwaggerEndpoint($"/swagger/V1-Member/swagger.json", "V1-Member");
+                c.SwaggerEndpoint($"/swagger/V1-User/swagger.json", "V1-User");
+                c.SwaggerEndpoint($"/swagger/V1-Manage/swagger.json", "V1-Manage");
                 c.RoutePrefix = "doc";
             });
             app.UseStaticFiles();
 
-            // Ìí¼ÓURLÖØĞ´ÖĞ¼ä¼ş//api/File/Get?fileCode=66&w=0&h=0
+            // æ·»åŠ URLé‡å†™ä¸­é—´ä»¶//api/File/Get?fileCode=66&w=0&h=0
             app.UseRewriter(new RewriteOptions()
                 .AddRewrite(@"^api/File/Get/([^/]+)/(\d+)/(\d+)$", "api/File/Get?filecode=$1&w=$2&h=$3", skipRemainingRules: true)
             );
 
+            // å¯ç”¨è¯·æ±‚ä½“ç¼“å†²ï¼Œå…è®¸å¤šæ¬¡è¯»å–è¯·æ±‚ä½“
+            // è§£å†³åŸºç±»æ„é€ å‡½æ•°ä¸­è¯»å– BodyParams å¯¼è‡´ [FromBody] å‚æ•°ä¸º null çš„é—®é¢˜
+            app.Use(async (context, next) =>
+            {
+                context.Request.EnableBuffering();
+                await next();
+            });
+
             app.UseRouting();
+
+            app.UseCors();
+
+            app.UseSession();
 
             app.UseAuthorization();
 
@@ -109,10 +165,6 @@ namespace ZSN.AgentBrook.API
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
             });
-
-
-
-            app.UseSession();
         }
     }
 }

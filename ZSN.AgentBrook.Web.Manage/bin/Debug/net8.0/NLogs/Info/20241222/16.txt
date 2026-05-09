@@ -1,8 +1,0 @@
-============================
-Time:2024-12-22 16:04:31.706
-LogQueueProvider创建内存队列成功
-Url:http://192.168.0.28:5002/Manage/SystemLog/LogRecordList
-UrlReferrer:http://192.168.0.28:5002/Manage
-UserHostAddress:192.168.0.18;;
-
-

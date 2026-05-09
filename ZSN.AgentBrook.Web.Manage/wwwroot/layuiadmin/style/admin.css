@@ -167,7 +167,12 @@ html{background-color: #f2f2f2; color: #666;}
 }
 
 /* 侧边收缩模式 */
-.layadmin-side-shrink .layui-layout-admin .layui-logo{width: 60px; background-image: url(res/logo.png); /*background-size: 20px;)*/}
+.layadmin-side-shrink .layui-layout-admin .layui-logo {
+    width: 30px;
+    background-image: url(res/logo.png);
+    background-size: contain;
+    margin-left: 12px;
+}
 .layadmin-side-shrink .layui-layout-admin .layui-logo span{display: none;}
 .layadmin-side-shrink .layui-side{left: 0; width: 60px;}
 .layadmin-side-shrink .layui-layout-admin .layui-layout-left,

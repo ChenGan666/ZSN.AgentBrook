@@ -1,0 +1,92 @@
+## .NET
+## 忽略 .NET 构建输出
+bin/
+obj/
+[Ll]og/
+*.log
+
+## 忽略 Visual Studio 用户文件
+.vscode/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## 忽略 Rider 和 JetBrains 系列 IDE 文件
+.idea/
+*.sln.iml
+
+## 忽略 ASP.NET 临时文件
+*.dbmdl
+*.bak
+*.sql
+# 但保留数据库初始化脚本(用于Docker部署)
+!**/Database/*.sql
+!**/Schema/*.sql
+App_Data/
+
+## 忽略发布输出
+publish/
+out/
+artifacts/
+
+## 忽略 NuGet 本地包
+*.nupkg
+*.snupkg
+*.nuspec
+packages/
+project.lock.json
+project.fragment.lock.json
+
+## 忽略调试和测试相关
+*.pidb
+*.psess
+*.vsp
+*.vspx
+*.coverage
+*.coveragexml
+TestResults/
+*.orig
+
+## 忽略临时文件
+*.tmp
+*.temp
+*.~*
+*.swp
+*.swo
+
+## 忽略配置/Secrets
+secrets.json
+appsettings.*.local.json
+appsettings.Development.json
+
+## 忽略 docker 构建缓存
+docker-compose.override.yml
+docker-compose.*.yml
+.dockerignore
+
+## 忽略环境依赖文件
+.env
+.env.*
+
+## 忽略 Resharper 和其他插件缓存
+_ReSharper*/
+*.DotSettings.user
+
+## 忽略 Rider 用户设置
+.idea/
+
+## 忽略系统文件
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## 忽略 Windows Installer 文件
+*.msi
+*.exe
+
+## 可选：忽略 Git 子模块锁文件
+.gitmodules.lock

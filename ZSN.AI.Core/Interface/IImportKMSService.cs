@@ -4,6 +4,6 @@ namespace ZSN.AI.Core.Interface
 {
     public interface IImportKMSService
     {
-        void ImportKMSTask(ImportKMSTaskReq req);
+        Task<ImportKMSTaskReq> ImportKMSTask(ImportKMSTaskReq req);
     }
 }

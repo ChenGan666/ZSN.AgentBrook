@@ -1,10 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
+using SI = SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
 
 namespace ZSN.Utils.Core.PIC
 {
@@ -58,75 +61,16 @@ namespace ZSN.Utils.Core.PIC
             return img;
         }
 
-        public static void ImageChange(System.Drawing.Image _sourceImg, out System.Drawing.Image _OutImg, int w, int h)
+        public static void ImageChange(SI.Image _sourceImg, out SI.Image _OutImg, int w, int h)
         {
             w = w > 0 ? w : _sourceImg.Width;
             h = h > 0 ? h : _sourceImg.Height;
 
-            double _newW = (double)w, _newH = (double)h, t;
-
-            if ((double)_sourceImg.Width > w)
+            _OutImg = _sourceImg.Clone(x => x.AutoOrient().Resize(new ResizeOptions
             {
-                t = (double)w;
-            }
-            else
-            {
-                t = (double)_sourceImg.Width;
-            }
-            if ((double)_sourceImg.Height * (double)t / (double)_sourceImg.Width > (double)h)
-            {
-                _newH = (double)h;
-                _newW = (double)h / (double)_sourceImg.Height * (double)_sourceImg.Width;
-            }
-            else
-            {
-                _newW = t;
-                _newH = (t / (double)_sourceImg.Width) * (double)_sourceImg.Height;
-            }
-            int x = (int)((w - _newW) / 2);
-            int y = (int)((h - _newH) / 2);
-
-
-            var exif = Thumbnail.ReadExif(_sourceImg);
-            if (exif.ContainsKey("Orientation"))
-            {
-                switch (int.Parse(exif["Orientation"]))
-                {
-                    case 2:
-                        _sourceImg.RotateFlip(RotateFlipType.RotateNoneFlipX);//horizontal flip
-                        break;
-                    case 3:
-                        _sourceImg.RotateFlip(RotateFlipType.Rotate180FlipNone);//right-top
-                        //_sourceImg = Rotate((Bitmap)img, 180);
-                        break;
-                    case 4:
-                        _sourceImg.RotateFlip(RotateFlipType.RotateNoneFlipY);//vertical flip
-                        break;
-                    case 5:
-                        _sourceImg.RotateFlip(RotateFlipType.Rotate90FlipX);
-                        break;
-                    case 6:
-                        _sourceImg.RotateFlip(RotateFlipType.Rotate90FlipNone);//right-top
-                        break;
-                    case 7:
-                        _sourceImg.RotateFlip(RotateFlipType.Rotate270FlipX);
-                        break;
-                    case 8:
-                        _sourceImg.RotateFlip(RotateFlipType.Rotate270FlipNone);//left-bottom
-                        break;
-                }
-            }
-
-            _OutImg = new System.Drawing.Bitmap((int)w, (int)h);
-
-            Graphics g = Graphics.FromImage(_OutImg);
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            g.Clear(Color.White);
-            g.DrawImage(_sourceImg, new Rectangle(x, y, (int)_newW, (int)_newH), new Rectangle(0, 0, _sourceImg.Width, _sourceImg.Height), GraphicsUnit.Pixel);
-            _sourceImg.Dispose();
-            g.Dispose();
-
+                Size = new SI.Size(w, h),
+                Mode = ResizeMode.Max
+            }));
         }
 
         /// <summary>
@@ -134,39 +78,14 @@ namespace ZSN.Utils.Core.PIC
         /// </summary>
         /// <param name="image"></param>
         /// <returns></returns>
-        public static byte[] ImageToBytes(System.Drawing.Image image)
+        public static byte[] ImageToBytes(SI.Image image)
         {
             if (image != null)
             {
-                ImageFormat format = image.RawFormat;
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    if (format.Equals(ImageFormat.Jpeg))
-                    {
-                        image.Save(ms, ImageFormat.Jpeg);
-                    }
-                    else if (format.Equals(ImageFormat.Png))
-                    {
-                        image.Save(ms, ImageFormat.Png);
-                    }
-                    else if (format.Equals(ImageFormat.Bmp))
-                    {
-                        image.Save(ms, ImageFormat.Bmp);
-                    }
-                    else if (format.Equals(ImageFormat.Gif))
-                    {
-                        image.Save(ms, ImageFormat.Gif);
-                    }
-                    else if (format.Equals(ImageFormat.Icon))
-                    {
-                        image.Save(ms, ImageFormat.Icon);
-                    }
-                    else
-                    {
-                        image.Save(ms, ImageFormat.Png);
-                    }
+                    image.Save(ms, new JpegEncoder());
                     byte[] buffer = new byte[ms.Length];
-                    //Image.Save()会改变MemoryStream的Position，需要重新Seek到Begin
                     ms.Seek(0, SeekOrigin.Begin);
                     ms.Read(buffer, 0, buffer.Length);
                     return buffer;
@@ -259,7 +178,7 @@ namespace ZSN.Utils.Core.PIC
         /// <param name="maxWidth">最大新宽度</param>
         /// <param name="maxHeight">最大新高度</param>
         /// <returns></returns>
-        private static Size ResizeImage(int width, int height, int maxWidth, int maxHeight)
+        private static System.Drawing.Size ResizeImage(int width, int height, int maxWidth, int maxHeight)
         {
             decimal MAX_WIDTH = (decimal)maxWidth;
             decimal MAX_HEIGHT = (decimal)maxHeight;

@@ -16,6 +16,7 @@ namespace ZSN.AI.DAL
         AppChatLogInfo AppChatLogInfo_DataRowToModel(DataRow row);
         AppChatLogInfo AppChatLogInfo_GetModel(string chatLogID); 
         DataSet AppChatLogInfo_GetList(string strWhere);
+        DataSet AppChatLogInfo_GetList(string strWhere,string SessionID,string MemberID);
         DataSet AppChatLogInfo_GetListBySessionID(string AppID,string SessionID);
         DataSet AppChatLogInfo_GetList(int top, string strWhere, string filedOrder);
         int AppChatLogInfo_GetRecordCount(string strWhere);

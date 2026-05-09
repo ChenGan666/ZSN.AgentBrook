@@ -4,7 +4,6 @@ using System.Runtime.Loader;
 using System.Xml;
 using ZSN.AI.Core.Utils;
 using System.Text.RegularExpressions;
-using NLog.Fluent;
 
 namespace ZSN.AI.Core.Service
 {
@@ -112,7 +111,6 @@ namespace ZSN.AI.Core.Service
             }
             catch (Exception ex)
             {
-               Log.Error(ex.Message + " ---- " + ex.StackTrace);
             }
         }    
     }

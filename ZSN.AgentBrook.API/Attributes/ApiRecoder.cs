@@ -15,7 +15,7 @@ namespace ZSN.AgentBrook.API.Attributes
 {
     public class ApiRecoder : ActionFilterAttribute, IExceptionFilter
     {
-        public int MarkId = 3;
+        public int MarkId = 305;
         public int ErrorId = 1;
         public bool IsGetFile = false;//是否记录读取文件事件
 

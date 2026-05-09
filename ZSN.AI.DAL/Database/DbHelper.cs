@@ -1,7 +1,9 @@
-﻿using System;
+using MySql.Data.MySqlClient;
+using System;
 using System.Collections;
 using System.Data;
 using System.Data.Common;
+using ZSN.Utils.Core.Helpers;
 
 namespace ZSN.AI.DAL
 {
@@ -40,6 +42,8 @@ namespace ZSN.AI.DAL
         private static readonly Hashtable MParamcache = Hashtable.Synchronized(new Hashtable());
 
         public static object LockHelper = new object();
+
+        public static object ConnectionOpenLock = new object();
 
         #endregion
 
@@ -930,7 +934,44 @@ namespace ZSN.AI.DAL
             using (DbConnection connection = GetFactory(db).CreateConnection())
             {
                 connection.ConnectionString = db.ConnectionString;
-                connection.Open();
+                
+                // 处理MySQL连接池初始化时的并发冲突，使用重试机制
+                int retryCount = 0;
+                const int maxRetries = 3;
+                
+                lock (ConnectionOpenLock)
+                {
+                    while (retryCount < maxRetries)
+                    {
+                        try
+                        {
+                            connection.Open();
+                            break; // 成功则跳出循环
+                        }
+                        catch (ArgumentException ex) when (ex.Message.Contains("An item with the same key has already been added"))
+                        {
+                            retryCount++;
+                            NLogHelper.WriteCustom($"MySQL连接并发冲突重试 {retryCount}/{maxRetries}: {ex.Message}", "/DB/Concurrent/");
+                            if (retryCount >= maxRetries)
+                            {
+                                throw; // 达到最大重试次数，抛出异常
+                            }
+                            // 指数退避策略，等待后重试
+                            System.Threading.Thread.Sleep(50 * retryCount);
+                        }
+                        catch (InvalidOperationException ex) when (ex.Message.Contains("Operations that change non-concurrent collections must have exclusive access"))
+                        {
+                            retryCount++;
+                            NLogHelper.WriteCustom($"MySQL集合并发访问重试 {retryCount}/{maxRetries}: {ex.Message}", "/DB/Concurrent/");
+                            if (retryCount >= maxRetries)
+                            {
+                                throw; // 达到最大重试次数，抛出异常
+                            }
+                            // 指数退避策略，等待后重试
+                            System.Threading.Thread.Sleep(50 * retryCount);
+                        }
+                    }
+                }
 
                 // 调用指定数据库连接字符串重载方法.
                 return ExecuteDataset(db, connection, commandType, commandText, commandParameters);
@@ -1017,7 +1058,23 @@ namespace ZSN.AI.DAL
                 da.SelectCommand = cmd;
                 DataSet ds = new DataSet();
 
-                da.Fill(ds);
+                // Lock wait timeout 重试机制
+                int lockRetryCount = 0;
+                const int maxLockRetries = 3;
+                while (true)
+                {
+                    try
+                    {
+                        da.Fill(ds);
+                        break;
+                    }
+                    catch (MySqlException ex) when (ex.Number == 1205 && lockRetryCount < maxLockRetries)
+                    {
+                        lockRetryCount++;
+                        NLogHelper.WriteCustom($"MySQL Lock wait timeout 重试 {lockRetryCount}/{maxLockRetries}: {ex.Message}", "/DB/LockRetry/");
+                        System.Threading.Thread.Sleep(200 * lockRetryCount);
+                    }
+                }
 
                 QueryCount++;
 

@@ -5,6 +5,7 @@ using System.Text;
 using ZSN.AI.Entity;
 using ZSN.AI.DAL;
 using ZSN.Utils.Core.Data;
+using NPOI.SS.UserModel;
 namespace ZSN.AI.DAL.MySql
 {
     public partial class BaseDictionaryInfoManage : IBaseDictionaryInfoManage
@@ -14,11 +15,11 @@ namespace ZSN.AI.DAL.MySql
         ///表名称
         private string BaseDictionaryInfoTableName = "base_dictionary_info";
         ///表字段
-        private const string BaseDictionaryInfoTableField = "DicId,DicName,DicTitle,DicValue,DicRemark,Remark,Status,Sort,Pid,Cid,CreateTime,UpdateTime";
+        private const string BaseDictionaryInfoTableField = "DicId,DicName,DicTitle,DicValue,DicRemark,Remark,Status,Sort,Pid,Cid,CreateTime,UpdateTime,Icon";
         ///添加用表字段
-        private const string BaseDictionaryInfoTableFieldForAdd = "DicName,DicTitle,DicValue,DicRemark,Remark,Status,Sort,Pid,Cid,CreateTime,UpdateTime";
+        private const string BaseDictionaryInfoTableFieldForAdd = "DicName,DicTitle,DicValue,DicRemark,Remark,Status,Sort,Pid,Cid,CreateTime,UpdateTime,Icon";
         ///添加用表字段value
-        private const string BaseDictionaryInfoTableFieldAltForAdd = "@DicName,@DicTitle,@DicValue,@DicRemark,@Remark,@Status,@Sort,@Pid,@Cid,@CreateTime,@UpdateTime";
+        private const string BaseDictionaryInfoTableFieldAltForAdd = "@DicName,@DicTitle,@DicValue,@DicRemark,@Remark,@Status,@Sort,@Pid,@Cid,@CreateTime,@UpdateTime,@Icon";
         public string SetConnectionName(string connName)
         {
             return BaseDictionaryInfoConnectionName = connName;
@@ -41,16 +42,18 @@ namespace ZSN.AI.DAL.MySql
 			 new MySqlParameter("@DicName", MySqlDbType.VarChar,255),
  new MySqlParameter("@DicTitle", MySqlDbType.VarChar,255),
  new MySqlParameter("@DicValue", MySqlDbType.VarChar,255),
- new MySqlParameter("@DicRemark", MySqlDbType.Text,65535),
+ new MySqlParameter("@DicRemark", MySqlDbType.Text),
  new MySqlParameter("@Remark", MySqlDbType.VarChar,512),
  new MySqlParameter("@Status", MySqlDbType.Int32,10),
  new MySqlParameter("@Sort", MySqlDbType.Int32,10),
  new MySqlParameter("@Pid", MySqlDbType.Int32,10),
  new MySqlParameter("@Cid", MySqlDbType.Int32,10),
  new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
- new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16)
+ new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16),
 
-					};
+ new MySqlParameter("@Icon", MySqlDbType.VarChar,255),
+
+                    };
 			 parameters[0].Value = model.DicName;
  parameters[1].Value = model.DicTitle;
  parameters[2].Value = model.DicValue;
@@ -62,6 +65,7 @@ namespace ZSN.AI.DAL.MySql
  parameters[8].Value = model.Cid;
  parameters[9].Value = model.CreateTime;
  parameters[10].Value = model.UpdateTime;
+            parameters[11].Value = model.Icon;
 
             object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(BaseDictionaryInfoConnectionName), CommandType.Text,strSql.ToString(), parameters);
             if (obj == null)
@@ -92,7 +96,8 @@ strSql.Append("Status=@Status,");
 strSql.Append("Sort=@Sort,");
 strSql.Append("Pid=@Pid,");
 strSql.Append("Cid=@Cid,");
-strSql.Append("CreateTime=@CreateTime,");
+            strSql.Append("Icon=@Icon,");
+            strSql.Append("CreateTime=@CreateTime,");
 strSql.Append("UpdateTime=@UpdateTime");
 
             strSql.Append(" where DicId=@DicId");
@@ -101,16 +106,17 @@ strSql.Append("UpdateTime=@UpdateTime");
  new MySqlParameter("@DicName", MySqlDbType.VarChar,255),
  new MySqlParameter("@DicTitle", MySqlDbType.VarChar,255),
  new MySqlParameter("@DicValue", MySqlDbType.VarChar,255),
- new MySqlParameter("@DicRemark", MySqlDbType.Text,65535),
+ new MySqlParameter("@DicRemark", MySqlDbType.Text),
  new MySqlParameter("@Remark", MySqlDbType.VarChar,512),
  new MySqlParameter("@Status", MySqlDbType.Int32,10),
  new MySqlParameter("@Sort", MySqlDbType.Int32,10),
  new MySqlParameter("@Pid", MySqlDbType.Int32,10),
  new MySqlParameter("@Cid", MySqlDbType.Int32,10),
  new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
- new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16)
+ new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16),
+ new MySqlParameter("@Icon", MySqlDbType.VarChar,512),
 
-			};
+            };
 			 parameters[0].Value = model.DicId;
  parameters[1].Value = model.DicName;
  parameters[2].Value = model.DicTitle;
@@ -123,6 +129,7 @@ strSql.Append("UpdateTime=@UpdateTime");
  parameters[9].Value = model.Cid;
  parameters[10].Value = model.CreateTime;
  parameters[11].Value = model.UpdateTime;
+            parameters[12].Value = model.Icon;
 
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(BaseDictionaryInfoConnectionName),CommandType.Text,strSql.ToString(), parameters);
             if (rows > 0)
@@ -259,6 +266,10 @@ strSql.Append("UpdateTime=@UpdateTime");
                 {
 					model.UpdateTime = DateTime.Parse(row["UpdateTime"].ToString());
                 }
+                if (row["Icon"] != null)
+                {
+                    model.Icon = row["Icon"].ToString();
+                }
             }
             return model;
         }
@@ -287,6 +298,79 @@ strSql.Append("UpdateTime=@UpdateTime");
             strSql.Append(BaseDictionaryInfoTableName);
 
             strSql.Append(" where Pid in(select DicId from "+ BaseDictionaryInfoTableName + " where DicName=@DicName);");
+            MySqlParameter[] parameters = {
+                    new MySqlParameter("@DicName", MySqlDbType.VarChar, 255)
+            };
+            parameters[0].Value = name;
+
+            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(BaseDictionaryInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+        }
+        /// <summary>
+        /// 获得子级数据列表,需MySQL 8.0+
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public DataSet BaseDictionaryInfo_GetAllChildList(string name = "")
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("WITH RECURSIVE RecursiveTree AS ( "+
+                            " SELECT * "+
+                            " FROM "+ BaseDictionaryInfoTableName + " "+
+                            " WHERE DicName = @DicName "+
+                            " UNION ALL "+
+                            " SELECT child.* "+
+                            " FROM "+ BaseDictionaryInfoTableName + " child "+
+                            " INNER JOIN RecursiveTree parent ON child.Pid = parent.DicId "+
+                            " ) "+
+                            " SELECT * FROM RecursiveTree;");
+            
+            MySqlParameter[] parameters = {
+                    new MySqlParameter("@DicName", MySqlDbType.VarChar, 255)
+            };
+            parameters[0].Value = name;
+
+            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(BaseDictionaryInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+        }
+        public DataSet BaseDictionaryInfo_GetAllChildList(int DicId = 0)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("WITH RECURSIVE RecursiveTree AS ( " +
+                            " SELECT * " +
+                            " FROM " + BaseDictionaryInfoTableName + " " +
+                            " WHERE DicId = @DicId " +
+                            " UNION ALL " +
+                            " SELECT child.* " +
+                            " FROM " + BaseDictionaryInfoTableName + " child " +
+                            " INNER JOIN RecursiveTree parent ON child.Pid = parent.DicId " +
+                            " ) " +
+                            " SELECT * FROM RecursiveTree;");
+
+            MySqlParameter[] parameters = {
+                    new MySqlParameter("@DicId", MySqlDbType.VarChar, 255)
+            };
+            parameters[0].Value = DicId;
+
+            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(BaseDictionaryInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+        }
+        /// <summary>
+        /// 获得父级数据列表,需MySQL 8.0+
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public DataSet BaseDictionaryInfo_GetAllParentList(string name = "")
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("WITH RECURSIVE ParentTree AS ( " +
+                            " SELECT * " +
+                            " FROM "+ BaseDictionaryInfoTableName + " " +
+                            " WHERE DicName = @DicName " +
+                            " UNION ALL " +
+                            " SELECT parent.* " +
+                            " FROM "+ BaseDictionaryInfoTableName + " parent " +
+                            " INNER JOIN ParentTree parent ON parent.DicId = parent.Pid " +
+                            " ) " +
+                            " SELECT * FROM ParentTree;");
+
             MySqlParameter[] parameters = {
                     new MySqlParameter("@DicName", MySqlDbType.VarChar, 255)
             };

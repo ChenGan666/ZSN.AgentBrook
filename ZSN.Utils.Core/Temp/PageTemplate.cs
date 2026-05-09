@@ -204,7 +204,6 @@ namespace Yannyo.Common
 				string outputPath = pageDir  + templateName + ".aspx";
 				
 					
-				
 				using (FileStream fs = new FileStream(outputPath, FileMode.Create,FileAccess.ReadWrite, FileShare.ReadWrite))
 				{
 					Byte[] info = System.Text.Encoding.UTF8.GetBytes(template);
@@ -568,7 +567,6 @@ namespace Yannyo.Common
 			}
                     
 					
-			
 			//解析普通变量{}
 			//r = new Regex(@"({([^\[\]/\{\}='\s]+)})", RegexOptions.IgnoreCase|RegexOptions.Singleline|RegexOptions.Compiled);
 			foreach (Match m in r[15].Matches(strTemplate))
@@ -852,7 +850,6 @@ namespace Yannyo.Common
 		
 
 	}
-
 
 
 }

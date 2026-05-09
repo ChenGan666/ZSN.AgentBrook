@@ -174,6 +174,22 @@ strSql.Append("LastUpdateTime=@LastUpdateTime");
                 return false;
             }
         }
+        public bool WorkflowNodeInfo_DeleteByWorkflowID(string WorkflowID)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("delete from ");
+            strSql.Append(WorkflowNodeInfoTableName);
+            strSql.Append(" where WorkflowID in(" + WorkflowID + ")  ");
+            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(WorkflowNodeInfoConnectionName), CommandType.Text, strSql.ToString());
+            if (rows > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
         /// <summary>
         /// 得到一个对象实体
         /// </summary>
@@ -259,6 +275,17 @@ strSql.Append("LastUpdateTime=@LastUpdateTime");
                 strSql.Append(" where " + strWhere);
             }
             return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(WorkflowNodeInfoConnectionName), CommandType.Text,strSql.ToString());
+        }
+
+        public DataSet GetAllNextNodeListByNodeID(string NodeID)
+        {
+            MySqlParameter[] parameters = {
+                    new MySqlParameter("@p_start_node_id", MySqlDbType.VarChar, 64),
+                    new MySqlParameter("@p_workflow_id", MySqlDbType.VarChar, 64),
+            };
+            parameters[0].Value = NodeID;
+            parameters[1].Value = null;
+            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(WorkflowNodeInfoConnectionName), CommandType.StoredProcedure, "GetDescendantNodes", parameters);
         }
         /// <summary>
         /// 获得前几行数据

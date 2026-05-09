@@ -9,13 +9,11 @@ using System.Threading.Tasks;
 using System.Web.UI;
 
 
-
 namespace Yannyo.Common
 {
     class MessageHelper
     {
     }
-
 
 
     public static class EmailHelper
@@ -97,9 +95,7 @@ namespace Yannyo.Common
         }
 
        
-
     }
-
 
 
     public class EmailMessage
@@ -113,7 +109,6 @@ namespace Yannyo.Common
         private bool _isBodyHtml;
         private string _body;
         private Encoding _bodyEncoding;
-
 
 
         public string Subject
@@ -144,7 +139,6 @@ namespace Yannyo.Common
             get { return _bodyEncoding; }
         }
       
-
 
     }
 

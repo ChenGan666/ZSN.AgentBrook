@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using ZSN.AI.Entity;
 using ZSN.AI.DAL;
+using Google.Protobuf.WellKnownTypes;
 namespace ZSN.AI.BLL
 {
     public partial class ApisettingsInfoBussiness
@@ -59,6 +60,9 @@ namespace ZSN.AI.BLL
         public static ZSN.AI.Entity.ApisettingsInfo GetModelByAppID(string appID)
         {
             return DatabaseProvider.GetApisettingsInfo(ConnectionName).ApisettingsInfo_GetModelByAppID(appID);
+        }
+        public static ZSN.AI.Entity.ApisettingsInfo GetModelByCompanyID(int CompanyID) {
+            return DatabaseProvider.GetApisettingsInfo(ConnectionName).ApisettingsInfo_GetModelByCompanyID(CompanyID);
         }
         /// <summary>
         /// 获得数据列表

@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\ZSN.AgentBrook.Web.Manage.props" />
-</Project>

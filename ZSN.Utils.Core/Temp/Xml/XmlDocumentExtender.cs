@@ -217,8 +217,6 @@ namespace Yannyo.Common.Xml
         }
 
 
-        
-        
         /// <summary>
         /// 删除指定路径下面的所有子结点和自身
         /// </summary>

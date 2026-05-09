@@ -14,6 +14,7 @@ namespace ZSN.AI.DAL
         bool WorkflowEdgeInfo_Delete(string edgeID); 
         bool WorkflowEdgeInfo_DeleteList(string edgeIDlist);
         bool WorkflowEdgeInfo_DeleteAbsentList(string edgeIDlist, string WorkflowID);
+        bool WorkflowEdgeInfo_DeleteByWorkflowID( string WorkflowID);
         WorkflowEdgeInfo WorkflowEdgeInfo_DataRowToModel(DataRow row);
         WorkflowEdgeInfo WorkflowEdgeInfo_GetModel(string edgeID);
         DataSet WorkflowEdgeInfo_GetListBySourceNodeId(string NodeId);

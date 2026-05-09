@@ -8,10 +8,17 @@ namespace ZSN.AI.Entity
 {
     public enum ErrorCode
     {
+        None = 10000,
+        Timeout = 10001,
         Error = 40001,
         DataEmpty = 40002,
         ParameterError = 40003,
         ServerError = 40004,
+        InvalidParameter = 40005,
+        Endpoint404 = 40006,
+        FileNotExist = 40007,
+        DataNotExists = 40008,
+        ParamsError = 40009,
 
         AccountError = 50001,
         AccountLock = 50002,
@@ -25,6 +32,12 @@ namespace ZSN.AI.Entity
 
         DataFormatError = 60001,
         DataAlreadyExists = 60002,
+        DataNoMemoryId = 6000101,//知识节点ID不能为空
+        DataLongTermMemoryNull = 6000102,//知识节点数据不能为空
+        DataRelationIdNotFound = 6000103,//知识节点关联ID不存在
+
+        TaskStateError = 60003,
+        TaskNotExists = 60004,
 
         WeixinMiniAppError = 70001,
         WeixinMiniAppRequestError = 70002,
@@ -57,13 +70,13 @@ namespace ZSN.AI.Entity
         /// <summary>
         /// 成功失败
         /// </summary>
-        public bool Status { get; set; }
-        public bool Success { get; set; }
+        public bool Status { get; set; } = false;
+        public bool Success { get; set; } = false;
         /// <summary>
         /// 状态码
         /// </summary>
         public int ErrorCode { get; set; }
-        public string SessionID { get; set; }
+        public string SessionID { get; set; } = string.Empty;
 
         /// <summary>
         /// 消息
@@ -78,12 +91,69 @@ namespace ZSN.AI.Entity
 
         public static JsonMsg<T> OK(T obj, string msg = "Success", string SessionID = "")
         {
+
             return new JsonMsg<T>() { Status = true, Success = true, ErrorCode = 0, ErrorDesc = msg, SessionID = SessionID, Data = obj };
+
         }
 
         public static JsonMsg<T> Error(T obj, ErrorCode errorCode)
         {
             return new JsonMsg<T>() { Status = false, Success = false, ErrorCode = (int)errorCode, ErrorDesc = errorCode.ToString(), Data = obj };
         }
+
+
+    }
+    public class PageData<T> where T : class
+    {
+        public T Data { get; set; }
+        public int pagetotal { get; set; }
+        public int total { get; set; }
+    }
+
+    /// <summary>
+    /// API请求数据结构
+    /// </summary>
+    public class ApiRequest
+    {
+        public string AppID { get; set; } = string.Empty;
+        public string Data { get; set; } = string.Empty;
+        public string Timestamp { get; set; } = string.Empty;
+        public string Sign { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// API响应数据结构
+    /// </summary>
+    /// <typeparam name="T">业务数据类型</typeparam>
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public T? Data { get; set; }
+    }
+
+    /// <summary>
+    /// 令牌响应类
+    /// </summary>
+    public class TokenResponse
+    {
+        public string AccessToken { get; set; } = string.Empty;
+        public long Expirein { get; set; }
+        public string MemberToken { get; set; } = string.Empty;
+        public string MemberRefreshToken { get; set; } = string.Empty;
+    }
+
+    public class FileInfo
+    {
+        public string FileCode { get; set; }
+        public string Url { get; set; }
+    }
+    
+    public class BaseInfo
+    {
+        public CompanyInfo CompanyInfo { get; set; } = new CompanyInfo();
+        public List<AppInfo> AppList { get; set; } = new List<AppInfo>();
+        public List<BaseDictionaryInfo> TagClassList { get; set; } = new List<BaseDictionaryInfo>();
+
     }
 }

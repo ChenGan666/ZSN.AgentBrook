@@ -18,7 +18,6 @@
                 <div class="layui-card-body">
                     <table class="layui-table layui-form">
                         <colgroup>
-                            <col width="50">
                             <col width="200">
                             <col>
                             <col width="50">
@@ -27,7 +26,6 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th>会员编号</th>
                                 <th>手机号码</th>
                                 <th>昵称</th>
                                 <th>积分</th>
@@ -39,7 +37,6 @@
                             @foreach (var member in lst)
                             {
                 <tr data-mid="@member.MemberID">
-                    <td>@member.MemberCard</td>
                     <td>@member.MPhoneNumber</td>
                     <td>@member.MNickName</td>
                     <td>@member.MPoints</td>
@@ -90,7 +87,7 @@
 
             /*新增*/
             $('.add_bt').click(function () {
-                var url = '@Url.Action("MemberEdit")';
+                var url = '@Url.Action("Edit")';
                 layer.open({
                     type: 2,
                     title: '新增',
@@ -104,7 +101,7 @@
             /*编辑*/
             $('.edit_bt').click(function () {
                 var mid = $(this).parents("tr").data('mid');
-                var url = '@Url.Action("MemberEdit")' + "?mid=" + mid;
+                var url = '@Url.Action("Edit")' + "?mid=" + mid;
                 layer.open({
                     type: 2,
                     title: '编辑',
@@ -120,7 +117,7 @@
                 layer.confirm("确认要删除吗，删除后不能恢复!", { title: "删除确认" }, function (index) {
 
                     $.ajax({
-                        url: '@Url.Action("MemberDel")',
+                        url: '@Url.Action("Del")',
                         type: 'POST',
                         data: {
                             mid: id
@@ -135,7 +132,7 @@
 
             form.on('switch(status)', function (data) {
                 $.ajax({
-                    url: '@Url.Action("MemberStatus")',
+                    url: '@Url.Action("Status")',
                     type: 'POST',
                     data: {
                         mid: $(this).parents("tr").data('mid'),

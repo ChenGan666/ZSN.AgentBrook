@@ -14,5 +14,8 @@ namespace ZSN.AI.Entity.Workflow
         public List<KnowledgeBaseInfo> knowledgeBaseList { get; set; } = new List<KnowledgeBaseInfo>();
         public List<PluginsInfo> pluginsList { get; set; } = new List<PluginsInfo>();
         public List<AgentInfo> agentList { get; set; } = new List<AgentInfo>();
+        public List<McpInfo> mcpList { get; set; } = new List<McpInfo>();
+        public List<WordTemplateInfo> wordTemplateList { get; set; } = new List<WordTemplateInfo>();
+        public List<SkillInfo> skillList { get; set; } = new List<SkillInfo>();
     }
 }

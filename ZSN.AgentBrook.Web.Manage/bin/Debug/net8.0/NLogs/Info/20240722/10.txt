@@ -1,8 +1,0 @@
-============================
-Time:2024-07-22 10:18:23.216
-LogQueueProvider创建内存队列成功
-Url:http://127.0.0.1:5002/Manage/Menu/index
-UrlReferrer:http://127.0.0.1:5002/Manage
-UserHostAddress:127.0.0.1;;
-
-

@@ -27,7 +27,7 @@ namespace ZSN.AI.BLL
             appChat.ChatLogID = Guid.NewGuid().ToString();
             appChat.AppID = AppID;
             appChat.ChatSessionID = SessionID;
-            appChat.Direction = 0;
+            appChat.Direction = string.Equals(Role, "Assistant", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
             appChat.Role = Role;
             appChat.LargeModelID = LargeModelID;
             appChat.Content = JsonConvert.SerializeObject(Inputs);
@@ -37,6 +37,13 @@ namespace ZSN.AI.BLL
             string _re = AppChatLogInfoBussiness.Add(appChat);
 
             AppInfo App = AppInfoBussiness.GetModel(AppID);
+            
+            // 如果 App 不存在,直接返回,不执行记录员任务
+            if (App == null)
+            {
+                return _re;
+            }
+            
             //向记录员AI下发工作任务
             WorkflowNodeInfo reporterNodeInfo = WorkflowNodeInfoBussiness.GetAppReporterNode(App.AppID);
             if (reporterNodeInfo != null)
@@ -121,6 +128,10 @@ namespace ZSN.AI.BLL
         public static List<AppChatLogInfo> GetList(string strWhere = "")
         {
             return AppChatLogInfoDataSet_ToList(DatabaseProvider.GetAppChatLogInfo(ConnectionName).AppChatLogInfo_GetList(strWhere).Tables[0]);
+        }
+        public static List<AppChatLogInfo> GetList(string SQL,string SessionID = "",string MemberID = "")
+        {
+            return AppChatLogInfoDataSet_ToList(DatabaseProvider.GetAppChatLogInfo(ConnectionName).AppChatLogInfo_GetList(SQL, SessionID, MemberID).Tables[0]);
         }
         /// <summary>
         /// 获得前几行数据

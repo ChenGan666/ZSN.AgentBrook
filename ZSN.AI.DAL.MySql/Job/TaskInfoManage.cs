@@ -11,23 +11,19 @@ namespace ZSN.AI.DAL.MySql
 {
     public partial class TaskInfoManage : ITaskInfoManage
     {
-        ///±Ì¡¥Ω”
+
         private string TaskInfoConnectionName = "JobDb";
-        ///±Ì√˚≥∆
+
         private const string TaskInfoTableName = "tb_task_info";
-        ///±Ì◊÷∂Œ
-        private const string TaskInfoTableField = "TaskID,TaskType,TaskConfig,CreateTime,UpdateTime,State,Results,LoopType,IntervalValue,RepeatValue,RedoCount,FromTaskID,FromMainTaskID ";
-        ///ÃÌº””√±Ì◊÷∂Œ
-        private const string TaskInfoTableFieldForAdd = "TaskID,TaskType,TaskConfig,CreateTime,UpdateTime,State,Results,LoopType,IntervalValue,RepeatValue,RedoCount,FromTaskID,FromMainTaskID";
-        ///ÃÌº””√±Ì◊÷∂Œvalue
-        private const string TaskInfoTableFieldAltForAdd = "@TaskID,@TaskType,@TaskConfig,@CreateTime,@UpdateTime,@State,@Results,@LoopType,@IntervalValue,@RepeatValue,@RedoCount,@FromTaskID,@FromMainTaskID";
+
+        private const string TaskInfoTableField = "TaskID,TaskType,TaskConfig,CreateTime,UpdateTime,State,Results,LoopType,IntervalValue,RepeatValue,RedoCount,FromTaskID,FromMainTaskID,WorkflowID,SessionID,ProcessesID ";
+        private const string TaskInfoTableFieldForAdd = "TaskID,TaskType,TaskConfig,CreateTime,UpdateTime,State,Results,LoopType,IntervalValue,RepeatValue,RedoCount,FromTaskID,FromMainTaskID,WorkflowID,SessionID,ProcessesID";
+        private const string TaskInfoTableFieldAltForAdd = "@TaskID,@TaskType,@TaskConfig,@CreateTime,@UpdateTime,@State,@Results,@LoopType,@IntervalValue,@RepeatValue,@RedoCount,@FromTaskID,@FromMainTaskID,@WorkflowID,@SessionID,@ProcessesID";
         public string SetConnectionName(string connName)
         {
             return TaskInfoConnectionName = connName;
         }
-        /// <summary>
-        /// ‘ˆº”“ªÃı ˝æ›
-        /// </summary>
+
         public string TaskInfo_Add(TaskInfo model)
         {
             StringBuilder strSql = new StringBuilder();
@@ -54,6 +50,9 @@ namespace ZSN.AI.DAL.MySql
  new MySqlParameter("@RedoCount", MySqlDbType.Int32),
              new MySqlParameter("@FromTaskID", MySqlDbType.VarChar,64),
              new MySqlParameter("@FromMainTaskID", MySqlDbType.VarChar,64),
+             new MySqlParameter("@WorkflowID", MySqlDbType.VarChar,64),
+             new MySqlParameter("@SessionID", MySqlDbType.VarChar,64),
+             new MySqlParameter("@ProcessesID", MySqlDbType.VarChar,128),
 
                     };
             parameters[0].Value = model.TaskID;
@@ -71,6 +70,9 @@ namespace ZSN.AI.DAL.MySql
             parameters[10].Value = model.RedoCount;
             parameters[11].Value = model.FromTaskID;
             parameters[12].Value = model.FromMainTaskID;
+            parameters[13].Value = model.WorkflowID;
+            parameters[14].Value = model.SessionID;
+            parameters[15].Value = model.ProcessesID;
 
             object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(TaskInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
             if (obj == null)
@@ -82,9 +84,7 @@ namespace ZSN.AI.DAL.MySql
                 return model.TaskID;
             }
         }
-        /// <summary>
-        /// ∏¸–¬“ªÃı ˝æ›
-        /// </summary>
+
         public bool TaskInfo_Update(TaskInfo model)
         {
             StringBuilder strSql = new StringBuilder();
@@ -102,7 +102,10 @@ strSql.Append("Results=@Results,");
             strSql.Append("RepeatValue=@RepeatValue,");
             strSql.Append("RedoCount=@RedoCount, ");
             strSql.Append("FromTaskID=@FromTaskID, ");
-            strSql.Append("FromMainTaskID=@FromMainTaskID ");
+            strSql.Append("FromMainTaskID=@FromMainTaskID, ");
+            strSql.Append("WorkflowID=@WorkflowID, ");
+            strSql.Append("SessionID=@SessionID, ");
+            strSql.Append("ProcessesID=@ProcessesID ");
 
             strSql.Append(" where TaskID=@TaskID");
             MySqlParameter[] parameters = {
@@ -120,6 +123,9 @@ strSql.Append("Results=@Results,");
  new MySqlParameter("@RedoCount", MySqlDbType.Int32),
                  new MySqlParameter("@FromTaskID", MySqlDbType.VarChar,64),
                  new MySqlParameter("@FromMainTaskID", MySqlDbType.VarChar,64),
+                 new MySqlParameter("@WorkflowID", MySqlDbType.VarChar,64),
+             new MySqlParameter("@SessionID", MySqlDbType.VarChar,64),
+             new MySqlParameter("@ProcessesID", MySqlDbType.VarChar,128),
 
             };
 			 parameters[0].Value = model.TaskID;
@@ -136,6 +142,9 @@ strSql.Append("Results=@Results,");
             parameters[10].Value = model.RedoCount;
             parameters[11].Value = model.FromTaskID;
             parameters[12].Value = model.FromMainTaskID;
+            parameters[13].Value = model.WorkflowID;
+            parameters[14].Value = model.SessionID;
+            parameters[15].Value = model.ProcessesID;
 
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(TaskInfoConnectionName),CommandType.Text,strSql.ToString(), parameters);
             if (rows > 0)
@@ -181,9 +190,28 @@ strSql.Append("Results=@Results,");
                 return false;
             }
         }
-        /// <summary>
-        /// …æ≥˝“ªÃı ˝æ›
-        /// </summary>
+
+        public bool TaskInfo_DeleteBySessionID(string SessionID)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("delete from ");
+            strSql.Append(TaskInfoTableName);
+            strSql.Append(" where SessionID=@SessionID");
+            MySqlParameter[] parameters = {
+                    new MySqlParameter("@SessionID", MySqlDbType.VarChar, 64)
+            };
+            parameters[0].Value = SessionID;
+            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(TaskInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+            if (rows > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public bool TaskInfo_Delete(string taskID)
         {
             StringBuilder strSql = new StringBuilder();
@@ -204,9 +232,23 @@ strSql.Append("Results=@Results,");
                 return false;
             }
         }
-        /// <summary>
-        /// ≈˙¡ø…æ≥˝ ˝æ›
-        /// </summary>
+        public bool TaskInfo_DeleteByWhere(string where)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("delete from ");
+            strSql.Append(TaskInfoTableName);
+            strSql.Append(" where "+where);
+            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(TaskInfoConnectionName), CommandType.Text, strSql.ToString());
+            if (rows > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public bool TaskInfo_DeleteList(string taskIDlist)
         {
             StringBuilder strSql = new StringBuilder();
@@ -223,9 +265,7 @@ strSql.Append("Results=@Results,");
                 return false;
             }
         }
-        /// <summary>
-        /// µ√µΩ“ª∏ˆ∂‘œÛ µÃÂ
-        /// </summary>
+
         public TaskInfo TaskInfo_GetModel(string taskID)
         {
             StringBuilder strSql = new StringBuilder();
@@ -274,9 +314,7 @@ strSql.Append("Results=@Results,");
                 return null;
             }
         }
-        /// <summary>
-        /// µ√µΩ“ª∏ˆ∂‘œÛ µÃÂ
-        /// </summary>
+
         public TaskInfo TaskInfo_DataRowToModel(DataRow row)
         {
             TaskInfo model = new TaskInfo();
@@ -334,11 +372,22 @@ strSql.Append("Results=@Results,");
                 {
                     model.FromMainTaskID = row["FromMainTaskID"].ToString();
                 }
+                if (row["WorkflowID"] != null)
+                {
+                    model.WorkflowID = row["WorkflowID"].ToString();
+                }
+                if (row["SessionID"] != null)
+                {
+                    model.SessionID = row["SessionID"].ToString();
+                }
+                if (row["ProcessesID"] != null)
+                {
+                    model.ProcessesID = row["ProcessesID"].ToString();
+                }
             }
             return model;
         }
-
-        public DataSet TaskInfo_GetList(int State, int taskType,DateTime StartTime, int ToState, int length)
+        public DataSet TaskInfo_GetList(NodeType nodeType, string WorkflowID)
         {
             StringBuilder strSql = new StringBuilder();
             strSql.Append("select ");
@@ -346,10 +395,23 @@ strSql.Append("Results=@Results,");
             strSql.Append(" FROM ");
             strSql.Append(TaskInfoTableName);
 
-            string _where = " where State=@State and TaskType=@TaskType and CreateTime<=@StartTime order by CreateTime ASC limit @length";
+            string _where = " where TaskType=@TaskType and WorkflowID=@WorkflowID";
 
             strSql.Append(_where + " ;");
-            strSql.Append(" update " + TaskInfoTableName + " set State=@ToState " + _where + " ;");
+
+            MySqlParameter[] parameters = {
+                    new MySqlParameter("@TaskType",MySqlDbType.Int32),
+                    new MySqlParameter("@WorkflowID",MySqlDbType.VarChar),
+            };
+            parameters[0].Value = nodeType;
+            parameters[1].Value = WorkflowID;
+
+            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(TaskInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+        }
+        public DataSet TaskInfo_GetList(int State, int taskType,DateTime StartTime, int ToState, int length)
+        {
+            DbInfo dbInfo = DbConfig.GetDbInfo(TaskInfoConnectionName);
+            string _where = " where State=@State and TaskType=@TaskType and CreateTime<=@StartTime order by CreateTime ASC limit @length";
 
             MySqlParameter[] parameters = {
                     new MySqlParameter("@State", MySqlDbType.Int32),
@@ -358,26 +420,21 @@ strSql.Append("Results=@Results,");
                     new MySqlParameter("@StartTime",MySqlDbType.DateTime,16),
                     new MySqlParameter("@length",MySqlDbType.Int32),
             };
-            parameters[0].Value = State; 
-            parameters[1].Value = taskType; 
+            parameters[0].Value = State;
+            parameters[1].Value = taskType;
             parameters[2].Value = ToState;
             parameters[3].Value = StartTime;
             parameters[4].Value = length;
 
-            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(TaskInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+            string selectSql = "select " + TaskInfoTableField + " FROM " + TaskInfoTableName + _where + " FOR UPDATE SKIP LOCKED ;";
+            string updateSql = " update " + TaskInfoTableName + " set State=@ToState " + _where + " ;";
+
+            return ExecuteWithRetry(dbInfo, selectSql, updateSql, parameters);
         }
         public DataSet TaskInfo_GetList(int State, string taskTypeStr, DateTime StartTime, int ToState, int length)
         {
-            StringBuilder strSql = new StringBuilder();
-            strSql.Append("select ");
-            strSql.Append(TaskInfoTableField);
-            strSql.Append(" FROM ");
-            strSql.Append(TaskInfoTableName);
-
-            string _where = " where State=@State and TaskType in("+ taskTypeStr + ") and CreateTime<=@StartTime order by CreateTime ASC limit @length";
-
-            strSql.Append(_where + " ;");
-            strSql.Append(" update " + TaskInfoTableName + " set State=@ToState " + _where + " ;");
+            DbInfo dbInfo = DbConfig.GetDbInfo(TaskInfoConnectionName);
+            string _where = $" where State=@State and TaskType in({taskTypeStr}) and CreateTime<=@StartTime order by CreateTime ASC limit @length";
 
             MySqlParameter[] parameters = {
                     new MySqlParameter("@State", MySqlDbType.Int32),
@@ -390,16 +447,57 @@ strSql.Append("Results=@Results,");
             parameters[2].Value = StartTime;
             parameters[3].Value = length;
 
-            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(TaskInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+            string selectSql = "select " + TaskInfoTableField + " FROM " + TaskInfoTableName + _where + " FOR UPDATE SKIP LOCKED ;";
+            string updateSql = " update " + TaskInfoTableName + " set State=@ToState " + _where + " ;";
+
+            return ExecuteWithRetry(dbInfo, selectSql, updateSql, parameters);
         }
 
-        public bool TaskInfo_SetState(List<string> TaskID,int ToState)
+        /// <summary>
+        /// Â∏¶ÈáçËØïÊú∫Âà∂ÁöÑ‰∫ãÂä°ÊâßË°åÔºåÁî®‰∫éÂ§ÑÁêÜ MySQL Ê≠ªÈîÅÁ≠â‰∏¥Êó∂ÊÄßÈîôËØØ
+        /// </summary>
+        private DataSet ExecuteWithRetry(DbInfo dbInfo, string selectSql, string updateSql, MySqlParameter[] parameters, int maxRetries = 3)
+        {
+            for (int attempt = 0; ; attempt++)
+            {
+                using (var conn = DbHelper.GetFactory(dbInfo).CreateConnection())
+                {
+                    conn.ConnectionString = dbInfo.ConnectionString;
+                    lock (DbHelper.ConnectionOpenLock)
+                    {
+                        conn.Open();
+                    }
+                    using (var tran = conn.BeginTransaction(System.Data.IsolationLevel.ReadCommitted))
+                    {
+                        try
+                        {
+                            DataSet ds = DbHelper.ExecuteDataset(dbInfo, tran, CommandType.Text, selectSql + updateSql, parameters);
+                            tran.Commit();
+                            return ds;
+                        }
+                        catch (MySqlException ex) when (ex.Number == 1213 && attempt < maxRetries)
+                        {
+                            // 1213 = Deadlock found when trying to get lock
+                            tran.Rollback();
+                            System.Threading.Thread.Sleep(100 * (attempt + 1));
+                        }
+                        catch
+                        {
+                            tran.Rollback();
+                            throw;
+                        }
+                    }
+                }
+            }
+        }
+
+        public bool TaskInfo_SetState(List<string> TaskID, TaskState ToState)
         {
             bool re = true;
             if (TaskID.Count > 0)
             {
                 StringBuilder strSql = new StringBuilder();
-                strSql.Append(" update " + TaskInfoTableName + " set State="+ ToState + "  where TaskID in("+ String.Join(",", TaskID.Select(n => $"'{n}'")) +");");
+                strSql.Append($" update {TaskInfoTableName} set State={ToState}  where TaskID in({String.Join(",", TaskID.Select(n => $"'{n}'"))});");
 
                 int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(TaskInfoConnectionName), CommandType.Text, strSql.ToString());
                 re = rows > 0;
@@ -408,9 +506,7 @@ strSql.Append("Results=@Results,");
             return re;
         }
 
-        /// <summary>
-        /// ªÒµ√ ˝æ›¡–±Ì
-        /// </summary>
+
         public DataSet TaskInfo_GetList(string strWhere = "")
         {
             StringBuilder strSql = new StringBuilder();
@@ -424,9 +520,7 @@ strSql.Append("Results=@Results,");
             }
             return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(TaskInfoConnectionName), CommandType.Text,strSql.ToString());
         }
-        /// <summary>
-        /// ªÒµ√«∞º∏–– ˝æ›
-        /// </summary>
+
         public DataSet TaskInfo_GetList(int top, string strWhere, string filedOrder)
         {
             StringBuilder strSql = new StringBuilder();
@@ -448,9 +542,6 @@ strSql.Append("Results=@Results,");
             }
             return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(TaskInfoConnectionName),CommandType.Text,strSql.ToString());
         }
-        /// <summary>
-        /// ªÒ»°º«¬º◊‹ ˝
-        /// </summary>
         public int TaskInfo_GetRecordCount(string strWhere = "")
         {
             StringBuilder strSql = new StringBuilder();
@@ -470,9 +561,6 @@ strSql.Append("Results=@Results,");
                 return Convert.ToInt32(obj);
             }
         }
-        /// <summary>
-        /// ∑÷“≥ªÒ»° ˝æ›¡–±Ì
-        /// </summary>
         public DataSet TaskInfo_GetListByPage(string strWhere, string orderby, int startIndex, int endIndex)
         {
             StringBuilder strSql = new StringBuilder();
@@ -491,17 +579,7 @@ strSql.Append("Results=@Results,");
             }
             return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(TaskInfoConnectionName),CommandType.Text,strSql.ToString());
         }
-        /// <summary>
-        /// ∑÷“≥ªÒ»° ˝æ›¡–±Ì
-        /// </summary>
-        /// <param name="pageSize">√ø“≥¥Û–°</param>
-        /// <param name="pageIndex">“≥±Í</param>
-        /// <param name="strWhere">≤È—ØÃıº˛</param>
-        /// <param name="pagetotal">◊‹“≥ ˝</param>
-        /// <param name="total">◊‹ ˝</param>
-        /// <param name="orderType">≈≈–ÚπÊ‘Ú£¨ ƒ¨»œΩµ–Ú£¨1Ωµ–Ú£¨0…˝–Ú</param>
-        /// <param name="showName">œ‘ æ◊÷∂Œ£¨ƒ¨»œ»´≤ø</param>
-        /// <param name="orderKey">≈≈–Úkey£¨ƒ¨»œ÷˜º¸</param>
+
         public DataTable TaskInfo_GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType = 1, string showName = "*", string orderKey = "TaskID")
         {
             MySqlParameter[] parameters = {

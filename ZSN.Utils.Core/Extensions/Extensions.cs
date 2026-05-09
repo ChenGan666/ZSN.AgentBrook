@@ -38,7 +38,7 @@ namespace ZSN.Utils.Core.Extensions
 
                     try
                     {
-                        return JsonConvert.DeserializeObject<T>(_value.ToObject<string>());
+                        return JsonConvert.DeserializeObject<T>(_value.ToObject<string>().SecureSQL());
                     }
                     catch (Exception _e)
                     {
@@ -332,8 +332,6 @@ namespace ZSN.Utils.Core.Extensions
         }
 
         
-
-
         public static Guid ToGuid(this string str)
         {
             Guid result;

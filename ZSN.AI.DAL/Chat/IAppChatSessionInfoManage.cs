@@ -11,7 +11,9 @@ namespace ZSN.AI.DAL
         #region tb_app_chat_session_info
         string AppChatSessionInfo_Add(AppChatSessionInfo model);
         bool AppChatSessionInfo_Update(AppChatSessionInfo model);
-        bool AppChatSessionInfo_Delete(string chatSessionID); 
+        bool AppChatSessionInfo_Delete(string chatSessionID);
+        bool AppChatSessionInfo_Delete(string chatSessionID,string MemberID);
+        bool AppChatSessionInfo_CleanUp(string MemberID);
         bool AppChatSessionInfo_DeleteList(string chatSessionIDlist);
         AppChatSessionInfo AppChatSessionInfo_DataRowToModel(DataRow row);
         AppChatSessionInfo AppChatSessionInfo_GetModel(string chatSessionID); 

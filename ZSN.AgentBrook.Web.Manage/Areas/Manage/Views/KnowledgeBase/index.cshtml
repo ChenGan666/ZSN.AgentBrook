@@ -1,4 +1,4 @@
-﻿@{
+@{
     var lst = ViewBag.KnowledgeBaseList as List<KnowledgeBaseInfo>;
 }
 @section Css{
@@ -12,6 +12,9 @@
                         <button class="layui-btn add_bt" >
                             <i class="layui-icon"></i>新建
                         </button>
+                    </div>
+                    <div class="layui-input-inline layui-show-xs-block">
+                        <button class="layui-btn layui-btn-danger delete-selected_bt">删除选中</button>
                     </div>
                     <hr>
                 </div>
@@ -30,9 +33,11 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th>编号</th>
+                                <th style="white-space: nowrap;">
+                                    <input type="checkbox" class="check-all" lay-skin="primary" lay-filter="check-all" /> 编号
+                                </th>
                                 <th>名称</th>
-                                <th>类型</th>
+                                <th>标签</th>
                                 <th>段落数</th>
                                 <th>切片数</th>
                                 <th>创建时间</th>
@@ -45,7 +50,10 @@
                             @foreach (var KnowledgeBase in lst)
                             {
                             <tr data-mid="@KnowledgeBase.KnowledgeBaseID" data-name="@KnowledgeBase.Name">
-                                    <td>@KnowledgeBase.KnowledgeBaseID</td>
+                                    <td style="white-space: nowrap;">
+                                        <input type="checkbox" class="check-item" value="@KnowledgeBase.KnowledgeBaseID" lay-skin="primary" lay-filter="check-item" />
+                                        <span>@KnowledgeBase.KnowledgeBaseID</span>
+                                    </td>
                                 <td>@KnowledgeBase.Name</td>
                                 <td>@KnowledgeBase.DicNameList</td>
                                     <td>@KnowledgeBase.ParagraphSlice</td>
@@ -53,19 +61,18 @@
                                 <td>@KnowledgeBase.CreateTime</td>
                                     <td>@Html.Raw(KnowledgeBase.ChargeType==0?"免费":"收费")</td>
                                 <td>
-                                    <input type="checkbox" name="switch" lay-text="正常|屏蔽" lay-skin="switch" lay-filter="status" @(KnowledgeBase.SystemStatus == 1 ? "checked" : "")>
+                                    <input type="checkbox" name="switch" lay-text="正常|屏蔽" lay-skin="switch" lay-filter="status" @(KnowledgeBase.SystemStatus == KnowledgeBaseStatus.Normal ? "checked" : "")>
                                 </td>
-                                <td><nobr>
+                                <td>
+                                    <div style="white-space: nowrap;">
                                         <button class="layui-btn file_bt" >
                                             文件
                                         </button>
-                                        <button class="layui-btn edit_bt" >
-                                            编辑
+                                        <button class="layui-btn tool-dropdown-kb">
+                                            <span>更多</span>
+                                            <i class="layui-icon layui-icon-down layui-font-12"></i>
                                         </button>
-                                        <button class="layui-btn del" data-id="@KnowledgeBase.KnowledgeBaseID">
-                                            删除
-                                        </button>
-                                    </nobr>
+                                    </div>
                                 </td>
                             </tr>
                             }
@@ -86,7 +93,53 @@
         layui.use(function () {
             var form = layui.form;
             var laypage = layui.laypage;
+            var dropdown = layui.dropdown;
             form.render();
+
+            // 渲染下拉菜单
+            dropdown.render({
+              elem: '.tool-dropdown-kb',
+              data: [{
+                title: '编辑',
+                id: 'edit'
+              },{
+                title: '删除',
+                id: 'delete'
+              }],
+              click: function(obj){
+                var $btn = $(this.elem);
+                var $tr = $btn.parents('tr');
+                var kbId = $tr.data('mid');
+                
+                if(obj.id === 'edit') {
+                  // 编辑功能
+                  var url = '@Url.Action("Edit")' + "?mid=" + kbId;
+                  layer.open({
+                    type: 2,
+                    title: '编辑',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['100%', '100%'],
+                    content: url
+                  });
+                } 
+                if(obj.id === 'delete') {
+                  // 删除功能
+                  layer.confirm("确认要删除吗,删除后不能恢复!", { title: "删除确认" }, function (index) {
+                    $.ajax({
+                      url: '@Url.Action("KnowledgeBaseDel")',
+                      type: 'POST',
+                      data: {
+                        mid: kbId
+                      },
+                      success: function (res) {
+                        layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                      }
+                    });
+                  });
+                }
+              }
+            });
 
             laypage.render({
                 elem: 'pageId'
@@ -130,37 +183,6 @@
                 });
                 */
             });
-            /*编辑*/
-            $('.edit_bt').click(function () {
-                var mid = $(this).parents("tr").data('mid');
-                var url = '@Url.Action("Edit")' + "?mid=" + mid;
-                layer.open({
-                    type: 2,
-                    title: '编辑',
-                    shadeClose: true,
-                    shade: 0.8,
-                    area: ['100%', '100%'],
-                    content: url
-                });
-            });
-            $('.del').click(function () {
-                var id = $(this).data('id');
-
-                layer.confirm("确认要删除吗，删除后不能恢复!", { title: "删除确认" }, function (index) {
-
-                    $.ajax({
-                        url: '@Url.Action("KnowledgeBaseDel")',
-                        type: 'POST',
-                        data: {
-                            mid: id
-                        },
-                        success: function (res) {
-                            layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
-                        }
-                    });
-
-                });
-            });
 
             form.on('switch(status)', function (data) {
                 $.ajax({
@@ -173,6 +195,42 @@
                     success: function (res) {
                         layer.msg('Finish', { icon: 1, time: 1000 });
                     }
+                });
+            });
+
+            // 全选/反选（Layui 事件）
+            form.on('checkbox(check-all)', function (data) {
+                var checked = data.elem.checked;
+                $('.check-item').prop('checked', checked);
+                form.render('checkbox');
+            });
+
+            form.on('checkbox(check-item)', function (data) {
+                var all = $('.check-item').length;
+                var selected = $('.check-item:checked').length;
+                $('.check-all').prop('checked', all > 0 && all === selected);
+                form.render('checkbox');
+            });
+
+            // 批量删除
+            $('.delete-selected_bt').on('click', function () {
+                var ids = $('.check-item:checked').map(function(){ return $(this).val(); }).get();
+                if(ids.length === 0){
+                    layer.msg('请先选择要删除的记录');
+                    return;
+                }
+                var mids = ids.join(',');
+                layer.confirm("确认要删除吗,删除后不能恢复!", { title: "删除确认" }, function (index) {
+                    $.ajax({
+                      url: '@Url.Action("KnowledgeBaseDel")',
+                      type: 'POST',
+                      data: {
+                        mid: mids
+                      },
+                      success: function (res) {
+                        layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                      }
+                    });
                 });
             });
         });

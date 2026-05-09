@@ -1,0 +1,210 @@
+﻿@{
+    var MCP = ViewBag.MCP as McpInfo;
+
+    var PreviewHost = ViewBag.PreviewHost as string;
+}
+
+@section Css
+{
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+    </style>
+}
+
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="MCPID" value="@MCP.MCPID" />
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        宿主
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="RunHost" value="@(RunHostType.Server)" title="服务端" @(MCP.RunHost == RunHostType.Server ? "checked" : "")>
+                        <input type="radio" name="RunHost" value="@(RunHostType.Client)" title="客户端" @(MCP.RunHost == RunHostType.Client ? "checked" : "")>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>名称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="Name" lay-verify="required" value="@MCP.Name"
+                                   autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>图标
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="ICON" lay-verify="required" value="@MCP.ICON"
+                                   autocomplete="off" class="layui-input ICON">
+                            <div id="file-upload-container">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red"></span>说明
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea type="text" name="Description" lay-verify="required" 
+                                      autocomplete="off" class="layui-input Description">@MCP.Description</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red"></span>参数配置
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea type="text" name="Config" lay-verify="required" 
+                                      autocomplete="off" class="layui-input Config">@MCP.Config</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red"></span>参数配置2(备用)
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea type="text" name="EnvironmentVar" lay-verify="required"
+                                      autocomplete="off" class="layui-input EnvironmentVar">@MCP.EnvironmentVar</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red"></span>输出参数配置
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <textarea type="text" name="OutputConfig" lay-verify="required" 
+                                      autocomplete="off" class="layui-input OutputConfig">@MCP.OutputConfig.ToJsonString()</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>创建时间
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="CreateTime" readonly lay-verify="required" placeholder="YYYY-MM-DD HH:mm" value="@MCP.CreateTime.ToCurrentTime()"
+                                   autocomplete="off" class="layui-input CreateTime">
+                        </div>
+                    </div>
+                </div>
+
+                
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        状态
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="SystemStatus" value="@McpState.Normal" title="正常" @(MCP.SystemStatus == McpState.Normal ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@McpState.Disabled" title="屏蔽" @(MCP.SystemStatus == McpState.Normal ? "" : "checked")>
+                    </div>
+                </div>
+
+                
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn save" lay-filter="save" lay-submit>保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Js
+{
+    <script src="/layuiadmin/modules/xm-select.js"></script>
+    <script>
+        layui.use(function () {
+            var form = layui.form,
+                layer = layui.layer,
+                xmSelect = layui.xmSelect;
+            form.render();
+
+
+
+            $('.save').click(function () {
+                
+            });
+
+            //提交
+            form.on('submit(save)', function (obj) {
+                layer.load(0);
+
+                $.ajax({
+                    url: '@Url.Action("MCPSave")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: 1 });
+                            if (rst.Status) {
+                                if (parent) {
+                                    parent.location.reload();
+                                } else {
+                                    location.reload();
+                                }
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}
+@section FileUpload {
+
+    <script>
+        $(function () {
+            var form = layui.form, layer = layui.layer;
+            form.render();
+
+            var _ICON = function () {
+                var fileCodeElement = $('.ICON');
+                var fileUploadContainer = $('#file-upload-container');
+
+                var options = {
+                    url: '/Controls/UploadFiles/Save',
+                    previewType: 'img',
+                    previewHost: '@PreviewHost',
+                    previewW: 150,
+                    previewH: 150,
+                    setPicW: 300,
+                    setPicH: 300,
+                    layui: layui,
+                    formData: {
+                        //example: 'test'
+                    },
+                };
+
+                FileUploadPlugin(fileUploadContainer, fileCodeElement, options);
+            };
+            _ICON();
+        });
+
+    </script>
+}

@@ -24,7 +24,7 @@
         <div class="layui-card-body">
             <form class="layui-form">
                 <input type="hidden" name="LargeModelID" value="@LargeModel.LargeModelID" />
-
+                <input type="hidden" name="IsDefaultModel" value="@LargeModel.IsDefaultModel" />
                 <div class="layui-form-item">
                     <label class="layui-form-label">
                         <span class="x-red">*</span>模型显示名称
@@ -120,6 +120,12 @@
                         <div class="layui-col-md9">
                             <input type="text" name="EndPoint" lay-verify="required" value="@LargeModel.EndPoint"
                                    autocomplete="off" class="layui-input EndPoint">
+                            <div>
+                                填写包含端点版本的基础 URL（Base URL）<br/>
+                                OpenAI:https://api.openai.com/v1<br/>
+                                Ollama：http://ip:11434/v1<br/>
+                                智谱：https://open.bigmodel.cn/api/paas/v4
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -195,10 +201,11 @@
                         状态
                     </label>
                     <div class="layui-input-inline">
-                        <input type="radio" name="SystemStatus" value="0" title="正常" @(LargeModel.SystemStatus == 0 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="1" title="屏蔽" @(LargeModel.SystemStatus == 0 ? "" : "checked")>
+                        <input type="radio" name="SystemStatus" value="@LargeModelStatus.Normal" title="正常" @(LargeModel.SystemStatus == LargeModelStatus.Normal ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@LargeModelStatus.Disabled" title="屏蔽" @(LargeModel.SystemStatus == LargeModelStatus.Disabled ? "checked" : "")>
                     </div>
                 </div>
+                
                 <div class="layui-form-item">
                     <div class="layui-input-block">
                         <button class="layui-btn test" lay-filter="test" lay-submit>测试</button>

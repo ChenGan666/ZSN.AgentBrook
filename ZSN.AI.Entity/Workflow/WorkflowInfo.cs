@@ -6,6 +6,20 @@ using System.Linq;
 using ZSN.AI.Entity;
 namespace ZSN.AI.Entity
 {
+
+    public enum MainType
+    {
+        Unknown = 0,
+        APP = 1,
+        Agent = 2,
+    }
+    public enum WorkflowStatus
+    {
+        Disable = -1,
+        Unreleased = 0,
+        Normal = 1,
+    }
+
     /// <summary>
     /// tb_workflow_info
     /// </summary>
@@ -20,7 +34,7 @@ namespace ZSN.AI.Entity
         /// <summary>
         /// MainType
         /// </summary>
-        public Int32 MainType { get; set; } = 0;
+        public MainType MainType { get; set; } = 0;
         /// <summary>
         /// MainID
         /// </summary>
@@ -30,7 +44,7 @@ namespace ZSN.AI.Entity
         /// <summary>
         /// SystemStatus
         /// </summary>
-        public Int32? SystemStatus { get; set; } = 0;
+        public WorkflowStatus SystemStatus { get; set; } = WorkflowStatus.Unreleased;
         /// <summary>
         /// CreateTime
         /// </summary>
@@ -39,7 +53,15 @@ namespace ZSN.AI.Entity
         /// LastUpdateTime
         /// </summary>
         public DateTime? LastUpdateTime { get; set; } = DateTime.Now;
+        public object? Config {get;set;}
         #endregion
+    }
+
+    public partial class WorkFlowConfig
+    {
+        public WorkFlowConfig() { }
+        public string SessionID { get; set; } = "";
+        public string ProcessesID { get; set; } = "";
     }
 
     public partial class WorkFlow
@@ -47,10 +69,12 @@ namespace ZSN.AI.Entity
         public WorkFlow() { }
         public string WorkflowID { get; set; } = "";
         public string MainID { get; set; } = "";
-        public int MainType { get; set; } = 0;
+        public MainType MainType { get; set; } = 0;
         public WorkflowInfo Info { get; set; } = new WorkflowInfo();
         public List<WorkflowNodeInfo> Nodes { get; set; } = new List<WorkflowNodeInfo>();
         public List<WorkflowEdgeInfo> Edges { get; set; } = new List<WorkflowEdgeInfo>();
+
+        public WorkFlowConfig Config { get; set; } = new WorkFlowConfig();
     }
 
     public partial class WorkFlowProcesses

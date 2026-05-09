@@ -41,7 +41,6 @@ namespace ZSN.Utils.Core.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"设置字符串失败: {ex.Message}");
                 return false;
             }
         }
@@ -59,7 +58,6 @@ namespace ZSN.Utils.Core.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"获取字符串失败: {ex.Message}");
                 return null;
             }
         }
@@ -80,7 +78,6 @@ namespace ZSN.Utils.Core.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"设置对象失败: {ex.Message}");
                 return false;
             }
         }
@@ -100,7 +97,6 @@ namespace ZSN.Utils.Core.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"获取对象失败: {ex.Message}");
                 return default;
             }
         }
@@ -119,7 +115,6 @@ namespace ZSN.Utils.Core.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"添加到列表失败: {ex.Message}");
                 return -1;
             }
         }
@@ -140,13 +135,11 @@ namespace ZSN.Utils.Core.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"获取列表范围失败: {ex.Message}");
                 return null;
             }
         }
 
         
-
         /// <summary>
         /// 删除键
         /// </summary>
@@ -160,7 +153,6 @@ namespace ZSN.Utils.Core.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"删除键失败: {ex.Message}");
                 return false;
             }
         }

@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\ZSN.XinLing.Web.Manage.props" />
-</Project>

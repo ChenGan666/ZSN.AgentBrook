@@ -14,7 +14,9 @@ namespace ZSN.AI.DAL
         bool LargeModelInfo_Delete(Int32 largeModelID); 
         bool LargeModelInfo_DeleteList(string largeModelIDlist);
         LargeModelInfo LargeModelInfo_DataRowToModel(DataRow row);
-        LargeModelInfo LargeModelInfo_GetModel(Int32 largeModelID); 
+        LargeModelInfo LargeModelInfo_GetModel(Int32 largeModelID);
+        LargeModelInfo LargeModelInfo_GetDefaultModel();
+        
         DataSet LargeModelInfo_GetList(string strWhere);
         DataSet LargeModelInfo_GetList(int top, string strWhere, string filedOrder);
         int LargeModelInfo_GetRecordCount(string strWhere);

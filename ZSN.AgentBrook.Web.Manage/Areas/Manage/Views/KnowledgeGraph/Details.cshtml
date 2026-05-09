@@ -1,0 +1,346 @@
+@{
+    var memory = ViewBag.Memory as ZSN.AI.Entity.ClawAI.LongTermMemoryInfo;
+    var incomingRelations = ViewBag.IncomingRelations as System.Collections.Generic.List<ZSN.AI.Entity.ClawAI.KnowledgeRelationInfo>;
+    var outgoingRelations = ViewBag.OutgoingRelations as System.Collections.Generic.List<ZSN.AI.Entity.ClawAI.KnowledgeRelationInfo>;
+}
+@section Css{
+    <style>
+        .detail-section {
+            margin-bottom: 20px;
+        }
+        .relation-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #fafafa;
+            transition: all 0.3s;
+        }
+        .relation-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        .relation-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .relation-prerequisite { background-color: #4caf50; color: white; }
+        .relation-derived { background-color: #ff9800; color: white; }
+        .relation-conflict { background-color: #f44336; color: white; }
+        .relation-related { background-color: #2196f3; color: white; }
+        .relation-example { background-color: #9c27b0; color: white; }
+        .relation-category { background-color: #00bcd4; color: white; }
+        .strength-bar {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .strength-fill {
+            height: 100%;
+            background-color: #2196f3;
+            transition: width 0.3s;
+        }
+    </style>
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">知识节点详情</div>
+                <div class="layui-card-body">
+                    <fieldset class="layui-elem-field layui-field-title">
+                        <legend>基本信息</legend>
+                    </fieldset>
+
+                    <div class="layui-form detail-section">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">记忆ID</label>
+                            <div class="layui-input-block">
+                                <input type="text" value="@memory.MemoryID" readonly class="layui-input layui-disabled">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">应用ID</label>
+                            <div class="layui-input-block">
+                                <input type="text" value="@memory.AppID" readonly class="layui-input layui-disabled">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">节点ID</label>
+                            <div class="layui-input-block">
+                                <input type="text" value="@memory.ClawID" readonly class="layui-input layui-disabled">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">知识类型</label>
+                            <div class="layui-input-block">
+                                <span class="layui-badge layui-bg-blue">@memory.KnowledgeType</span>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">主题</label>
+                            <div class="layui-input-block">
+                                <input type="text" value="@memory.Topic" readonly class="layui-input layui-disabled">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">摘要</label>
+                            <div class="layui-input-block">
+                                <textarea readonly class="layui-textarea layui-disabled" style="min-height: 60px;">@memory.Summary</textarea>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">详细内容</label>
+                            <div class="layui-input-block">
+                                <textarea readonly class="layui-textarea layui-disabled" style="min-height: 150px;">@memory.Content</textarea>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">重要性</label>
+                            <div class="layui-input-block">
+                                <div style="width: 200px;">
+                                    <input type="text" value="@memory.Importance" readonly class="layui-input layui-disabled">
+                                </div>
+                                <div class="strength-bar" style="width: 200px;">
+                                    <div class="strength-fill" style="width: @(memory.Importance)%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">访问次数</label>
+                            <div class="layui-input-block">
+                                <input type="text" value="@memory.AccessCount" readonly class="layui-input layui-disabled">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">创建时间</label>
+                            <div class="layui-input-block">
+                                <input type="text" value="@memory.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")" readonly class="layui-input layui-disabled">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">最后更新</label>
+                            <div class="layui-input-block">
+                                <input type="text" value="@memory.LastUpdateTime.ToString("yyyy-MM-dd HH:mm:ss")" readonly class="layui-input layui-disabled">
+                            </div>
+                        </div>
+                    </div>
+
+                    <fieldset class="layui-elem-field layui-field-title">
+                        <legend>关系信息</legend>
+                    </fieldset>
+
+                    <div class="detail-section">
+                        <h3>出度关系 (@(outgoingRelations?.Count ?? 0))</h3>
+                        @if (outgoingRelations != null && outgoingRelations.Count > 0)
+                        {
+                            @foreach (var rel in outgoingRelations)
+                            {
+                                var targetMemory = ZSN.AI.BLL.LongTermMemoryBusiness.GetModel(rel.TargetMemoryID);
+                                <div class="relation-card">
+                                    <div>
+                                        <span class="relation-type relation-@rel.RelationType">@GetRelationTypeLabel(rel.RelationType)</span>
+                                        <strong>目标：</strong>@(targetMemory?.Summary ?? "未知")
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        <strong>关系强度：</strong>
+                                        <div class="strength-bar">
+                                            <div class="strength-fill" style="width: @(rel.Strength * 100)%;"></div>
+                                        </div>
+                                        <span style="font-size: 12px; color: #666;">@(rel.Strength.ToString("F2"))</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(rel.Metadata))
+                                    {
+                                        <div style="margin-top: 8px; font-size: 12px; color: #999;">
+                                            <strong>元数据：</strong>
+                                            <pre style="margin: 5px 0; padding: 8px; background-color: #f5f5f5; border-radius: 4px;">@rel.Metadata</pre>
+                                        </div>
+                                    }
+                                    <div style="margin-top: 10px;">
+                                        <button class="layui-btn layui-btn-xs visualize-target" data-id="@rel.TargetMemoryID">
+                                            <i class="layui-icon">&#xe64c;</i>查看目标节点
+                                        </button>
+                                        <button class="layui-btn layui-btn-xs layui-btn-danger del-rel" data-id="@rel.RelationID">
+                                            <i class="layui-icon">&#xe640;</i>删除关系
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div style="padding: 20px; text-align: center; color: #999;">暂无出度关系</div>
+                        }
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>入度关系 (@(incomingRelations?.Count ?? 0))</h3>
+                        @if (incomingRelations != null && incomingRelations.Count > 0)
+                        {
+                            @foreach (var rel in incomingRelations)
+                            {
+                                var sourceMemory = ZSN.AI.BLL.LongTermMemoryBusiness.GetModel(rel.SourceMemoryID);
+                                <div class="relation-card">
+                                    <div>
+                                        <span class="relation-type relation-@rel.RelationType">@GetRelationTypeLabel(rel.RelationType)</span>
+                                        <strong>来源：</strong>@(sourceMemory?.Summary ?? "未知")
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        <strong>关系强度：</strong>
+                                        <div class="strength-bar">
+                                            <div class="strength-fill" style="width: @(rel.Strength * 100)%;"></div>
+                                        </div>
+                                        <span style="font-size: 12px; color: #666;">@(rel.Strength.ToString("F2"))</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(rel.Metadata))
+                                    {
+                                        <div style="margin-top: 8px; font-size: 12px; color: #999;">
+                                            <strong>元数据：</strong>
+                                            <pre style="margin: 5px 0; padding: 8px; background-color: #f5f5f5; border-radius: 4px;">@rel.Metadata</pre>
+                                        </div>
+                                    }
+                                    <div style="margin-top: 10px;">
+                                        <button class="layui-btn layui-btn-xs visualize-source" data-id="@rel.SourceMemoryID">
+                                            <i class="layui-icon">&#xe64c;</i>查看来源节点
+                                        </button>
+                                        <button class="layui-btn layui-btn-xs layui-btn-danger del-rel" data-id="@rel.RelationID">
+                                            <i class="layui-icon">&#xe640;</i>删除关系
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div style="padding: 20px; text-align: center; color: #999;">暂无入度关系</div>
+                        }
+                    </div>
+
+                    <div class="detail-section" style="text-align: center; margin-top: 30px;">
+                        <button class="layui-btn" id="closeBtn">关闭</button>
+                        <button class="layui-btn layui-btn-normal" id="visualizeBtn" data-id="@memory.MemoryID">
+                            <i class="layui-icon">&#xe64c;</i>查看知识图谱
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(['layer'], function () {
+            var layer = layui.layer;
+
+            // 获取关系类型标签
+            function getRelationTypeLabel(type) {
+                const labels = {
+                    'related': '相关',
+                    'prerequisite': '前置',
+                    'derived': '派生',
+                    'conflict': '冲突',
+                    'example': '示例',
+                    'category': '分类'
+                };
+                return labels[type] || '相关';
+            }
+
+            // 查看目标节点图谱
+            $('.visualize-target').click(function () {
+                var id = $(this).data('id');
+                var url = '@Url.Action("Visualize")?memoryId=' + id;
+                parent.layer.open({
+                    type: 2,
+                    title: '知识图谱可视化',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['95%', '90%'],
+                    content: url
+                });
+            });
+
+            // 查看来源节点图谱
+            $('.visualize-source').click(function () {
+                var id = $(this).data('id');
+                var url = '@Url.Action("Visualize")?memoryId=' + id;
+                parent.layer.open({
+                    type: 2,
+                    title: '知识图谱可视化',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['95%', '90%'],
+                    content: url
+                });
+            });
+
+            // 删除关系
+            $('.del-rel').click(function () {
+                var id = $(this).data('id');
+                var btn = $(this);
+                layer.confirm('确认要删除这个关系吗？', { title: '删除确认' }, function (index) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteRelation")',
+                        type: 'POST',
+                        data: { relationId: id },
+                        success: function (res) {
+                            if (res.success) {
+                                layer.msg(res.msg, { icon: 1, time: 1000 }, function () {
+                                    parent.location.reload();
+                                });
+                            } else {
+                                layer.msg(res.msg, { icon: 2 });
+                            }
+                        },
+                        error: function () {
+                            layer.msg('删除失败，请稍后重试', { icon: 2 });
+                        }
+                    });
+                    layer.close(index);
+                });
+            });
+
+            // 查看当前节点图谱
+            $('#visualizeBtn').click(function () {
+                var id = $(this).data('id');
+                var url = '@Url.Action("Visualize")?memoryId=' + id;
+                parent.layer.open({
+                    type: 2,
+                    title: '知识图谱可视化',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['95%', '90%'],
+                    content: url
+                });
+            });
+
+            // 关闭
+            $('#closeBtn').click(function () {
+                var index = parent.layer.getFrameIndex(window.name);
+                parent.layer.close(index);
+            });
+        });
+
+        @functions {
+            public string GetRelationTypeLabel(string type)
+            {
+                return type switch
+                {
+                    "related" => "相关",
+                    "prerequisite" => "前置",
+                    "derived" => "派生",
+                    "conflict" => "冲突",
+                    "example" => "示例",
+                    "category" => "分类",
+                    _ => "相关"
+                };
+            }
+        }
+    </script>
+}

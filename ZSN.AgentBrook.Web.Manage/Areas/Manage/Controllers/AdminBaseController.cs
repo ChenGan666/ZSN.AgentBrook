@@ -12,6 +12,7 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
     public class AdminBaseController: CommonBaseController
     {
         public HashEncrypt hashEncrypt = new HashEncrypt();
+        public int ErrorId = 2;
         public AdminBaseController()
         {
             

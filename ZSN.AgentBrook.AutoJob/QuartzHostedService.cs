@@ -1,17 +1,32 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ZSN.AgentBrook.AutoJob;
 using ZSN.Utils.Core.Helpers;
-using static Quartz.Logging.OperationName;
 
 namespace ZSN.AgentBrook.AutoJob
 {
     public class QuartzHostedService : IHostedService
     {
         private readonly IScheduler _scheduler;
+
+        // Job配置映射：JobName -> (Job类型, Trigger名称, Trigger组名)
+        private static readonly Dictionary<string, (Type JobType, string TriggerName, string GroupName)> JobMappings = new Dictionary<string, (Type, string, string)>
+        {
+            { "TimeTrigger", (typeof(TimeTrigger), "TimeTrigger_Trigger", "TimeTrigger_Group") },
+            { "AIDispatcher", (typeof(AIDispatcher), "AIDispatcher_Trigger", "AIDispatcher_Group") },
+            { "FileChunk", (typeof(FileChunkJob), "FileChunk_Trigger", "FileChunk_Group") },
+            { "Node", (typeof(NodeJob), "Node_Trigger", "Node_Group") },
+            { "SessionTopic", (typeof(SessionTopicJob), "SessionTopic_Trigger", "SessionTopic_Group") },
+            { "Markdown", (typeof(MarkdownJob), "Markdown_Trigger", "Markdown_Group") },
+            { "Cleaner", (typeof(CleanerJob), "Cleaner_Trigger", "Cleaner_Group") },
+            { "FileToKnowledgeBase", (typeof(FileToKnowledgeBaseJob), "FileToKnowledgeBase_Trigger", "FileToKnowledgeBase_Group") },
+            { "MemoryConsolidation", (typeof(MemoryConsolidationJob), "MemoryConsolidation_Trigger", "MemoryConsolidation_Group") },
+            { "ClawAIStepTimeout", (typeof(ClawAIStepTimeoutJob), "ClawAIStepTimeout_Trigger", "ClawAIStepTimeout_Group") }
+        };
 
         public QuartzHostedService(IScheduler scheduler)
         {
@@ -20,61 +35,51 @@ namespace ZSN.AgentBrook.AutoJob
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var _jobs = ConfigHelper.GetSection("Job").GetChildren().ToArray();
-            int LoopTimerSeconds = 0;
+            var jobs = ConfigHelper.GetSection("Job").GetChildren().ToArray();
 
-            foreach (var _job in _jobs)
+            foreach (var job in jobs)
             {
-                if (_job.GetSection("JobName").Value == "TimeTrigger")
+                var jobName = job.GetSection("JobName").Value;
+                if (!JobMappings.TryGetValue(jobName, out var jobConfig))
+                    continue;
+
+                var loopTimerSeconds = int.Parse(job.GetSection("LoopTimerSeconds").Value ?? "1000");
+                var jobDetail = JobBuilder.Create(jobConfig.JobType).Build();
+
+                // 支持 CronSchedule 和 SimpleSchedule 两种调度方式
+                if (loopTimerSeconds <= 0)
                 {
-                    LoopTimerSeconds = int.Parse(_job.GetSection("LoopTimerSeconds").Value??"1000");
-                    var _Worker = JobBuilder.Create<TimeTrigger>().Build();
-                    var _Worker_trigger = TriggerBuilder.Create().StartNow().WithIdentity("JobEvent_TimeTrigger", "JobEvent_TimeTrigger").WithSimpleSchedule(t => t.WithIntervalInSeconds(LoopTimerSeconds).RepeatForever()).Build();
-                    // 将任务添加到调度器
-                    await _scheduler.ScheduleJob(_Worker, _Worker_trigger, cancellationToken);
-                    // 启动调度器
-                    await _scheduler.Start(cancellationToken);
+                    // 使用 Cron 表达式调度
+                    var cronSchedule = job.GetSection("WithCronSchedule").Value;
+                    if (!string.IsNullOrEmpty(cronSchedule))
+                    {
+                        var trigger = TriggerBuilder.Create()
+                            .WithIdentity(jobConfig.TriggerName, jobConfig.GroupName)
+                            .WithCronSchedule(cronSchedule)
+                            .Build();
+                        await _scheduler.ScheduleJob(jobDetail, trigger, cancellationToken);
+                    }
                 }
-                if (_job.GetSection("JobName").Value == "AIDispatcher")
+                else
                 {
-                    LoopTimerSeconds = int.Parse(_job.GetSection("LoopTimerSeconds").Value ?? "1000");
-                    var _Worker = JobBuilder.Create<AIDispatcher>().Build();
-                    var _Worker_trigger = TriggerBuilder.Create().StartNow().WithIdentity("JobEvent_AIDispatcher", "JobEvent_AIDispatcher").WithSimpleSchedule(t => t.WithIntervalInSeconds(LoopTimerSeconds).RepeatForever()).Build();
-                    // 将任务添加到调度器
-                    await _scheduler.ScheduleJob(_Worker, _Worker_trigger, cancellationToken);
-                    // 启动调度器
-                    await _scheduler.Start(cancellationToken);
-                }
-                if (_job.GetSection("JobName").Value == "FileChunk")
-                {
-                    LoopTimerSeconds = int.Parse(_job.GetSection("LoopTimerSeconds").Value ?? "1000");
-                    var _Worker = JobBuilder.Create<FileChunkJob>().Build();
-                    var _Worker_trigger = TriggerBuilder.Create().StartNow().WithIdentity("JobEvent_FileChunk", "JobEvent_FileChunk").WithSimpleSchedule(t => t.WithIntervalInSeconds(LoopTimerSeconds).RepeatForever()).Build();
-                    // 将任务添加到调度器
-                    await _scheduler.ScheduleJob(_Worker, _Worker_trigger, cancellationToken);
-                    // 启动调度器
-                    await _scheduler.Start(cancellationToken);
-                }
-                if (_job.GetSection("JobName").Value == "Node")
-                {
-                    LoopTimerSeconds = int.Parse(_job.GetSection("LoopTimerSeconds").Value ?? "1000");
-                    var _Worker = JobBuilder.Create<NodeJob>().Build();
-                    var _Worker_trigger = TriggerBuilder.Create().StartNow().WithIdentity("JobEvent_Node", "JobEvent_Node").WithSimpleSchedule(t => t.WithIntervalInSeconds(LoopTimerSeconds).RepeatForever()).Build();
-                    // 将任务添加到调度器
-                    await _scheduler.ScheduleJob(_Worker, _Worker_trigger, cancellationToken);
-                    // 启动调度器
-                    await _scheduler.Start(cancellationToken);
+                    // 使用固定间隔调度
+                    var trigger = TriggerBuilder.Create()
+                        .StartNow()
+                        .WithIdentity(jobConfig.TriggerName, jobConfig.GroupName)
+                        .WithSimpleSchedule(t => t.WithIntervalInSeconds(loopTimerSeconds).RepeatForever())
+                        .Build();
+                    await _scheduler.ScheduleJob(jobDetail, trigger, cancellationToken);
                 }
             }
 
-            Console.WriteLine("Quartz Scheduler started.");
+            // 所有任务添加完成后，启动调度器
+            await _scheduler.Start(cancellationToken);
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             // 停止调度器
             await _scheduler.Shutdown(cancellationToken);
-            Console.WriteLine("Quartz Scheduler stopped.");
         }
     }
 }

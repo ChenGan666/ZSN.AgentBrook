@@ -8,7 +8,6 @@
             <form class="layui-form">
                 <input type="hidden" value="@dic.DicId" name="DicId" />
                 <input type="hidden" value="@dic.Pid" name="Pid" />
-                <input type="hidden" value="@dic.Cid" name="Cid" />
                 <input type="hidden" value="@dic.CreateTime" name="CreateTime" />
                 <div class="layui-form-item">
                     <label class="layui-form-label">
@@ -30,12 +29,23 @@
                 </div>
                 <div class="layui-form-item">
                     <label class="layui-form-label">
+                        <span class="x-red"></span>图标
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="Icon" value="@dic.Icon"
+                               autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
                         字典值
                     </label>
                     <div class="layui-input-block">
                         <textarea name="DicValue" class="layui-textarea">@dic.DicValue</textarea>
                     </div>
                 </div>
+
+                
                 <div class="layui-form-item">
                     <label class="layui-form-label">
                         字典备注
@@ -59,6 +69,15 @@
                     </label>
                     <div class="layui-input-inline">
                         <input type="text" name="Sort" value="@dic.Sort" lay-verify="number"
+                               autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        Cid（特殊保留值）
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="Cid" value="@dic.Cid" lay-verify="number"
                                autocomplete="off" class="layui-input">
                     </div>
                 </div>

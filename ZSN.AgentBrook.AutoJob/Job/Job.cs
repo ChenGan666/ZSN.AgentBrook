@@ -6,6 +6,6 @@ namespace ZSN.AgentBrook.AutoJob
 {
     public class JobBase
     {
-        public int ErrorId = 10;//JobError
+        public int ErrorId = 308;//JobError
     }
 }

@@ -1,4 +1,4 @@
-﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Office2021.DocumentTasks;
 
 using J2N.Text;
@@ -28,7 +28,6 @@ namespace ZSN.AgentBrook.AutoJob
         }
         public async Task<int> Auto()
         {
-            Console.WriteLine("ZSN.AI.AutoJob.Job![JobEvent_TimeTrigger]");
             int num = 0;
             try
             {
@@ -42,12 +41,12 @@ namespace ZSN.AgentBrook.AutoJob
                         if (task != null)
                         {
                             num++;
-                            task.RedoCount++;
 
                             var IntervalValue = task.IntervalValue;
                             bool Doing = false;
                             DateTime currentDate = DateTime.Now.Date;
-                            DateTime taskTime = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, task.CreateTime.Hour, task.CreateTime.Minute, task.CreateTime.Second); ;
+                            // 使用StartTime作为每日触发时间点
+                            DateTime taskTime = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, task.StartTime.Hour, task.StartTime.Minute, task.StartTime.Second);
                             try
                             {
                                 switch (task.LoopType)
@@ -62,21 +61,21 @@ namespace ZSN.AgentBrook.AutoJob
                                         }
                                         break;
                                     case LoopType.Day:
-                                        if ((DateTime.Now - task.UpdateTime).TotalDays > IntervalValue.Value[0] && (DateTime.Now - taskTime).Seconds<=0)
+                                        if ((DateTime.Now - task.UpdateTime).TotalDays >= IntervalValue.Value[0] && Math.Abs((DateTime.Now - taskTime).TotalSeconds) <= 60)
                                         {
                                             Doing = true;
                                         }
                                         break;
                                     case LoopType.Week:
                                         string dayOfWeek = ((int)DateTime.Now.DayOfWeek).ToString();
-                                        if (string.Join(",", IntervalValue).IndexOf(dayOfWeek) > -1 && (DateTime.Now - taskTime).Seconds <= 0)
+                                        if (string.Join(",", IntervalValue.Value).IndexOf(dayOfWeek) > -1 && Math.Abs((DateTime.Now - taskTime).TotalSeconds) <= 60)
                                         {
                                             Doing = true;
                                         }
                                         break;
                                     case LoopType.Month:
                                         string day = ((int)DateTime.Now.Day).ToString();
-                                        if (string.Join(",", IntervalValue).IndexOf(day) > -1 && (DateTime.Now - taskTime).Seconds <= 0)
+                                        if (string.Join(",", IntervalValue.Value).IndexOf(day) > -1 && Math.Abs((DateTime.Now - taskTime).TotalSeconds) <= 60)
                                         {
                                             Doing = true;
                                         }
@@ -86,22 +85,34 @@ namespace ZSN.AgentBrook.AutoJob
                                 if (Doing)
                                 {
                                     await this.Doing(task);
+                                    task.RedoCount++;
                                 }
 
+                                // 处理任务状态和执行次数
                                 if (task.LoopType != LoopType.NOLoop)
                                 {
+                                    // 循环任务
                                     if (task.RepeatValue == 0)
                                     {
-                                        task.State = 0;
+                                        // 无限次执行,保持Waiting状态
+                                        task.State = TaskState.Waiting;
                                         TaskInfoBussiness.Update(task);
                                     }
-                                    else if (task.RedoCount++ < task.RepeatValue)
+                                    else if (task.RedoCount >= task.RepeatValue)
                                     {
+                                        // 已达到执行次数上限,标记为完成
                                         TaskIDList.Add(task.TaskID);
+                                    }
+                                    else
+                                    {
+                                        // 未达到执行次数上限,继续等待
+                                        task.State = TaskState.Waiting;
+                                        TaskInfoBussiness.Update(task);
                                     }
                                 }
                                 else
                                 {
+                                    // 非循环任务,执行一次后完成
                                     task.State = TaskState.Completed;
                                     TaskInfoBussiness.Update(task);
                                 }
@@ -109,12 +120,10 @@ namespace ZSN.AgentBrook.AutoJob
                             catch (Exception e)
                             {
                                 task.State = TaskState.Failure;
-                                if (task.LoopType == LoopType.NOLoop)
+                                // 错误处理:循环任务保持Waiting状态以便重试,非循环任务标记为失败
+                                if (task.LoopType != LoopType.NOLoop)
                                 {
-                                    if (task.RedoCount++ < task.RepeatValue)
-                                    {
-                                        task.State = 0;
-                                    }
+                                    task.State = TaskState.Waiting;
                                 }
                                 TaskInfoBussiness.Update(task);
                                 DefaultLogService.AddOperationLog(ErrorId, e.Message);
@@ -124,7 +133,7 @@ namespace ZSN.AgentBrook.AutoJob
 
                     if (TaskIDList.Count > 0)
                     {
-                        TaskInfoBussiness.SetState(TaskIDList, 2);
+                        TaskInfoBussiness.SetState(TaskIDList, TaskState.Completed);
                     }
                 }
             }
@@ -153,7 +162,7 @@ namespace ZSN.AgentBrook.AutoJob
                         taskData.TaskID = task.TaskID;
 
                         TimeTriggerData timeTriggerData  = JsonConvert.DeserializeObject<TimeTriggerData>(taskConfig.NodeConfig.data.ToString());
-                        if (timeTriggerData != null)
+                        if (timeTriggerData != null && timeTriggerData.enable)
                         {
                             string prompt = timeTriggerData.prompt;
                             List<WorkflowEdgeInfo> edgeList = WorkflowEdgeInfoBussiness.GetListBySourceNodeId(NodeID);
@@ -192,6 +201,8 @@ namespace ZSN.AgentBrook.AutoJob
                 task.Results = new Results();
                 task.Results.Data = ex;
                 task.State = TaskState.Failure;
+
+                DefaultLogService.AddOperationLog(ErrorId, ex.Message);
             }
             task.UpdateTime = DateTime.Now;
             TaskInfoBussiness.Update(task);

@@ -1,8 +1,0 @@
-============================
-Time:2024-11-22 10:56:06.236
-LogQueueProvider创建内存队列成功
-Url:http://192.168.0.28:5002/Manage/Workflow/Save
-UrlReferrer:http://192.168.0.28:5002/workflow/index.html?WorkFlowID=37721d49-2661-4f16-9678-6eb7ee0b7491&MainID=15c5fb785f4ce8a99717ea85f29690c9&MainType=1
-UserHostAddress:192.168.0.18;;
-
-

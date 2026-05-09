@@ -1,0 +1,1420 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ZSN.AI.Core</name>
+    </assembly>
+    <members>
+        <member name="T:ZSN.AI.Core.Common.DependencyInjection.ServiceCollectionExtensions">
+            <summary>
+            容器扩展
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.DependencyInjection.ServiceCollectionExtensions.AddServicesFromAssemblies(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String[])">
+            <summary>
+            从程序集中加载类型并添加到容器中
+            </summary>
+            <param name="services">容器</param>
+            <param name="assemblies">程序集集合</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.DependencyInjection.InitExtensions.LoadFun(Microsoft.AspNetCore.Builder.WebApplication)">
+            <summary>
+            加载数据库的插件
+            </summary>
+            <param name="services"></param>
+            <returns></returns>
+        </member>
+        <member name="F:ZSN.AI.Core.Common.DependencyInjection.ServiceLifetime.Scoped">
+            <summary>
+            作用域
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Common.DependencyInjection.ServiceLifetime.Singleton">
+            <summary>
+            单例
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Common.DependencyInjection.ServiceLifetime.Transient">
+            <summary>
+            瞬时
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.ExcelToDataTable(System.String,System.Boolean)">
+            <summary>
+            将excel导入到datatable
+            </summary>
+            <param name="filePath">excel路径</param>
+            <param name="isColumnName">第一行是否是列名</param>
+            <returns>返回datatable</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.ExcelToDataTable(System.IO.Stream,System.Boolean)">
+            <summary>
+            将excel导入到datatable
+            </summary>
+            <param name="stream">流</param>
+            <param name="isColumnName">第一行是否是列名</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.ExcelToList``1(System.IO.Stream)">
+            <summary>
+            Excel 转换为对象列表
+            </summary>
+            <typeparam name="TResult">目标对象类型</typeparam>
+            <param name="stream">Excel 文件流</param>
+            <returns>对象列表</returns>
+            <summary>
+            excel转list
+            </summary>
+            <typeparam name="TResult"></typeparam>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.ExcelToList``1(System.IO.Stream,System.String)">
+            <summary>
+            excel转list-根据sheetName得到List
+            </summary>
+            <typeparam name="TResult"></typeparam>
+            <param name="stream"></param>
+            <param name="sheetName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.ListToExcel``1(``0[],System.String)">
+            <summary>
+            List导出excel 二进制流
+            </summary>
+            <typeparam name="T">实体</typeparam>
+            <param name="data">List</param>
+            <param name="sheetName">sheetname 可不填，默认Sheet0</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.DataTableToExcel(System.Data.DataTable,System.String,System.String)">
+            <summary>
+             Dt导出excel 二进制流
+            </summary>
+            <param name="dt">datatable</param>
+            <param name="strFile">strFile</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.ListWriteExcel``1(``0[],System.String,System.String)">
+            <summary>
+            List写入excel
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="data"></param>
+            <param name="strFile">路径</param>
+            <param name="sheetName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.DataTableWriteExcel(System.Data.DataTable,System.String,System.String)">
+            <summary>
+            dt写入excel
+            </summary>
+            <param name="dt">datatable</param>
+            <param name="strFile">路径</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Common.Excel.ExeclHelper.SetCellDropdownList(NPOI.SS.UserModel.IWorkbook,NPOI.SS.UserModel.ISheet,System.Collections.Generic.List{System.String},System.String,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            设置单元格下拉框(除去标题行)
+            </summary>
+            <param name="workbook"></param>
+            <param name="sheet"></param>
+            <param name="ddlList"></param>
+            <param name="firstcol"></param>
+            <param name="lastcol"></param>
+        </member>
+        <member name="P:ZSN.AI.Core.Handler.KMExcelHandler.StepName">
+            <inheritdoc />
+        </member>
+        <member name="M:ZSN.AI.Core.Handler.KMExcelHandler.InvokeAsync(Microsoft.KernelMemory.Pipeline.DataPipeline,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="P:ZSN.AI.Core.Handler.QAHandler.StepName">
+            <inheritdoc />
+        </member>
+        <member name="M:ZSN.AI.Core.Handler.QAHandler.InvokeAsync(Microsoft.KernelMemory.Pipeline.DataPipeline,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:ZSN.AI.Core.Interface.IEmbeddingService">
+            <summary>
+            文本向量化服务接口
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Interface.IEmbeddingService.GetEmbeddingAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            生成单个文本的向量
+            </summary>
+            <param name="text">输入文本</param>
+            <param name="cancellationToken">取消令牌</param>
+            <returns>向量数组</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Interface.IEmbeddingService.GetEmbeddingsAsync(System.String[],System.Threading.CancellationToken)">
+            <summary>
+            批量生成文本向量
+            </summary>
+            <param name="texts">文本列表</param>
+            <param name="cancellationToken">取消令牌</param>
+            <returns>向量数组列表</returns>
+        </member>
+        <member name="P:ZSN.AI.Core.Interface.IEmbeddingService.VectorDimension">
+            <summary>
+            获取向量维度
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Interface.IImageService">
+            <summary>
+            图片生成服务接口
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Interface.IImageService.GenerateImageAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Image.ImageGenerationRequest)">
+            <summary>
+            生成图片
+            </summary>
+            <param name="modelInfo">模型信息</param>
+            <param name="request">图片生成请求</param>
+            <returns>图片URL</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Interface.IImageService.GenerateImageAsync(ZSN.AI.Entity.LargeModelInfo,System.String,System.Int32,System.Int32,System.String,System.String)">
+            <summary>
+            生成图片(简化版本 - 仅文生图)
+            </summary>
+            <param name="modelInfo">模型信息</param>
+            <param name="prompt">提示词</param>
+            <param name="width">宽度</param>
+            <param name="height">高度</param>
+            <param name="quality">质量</param>
+            <param name="style">风格</param>
+            <returns>图片URL</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Interface.IKernelService.GenerateEmbeddingAsync(ZSN.AI.Entity.LargeModelInfo,System.String)">
+            <summary>
+            生成文本向量嵌入
+            </summary>
+            <param name="modelInfo">向量模型信息</param>
+            <param name="text">要生成向量的文本</param>
+            <returns>向量数组</returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Interface.IVideoService">
+            <summary>
+            视频生成服务接口
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Interface.IVideoService.SubmitVideoTaskAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Video.VideoGenerationRequest)">
+            <summary>
+            提交视频生成任务
+            </summary>
+            <param name="modelInfo">模型信息</param>
+            <param name="request">视频生成请求</param>
+            <returns>视频生成响应(包含任务ID)</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Interface.IVideoService.QueryVideoTaskStatusAsync(ZSN.AI.Entity.LargeModelInfo,System.String)">
+            <summary>
+            查询视频生成任务状态
+            </summary>
+            <param name="modelInfo">模型信息</param>
+            <param name="taskId">任务ID</param>
+            <returns>视频生成响应(包含任务状态和结果)</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Interface.IVideoService.GenerateVideoAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Video.VideoGenerationRequest,System.Int32,System.Int32)">
+            <summary>
+            生成视频(提交任务并等待完成)
+            </summary>
+            <param name="modelInfo">模型信息</param>
+            <param name="request">视频生成请求</param>
+            <param name="maxWaitSeconds">最大等待时间(秒),默认300秒</param>
+            <param name="pollIntervalSeconds">轮询间隔(秒),默认5秒</param>
+            <returns>视频生成响应(包含视频URL)</returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Image.ImageGenerationRequest">
+            <summary>
+            图片生成请求基类 - 通用参数
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.GenerationType">
+            <summary>
+            图片生成类型
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.Prompt">
+            <summary>
+            提示词描述
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.ImageInput">
+            <summary>
+            输入图片URL或Base64 (用于图生图)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.Width">
+            <summary>
+            图片宽度
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.Height">
+            <summary>
+            图片高度
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.Quality">
+            <summary>
+            图片质量 (如: "standard", "hd")
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.Style">
+            <summary>
+            图片风格 (如: "vivid", "natural")
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.N">
+            <summary>
+            生成图片数量
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationRequest.ExtendedParameters">
+            <summary>
+            扩展参数字典 - 用于不同模型的特殊参数
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Image.ImageGenerationResponse">
+            <summary>
+            图片生成响应模型
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationResponse.ImageUrls">
+            <summary>
+            生成的图片URL列表
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationResponse.RequestId">
+            <summary>
+            请求ID
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.ImageGenerationResponse.ErrorMessage">
+            <summary>
+            错误消息
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Image.ImageGenerationType">
+            <summary>
+            图片生成类型枚举
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Image.ImageGenerationType.TextToImage">
+            <summary>
+            文本生成图片 (Text to Image)
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Image.ImageGenerationType.ImageToImage">
+            <summary>
+            图片生成图片 (Image to Image / Image Edit)
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Image.Parameters.OpenAIImageParameters">
+            <summary>
+            OpenAI DALL-E 模型参数
+            支持模型: dall-e-2, dall-e-3
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.Parameters.OpenAIImageParameters.Size">
+            <summary>
+            图片尺寸
+            DALL-E 2: 256x256, 512x512, 1024x1024
+            DALL-E 3: 1024x1024, 1792x1024, 1024x1792
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.Parameters.OpenAIImageParameters.Quality">
+            <summary>
+            图片质量 (仅DALL-E 3支持)
+            可选值: "standard", "hd"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.Parameters.OpenAIImageParameters.Style">
+            <summary>
+            图片风格 (仅DALL-E 3支持)
+            可选值: "vivid", "natural"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.Parameters.OpenAIImageParameters.N">
+            <summary>
+            生成图片数量
+            DALL-E 2: 1-10
+            DALL-E 3: 仅支持1
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Models.Image.Parameters.OpenAIImageParameters.GetModelName(System.Int32)">
+            <summary>
+            获取对应的模型名称
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Image.Parameters.QWenImageParameters">
+            <summary>
+            QWen (通义千问) 图片生成模型参数
+            支持模型: Qwen/Qwen-Image (文生图), Qwen/Qwen-Image-Edit (图生图)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Image.Parameters.QWenImageParameters.Size">
+            <summary>
+            图片尺寸
+            格式: "widthxheight" (如: "1024x1024")
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Models.Image.Parameters.QWenImageParameters.GetModelName(ZSN.AI.Core.Models.Image.ImageGenerationType)">
+            <summary>
+            获取对应的模型名称
+            </summary>
+            <param name="generationType">生成类型</param>
+            <returns>模型名称</returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.Parameters.DoubaoVideoParameters">
+            <summary>
+            Doubao (豆包) 模型参数
+            支持模型: doubao-seedance-1-5-pro-251215
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.DoubaoVideoParameters.Duration">
+            <summary>
+            视频时长(秒)
+            根据模型文档设置默认值
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.DoubaoVideoParameters.Resolution">
+            <summary>
+            分辨率
+            根据模型文档设置支持的分辨率
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Models.Video.Parameters.DoubaoVideoParameters.GetModelName">
+            <summary>
+            获取对应的模型名称
+            </summary>
+            <returns>模型名称</returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.Parameters.HailuoVideoParameters">
+            <summary>
+            MiniMax Hailuo 模型参数
+            支持模型: MiniMax-Hailuo-2.3 (T2V和I2V)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.HailuoVideoParameters.Duration">
+            <summary>
+            视频时长(秒)
+            默认: 6
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.HailuoVideoParameters.Resolution">
+            <summary>
+            分辨率
+            支持: "1080P", "720P"
+            默认: "1080P"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.HailuoVideoParameters.PromptOptimizer">
+            <summary>
+            是否启用提示词优化
+            默认: true
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.HailuoVideoParameters.FastPretreatment">
+            <summary>
+            是否快速预处理
+            默认: false
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.HailuoVideoParameters.AigcWatermark">
+            <summary>
+            是否添加AIGC水印
+            默认: false
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Models.Video.Parameters.HailuoVideoParameters.GetModelName">
+            <summary>
+            获取对应的模型名称
+            </summary>
+            <returns>模型名称</returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.Parameters.SoraVideoParameters">
+            <summary>
+            OpenAI Sora 模型参数
+            支持模型: openai/sora-2/text-to-video, openai/sora-2/text-to-video-pro, 
+                     openai/sora-2/image-to-video, openai/sora-2/image-to-video-pro
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.SoraVideoParameters.Size">
+            <summary>
+            视频尺寸
+            支持: "720x1280" (竖屏), "1280x720" (横屏)
+            默认: "720x1280"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.SoraVideoParameters.Duration">
+            <summary>
+            视频时长(秒)
+            T2V支持: 4, 8, 12 秒
+            I2V支持: 4 秒
+            默认: 4
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Models.Video.Parameters.SoraVideoParameters.GetModelName(ZSN.AI.Core.Models.Video.VideoGenerationType,System.Boolean)">
+            <summary>
+            获取对应的模型名称
+            </summary>
+            <param name="generationType">生成类型</param>
+            <param name="isPro">是否使用Pro版本</param>
+            <returns>模型名称</returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters">
+            <summary>
+            Vidu 模型参数
+            支持模型: viduq2, viduq2-pro, viduq2-turbo
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters.ViduType">
+            <summary>
+            Vidu 生成类型
+            可选值: "text2video", "img2video", "reference2video", "start-end2video"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters.Duration">
+            <summary>
+            视频时长(秒)
+            默认: 5
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters.AspectRatio">
+            <summary>
+            宽高比 (用于text2video和reference2video)
+            支持: "16:9", "9:16", "4:3", "3:4", "1:1"
+            默认: "16:9"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters.Resolution">
+            <summary>
+            分辨率 (用于img2video和start-end2video)
+            支持: "720p", "1080p", "auto"
+            默认: "1080p"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters.MovementAmplitude">
+            <summary>
+            运动幅度 (用于img2video, reference2video, start-end2video)
+            支持: "auto", "small", "medium", "large"
+            默认: "auto"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters.Bgm">
+            <summary>
+            是否添加背景音乐
+            默认: false
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters.GetModelName(System.String)">
+            <summary>
+            获取对应的模型名称
+            </summary>
+            <param name="modelVersion">模型版本: "q2", "q2-pro", "q2-turbo"</param>
+            <returns>模型名称</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Models.Video.Parameters.ViduVideoParameters.SetViduTypeFromGenerationType">
+            <summary>
+            根据生成类型设置ViduType
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.Parameters.WanAIVideoParameters">
+            <summary>
+            Wan-AI 模型参数
+            支持模型: Wan-AI/Wan2.2-T2V, Wan-AI/Wan2.2-I2V, Wan-AI/Wan2.5-T2V, Wan-AI/Wan2.5-I2V, 
+                     Wan-AI/Wan2.6-T2V, Wan-AI/Wan2.6-I2V
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.WanAIVideoParameters.Resolution">
+            <summary>
+            分辨率
+            Wan2.2/2.5: "720P" (1280x720或720x1280), "480P" (832x480或480x832)
+            Wan2.6: "720P", "1080P"
+            默认: "720P"
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.WanAIVideoParameters.Seed">
+            <summary>
+            随机种子
+            范围: [0, 2147483647] (Wan2.2/2.5)
+            范围: [0, 4294967295] (Wan2.6)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.WanAIVideoParameters.NegativePrompt">
+            <summary>
+            负面提示词
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.WanAIVideoParameters.Duration">
+            <summary>
+            视频时长（仅Wan2.6支持）
+            支持: 5, 10, 15 秒
+            默认: 5
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.WanAIVideoParameters.PromptExtend">
+            <summary>
+            是否启用提示词扩展（仅Wan2.6支持）
+            默认: true
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.Parameters.WanAIVideoParameters.ShotType">
+            <summary>
+            镜头类型（仅Wan2.6支持）
+            支持: "single" (单镜头), "multi" (多镜头)
+            默认: "single"
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Models.Video.Parameters.WanAIVideoParameters.GetModelName(System.String,ZSN.AI.Core.Models.Video.VideoGenerationType)">
+            <summary>
+            获取对应的模型名称
+            </summary>
+            <param name="version">版本号: "2.2", "2.5", "2.6"</param>
+            <param name="generationType">生成类型</param>
+            <returns>模型名称</returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.VideoGenerationRequest">
+            <summary>
+            视频生成请求基类 - 通用参数
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.GenerationType">
+            <summary>
+            视频生成类型
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.Prompt">
+            <summary>
+            提示词描述
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.NegativePrompt">
+            <summary>
+            负面提示词(可选)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.ImageInput">
+            <summary>
+            输入图片URL或Base64 (用于图生视频)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.ReferenceImages">
+            <summary>
+            参考图片列表 (用于参考图生成视频)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.FirstFrameUrl">
+            <summary>
+            首帧图片URL或Base64 (用于首尾帧生成视频)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.LastFrameUrl">
+            <summary>
+            尾帧图片URL或Base64 (用于首尾帧生成视频)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.Duration">
+            <summary>
+            视频时长(秒) - 不同模型支持不同时长
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.Size">
+            <summary>
+            视频分辨率/尺寸 (如: "720x1280", "1080P", "16:9")
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.AspectRatio">
+            <summary>
+            宽高比 (如: "16:9", "9:16", "1:1")
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.Resolution">
+            <summary>
+            分辨率 (如: "720p", "1080p")
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.Seed">
+            <summary>
+            随机种子 (用于可重现的生成)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationRequest.ExtendedParameters">
+            <summary>
+            扩展参数字典 - 用于不同模型的特殊参数
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.VideoGenerationResponse">
+            <summary>
+            视频生成响应模型
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationResponse.TaskId">
+            <summary>
+            任务ID
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationResponse.RequestId">
+            <summary>
+            请求ID
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationResponse.TaskStatus">
+            <summary>
+            任务状态
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationResponse.VideoUrls">
+            <summary>
+            生成的视频URL列表
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationResponse.SubmitTime">
+            <summary>
+            任务提交时间 (Unix时间戳)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationResponse.FinishTime">
+            <summary>
+            任务完成时间 (Unix时间戳)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationResponse.ErrorMessage">
+            <summary>
+            错误消息 (任务失败时)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoGenerationResponse.Usage">
+            <summary>
+            使用统计信息
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.VideoUsageInfo">
+            <summary>
+            视频使用统计信息
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoUsageInfo.Duration">
+            <summary>
+            视频时长(秒)
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Models.Video.VideoUsageInfo.AdditionalInfo">
+            <summary>
+            其他使用信息
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.VideoGenerationType">
+            <summary>
+            视频生成类型枚举
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Video.VideoGenerationType.TextToVideo">
+            <summary>
+            文本生成视频 (Text to Video)
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Video.VideoGenerationType.ImageToVideo">
+            <summary>
+            图片生成视频 (Image to Video)
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Video.VideoGenerationType.ReferenceToVideo">
+            <summary>
+            参考图生成视频 (Reference Images to Video)
+            使用1-7张参考图片生成具有主体一致性的视频
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Video.VideoGenerationType.StartEndToVideo">
+            <summary>
+            首尾帧生成视频 (Start-End Frames to Video)
+            使用首帧和尾帧图片生成中间过渡视频
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Models.Video.VideoTaskStatus">
+            <summary>
+            视频生成任务状态枚举
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Video.VideoTaskStatus.Pending">
+            <summary>
+            等待中
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Video.VideoTaskStatus.Running">
+            <summary>
+            运行中
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Video.VideoTaskStatus.Success">
+            <summary>
+            成功
+            </summary>
+        </member>
+        <member name="F:ZSN.AI.Core.Models.Video.VideoTaskStatus.Failure">
+            <summary>
+            失败
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Apis.Name">
+            <summary>
+            接口名称
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Apis.Describe">
+            <summary>
+            接口描述
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Apis.Url">
+            <summary>
+            接口地址
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Apis.Method">
+            <summary>
+            请求方法
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Apis.Query">
+            <summary>
+            QueryString参数
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Apis.JsonBody">
+            <summary>
+            jsonBody 实体
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Apis.InputPrompt">
+            <summary>
+            入参提示词
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Apis.OutputPrompt">
+            <summary>
+            返回提示词
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Chats.UserName">
+            <summary>
+            用户名
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Chats.AppId">
+            <summary>
+            应用ID
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Chats.Context">
+            <summary>
+            消息内容
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Chats.IsSend">
+            <summary>
+            发送是true  接收是false
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Chats.CreateTime">
+            <summary>
+            创建事件
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Chats.FileName">
+            <summary>
+            文件名
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Funs.Path">
+            <summary>
+            接口描述
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Kmss.Icon">
+            <summary>
+            图标
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Kmss.Name">
+            <summary>
+            名称
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Kmss.Describe">
+            <summary>
+            会话模型
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Kmss.ChatModelID">
+            <summary>
+            会话模型ID
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Kmss.EmbeddingModelID">
+            <summary>
+            向量模型ID
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Kmss.MaxTokensPerParagraph">
+            <summary>
+            每个段落的最大标记数。
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Kmss.MaxTokensPerLine">
+            <summary>
+            每行，也就是每句话的最大标记数
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.Kmss.OverlappingTokens">
+            <summary>
+            段落之间重叠标记的数量。
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.AIModels.AIType">
+            <summary>
+            AI类型
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.AIModels.AIModelType">
+            <summary>
+            模型类型
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.AIModels.EndPoint">
+            <summary>
+            模型地址
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.AIModels.ModelName">
+            <summary>
+            模型名称
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.AIModels.ModelKey">
+            <summary>
+            模型秘钥
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Repositories.AIModels.ModelDescription">
+            <summary>
+            部署名，azure需要使用
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.ChatService.SendChatAsync(ZSN.AI.Entity.LargeModelConfig,Microsoft.SemanticKernel.ChatCompletion.ChatHistory,ZSN.AI.Entity.CallFunction,System.String,System.Boolean,System.IProgress{System.String},System.Threading.CancellationToken)">
+            <summary>
+            发送消息
+            </summary>
+            <param name="ModelConfig"></param>
+            <param name="history"></param>
+            <param name="Function"></param>
+            <param name="responseFormat">json_object,text</param>
+            <param name="enableStreamingObservation"></param>
+            <param name="ct"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.ChatService.SendKmsAsync(System.Collections.Generic.List{ZSN.AI.Entity.KnowledgeBaseUnit},ZSN.AI.Entity.LargeModelConfig,System.String,Microsoft.SemanticKernel.ChatCompletion.ChatHistory)">
+            <summary>
+            通过多个知识库获取提问的相关内容，并根据对话记录重新组织返回
+            </summary>
+            <param name="KnowledgeBaseUnits"></param>
+            <param name="ChatModel"></param>
+            <param name="questions"></param>
+            <param name="history"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.ChatService.GetChatHistory(System.Collections.Generic.List{ZSN.AI.Entity.AppChatLogInfo},Microsoft.SemanticKernel.ChatCompletion.ChatHistory)">
+            <summary>
+            组织会话记录
+            </summary>
+            <param name="MessageList">消息列表</param>
+            <param name="history">记录历史</param>
+            <returns>处理后的对话历史</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.FunctionService.SearchMarkedMethods">
+            <summary>
+            查询程序集中的方法委托，后续利用Source Generators生成
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Service.ImageService">
+            <summary>
+            图片生成服务 - 对外统一接口
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.ImageService.GenerateImageAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Image.ImageGenerationRequest)">
+            <summary>
+            生成图片
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.ImageService.GenerateImageAsync(ZSN.AI.Entity.LargeModelInfo,System.String,System.Int32,System.Int32,System.String,System.String)">
+            <summary>
+            生成图片(简化版本 - 仅文生图)
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.ImageService.GetProvider(ZSN.AI.Entity.LargeModelInfo)">
+            <summary>
+            根据模型信息获取对应的提供商
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.GetKernel(ZSN.AI.Entity.LargeModelInfo)">
+            <summary>
+            获取kernel实例，依赖注入不好按每个用户去 Import不同的插件，所以每次new一个新的kernel
+            </summary>
+            <param name="ModelInfo">模型信息</param>
+            <returns>配置好的Kernel实例</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.GetKernelByAIModelID(System.Int32)">
+            <summary>
+            通过模型ID获取Kernel实例
+            </summary>
+            <param name="modelid">模型ID</param>
+            <returns>配置好的Kernel实例</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.CreateDefaultKernel">
+            <summary>
+            创建一个默认的Kernel实例，当其他方法失败时使用
+            </summary>
+            <returns>默认配置的Kernel实例</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.ImportFunctions(Microsoft.SemanticKernel.Kernel,System.Collections.Generic.IList{ModelContextProtocol.Client.McpClientTool})">
+            <summary>
+            将MCP客户端工具转换为Kernel函数，并导入到Kernel中
+            </summary>
+            <param name="_kernel"></param>
+            <param name="clientTools"></param>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.ImportFunctions(ZSN.AI.Entity.LargeModelConfig,Microsoft.SemanticKernel.Kernel)">
+            <summary>
+            根据app配置的插件，导入插件
+            </summary>
+            <param name="app"></param>
+            <param name="_kernel"></param>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.ImportNativeFunction(ZSN.AI.Entity.LargeModelConfig,System.Collections.Generic.List{Microsoft.SemanticKernel.KernelFunction})">
+            <summary>
+            导入原生插件
+            </summary>
+            <param name="app"></param>
+            <param name="functions"></param>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.RegisterPluginsWithBase(Microsoft.SemanticKernel.IKernelBuilder)">
+            <summary>
+            注册默认插件
+            </summary>
+            <param name="kernel"></param>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.HistorySummarize(Microsoft.SemanticKernel.Kernel,Microsoft.SemanticKernel.ChatCompletion.ChatHistory)">
+            <summary>
+            会话总结
+            </summary>
+            <param name="_kernel"></param>
+            <param name="history"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.GenerateEmbeddingAsync(ZSN.AI.Entity.LargeModelInfo,System.String)">
+            <summary>
+            生成文本向量嵌入
+            使用 Microsoft.Extensions.AI 的 IEmbeddingGenerator 接口
+            </summary>
+            <param name="modelInfo">向量模型信息</param>
+            <param name="text">要生成向量的文本</param>
+            <returns>向量数组</returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.CreateOpenAIEmbeddingService(ZSN.AI.Entity.LargeModelInfo,System.Net.Http.HttpClient)">
+            <summary>
+            创建 OpenAI 兼容的嵌入生成服务
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.KernelService.CreateOllamaEmbeddingService(ZSN.AI.Entity.LargeModelInfo,System.Net.Http.HttpClient)">
+            <summary>
+            创建 Ollama 嵌入生成服务
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Service.Providers.CompshareVideoProvider">
+            <summary>
+            Compshare (优云智算) 视频生成提供商
+            API文档: https://www.compshare.cn/docs/modelverse/models/video_api/
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.CompshareVideoProvider.SubmitVideoTaskAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Video.VideoGenerationRequest)">
+            <summary>
+            提交视频生成任务
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.CompshareVideoProvider.QueryVideoTaskStatusAsync(ZSN.AI.Entity.LargeModelInfo,System.String)">
+            <summary>
+            查询视频生成任务状态
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.CompshareVideoProvider.BuildSubmitRequestBody(System.String,ZSN.AI.Core.Models.Video.VideoGenerationRequest)">
+            <summary>
+            构建提交任务的请求体
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.CompshareVideoProvider.BuildInputObject(System.String,ZSN.AI.Core.Models.Video.VideoGenerationRequest)">
+            <summary>
+            构建input对象
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.CompshareVideoProvider.BuildParametersObject(System.String,ZSN.AI.Core.Models.Video.VideoGenerationRequest)">
+            <summary>
+            构建parameters对象
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.CompshareVideoProvider.ParseSubmitResponse(System.String)">
+            <summary>
+            解析提交任务的响应
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.CompshareVideoProvider.ParseStatusResponse(System.String)">
+            <summary>
+            解析查询状态的响应
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.CompshareVideoProvider.ConvertToDataUriIfNeeded(System.String)">
+            <summary>
+            将Base64字符串转换为Data URI格式（如果需要）
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Service.Providers.IImageProvider">
+            <summary>
+            图片生成提供商接口
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.IImageProvider.GenerateImageAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Image.ImageGenerationRequest)">
+            <summary>
+            生成图片
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Service.Providers.IVideoProvider">
+            <summary>
+            视频生成提供商接口
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.IVideoProvider.SubmitVideoTaskAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Video.VideoGenerationRequest)">
+            <summary>
+            提交视频生成任务
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.IVideoProvider.QueryVideoTaskStatusAsync(ZSN.AI.Entity.LargeModelInfo,System.String)">
+            <summary>
+            查询视频生成任务状态
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Service.Providers.OpenAICompatibleImageProvider">
+            <summary>
+            OpenAI 兼容的图片生成提供商
+            支持 OpenAI DALL-E, QWen, Compshare 等兼容 OpenAI API 格式的服务
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.OpenAICompatibleImageProvider.GenerateImageAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Image.ImageGenerationRequest)">
+            <summary>
+            生成图片
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.OpenAICompatibleImageProvider.BuildRequestBody(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Image.ImageGenerationRequest)">
+            <summary>
+            构建请求体
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.OpenAICompatibleImageProvider.ProcessImageInput(System.String)">
+            <summary>
+            处理图片输入(URL或Base64)
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.Providers.OpenAICompatibleImageProvider.ParseResponse(System.String)">
+            <summary>
+            解析响应
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Service.VideoService">
+            <summary>
+            视频生成服务 - 对外统一接口
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.VideoService.SubmitVideoTaskAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Video.VideoGenerationRequest)">
+            <summary>
+            提交视频生成任务
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.VideoService.QueryVideoTaskStatusAsync(ZSN.AI.Entity.LargeModelInfo,System.String)">
+            <summary>
+            查询视频生成任务状态
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.VideoService.GenerateVideoAsync(ZSN.AI.Entity.LargeModelInfo,ZSN.AI.Core.Models.Video.VideoGenerationRequest,System.Int32,System.Int32)">
+            <summary>
+            生成视频(提交任务并等待完成)
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Service.VideoService.GetProvider(ZSN.AI.Entity.LargeModelInfo)">
+            <summary>
+            根据模型信息获取对应的提供商
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Utils.BooleanConverter">
+            <summary>
+            宽松的布尔值转换器，支持字符串到布尔值的转换
+            用于兼容MCP协议等可能将布尔值序列化为字符串的场景
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Utils.NullableBooleanConverter">
+            <summary>
+            可空布尔值转换器
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.IsNull(System.Object)">
+            <summary>
+            判断是否为空，为空返回true
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.IsNotNull(System.Object)">
+            <summary>
+            判断是否为空，为空返回true
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.IsNull(System.String)">
+            <summary>
+            判断是否为空，为空返回true
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ConvertToString(System.Object)">
+            <summary>
+            将obj类型转换为string
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ConvertToInt32(System.Object)">
+            <summary>
+            object 转int32
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ConvertToInt64(System.Object)">
+            <summary>
+            object 转int32
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ConvertToDouble(System.Object)">
+            <summary>
+            将字符串转double
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ConvertToDateTime(System.String)">
+            <summary>
+            转换为datetime类型
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ConvertToDateTime(System.String,System.String)">
+            <summary>
+            转换为datetime类型的格式字符串
+            </summary>
+            <param name="s">要转换的对象</param>
+            <param name="y">格式化字符串</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ConvertToDecimal(System.Object)">
+            <summary>
+            将字符串转换成decimal
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.DecimalFraction(System.Decimal)">
+            <summary>
+            decimal保留2位小数
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ReplaceHtml(System.String)">
+            <summary>
+            替换html种的特殊字符
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.StreamToByte(System.IO.Stream)">
+            <summary>
+            流转byte
+            </summary>
+            <param name="stream"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ToQueryString(System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            json参数转化querystring参数
+            </summary>
+            <param name="parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.ConvertUtils.ComparisonIgnoreCase(System.String,System.String)">
+            <summary>
+            忽略大小写匹配
+            </summary>
+            <param name="s"></param>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Utils.UnifiedChatSettings">
+            <summary>
+            多模型统一 Chat 执行参数
+            OpenAI 参数 + ExtensionData 兜底
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.UnifiedChatSettings.Set(System.String,System.Object)">
+            <summary>
+            统一设置模型参数（最终都会进入请求体）
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.UnifiedChatSettings.Get``1(System.String)">
+            <summary>
+            安全读取扩展参数
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.RepoFiles.SamplePluginsPath">
+            <summary>
+            Scan the local folders from the repo, looking for "samples/plugins" folder.
+            </summary>
+            <returns>The full path to samples/plugins</returns>
+        </member>
+        <member name="T:ZSN.AI.Core.Utils.XmlCommentHelper">
+            <summary>
+            注释辅助类
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.LoadAll">
+            <summary>
+            从当前dll文件中加载所有的xml文件
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.LoadXml(System.String[])">
+            <summary>
+            从xml中加载
+            </summary>
+            <param name="xmls"></param>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.Load(System.String[])">
+            <summary>
+            从文件中加载
+            </summary>
+            <param name="xmlFiles"></param>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.Load(System.IO.Stream[])">
+            <summary>
+            从流中加载
+            </summary>
+            <param name="streams"></param>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetTypeComment(System.Type,System.String,System.Boolean)">
+            <summary>
+            读取类型中的注释
+            </summary>
+            <param name="type">类型</param>
+            <param name="xPath">注释路径</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetFieldOrPropertyComment(System.Reflection.MemberInfo,System.String,System.Boolean)">
+            <summary>
+            读取字段或者属性的注释
+            </summary>
+            <param name="fieldOrPropertyInfo">字段或者属性</param>
+            <param name="xPath">注释路径</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetMethodComment(System.Reflection.MethodInfo,System.String,System.Boolean)">
+            <summary>
+            读取方法中的注释
+            </summary>
+            <param name="methodInfo">方法</param>
+            <param name="xPath">注释路径</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetMethodReturnComment(System.Reflection.MethodInfo,System.Boolean)">
+            <summary>
+            读取方法中的返回值注释
+            </summary>
+            <param name="methodInfo">方法</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetParameterComment(System.Reflection.ParameterInfo,System.Boolean)">
+            <summary>
+            读取参数的注释
+            </summary>
+            <param name="parameterInfo">参数</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetParameterComments(System.Reflection.MethodInfo,System.Boolean)">
+            <summary>
+            读取方法的所有参数的注释
+            </summary>
+            <param name="methodInfo">方法</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetComment(System.String,System.String,System.Boolean)">
+            <summary>
+            读取指定名称节点的注释
+            </summary>
+            <param name="name">节点名称</param>
+            <param name="xPath">注释路径</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetSummary(System.String,System.Boolean)">
+            <summary>
+            读取指定节点的summary注释
+            </summary>
+            <param name="name">节点名称</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetExample(System.String,System.Boolean)">
+            <summary>
+            读取指定节点的example注释
+            </summary>
+            <param name="name">节点名称</param>
+            <param name="humanize">可读性优化(比如：去掉xml标记)</param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetMemberNameForMethod(System.Reflection.MethodInfo)">
+            <summary>
+            获取方法的节点名称
+            </summary>
+            <param name="method"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetMemberNameForType(System.Type)">
+            <summary>
+            获取类型的节点名称
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="M:ZSN.AI.Core.Utils.XmlCommentHelper.GetMemberNameForFieldOrProperty(System.Reflection.MemberInfo)">
+            <summary>
+            获取字段或者属性的节点名称
+            </summary>
+            <param name="fieldOrPropertyInfo"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

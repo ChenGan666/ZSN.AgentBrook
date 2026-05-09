@@ -1,5 +1,5 @@
-﻿using ZSN.AgentBrook.API.Attributes;
-using ZSN.AgentBrook.API.Helpers;
+using ZSN.AgentBrook.API.Attributes;
+using ZSN.AI.Service.Helpers;
 using ZSN.Utils.Core.Helpers;
 using ZSN.Utils.Core.PIC;
 using ZSN.Utils.Core.Extensions;
@@ -15,12 +15,15 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace ZSN.AgentBrook.API.Controllers
 {
     [ApiRecoder]
     public class ApiBaseController : CommonApiBaseController
     {
+        public CompanyInfo Company { get; set; }
         public ApisettingsInfo setting = null;// SettingsService.Current;
         public MemberSettings memberSetting = null;
         public string dataCode = "";
@@ -30,10 +33,15 @@ namespace ZSN.AgentBrook.API.Controllers
 
             redis = new RedisHelper();
             this.setting = SettingsService.Current;
+            this.Company = this.setting != null ? CompanyInfoBussiness.GetModelByAppID(this.setting.AppID) : null;
             if (!this.MemberToken.IsNullOrEmpty())
             {
                 var _s = this.MemberSetting;
             }
+        }
+        public CompanyInfo COMPANY
+        {
+            get { return this.Company; }
         }
 
         public MemberSettings MemberSetting
@@ -75,35 +83,19 @@ namespace ZSN.AgentBrook.API.Controllers
 
                 string Data = DataObj.JsonGetValue<string>("Data");
                 this.dataCode = hashEncrypt.MD5System(URL+Data);
+
+
+                AppKey = this.memberSetting != null ? this.memberSetting.GetAppKey() : !AccessToken.IsNullOrEmpty() ? AccessToken : COMPANY.SecretKey;
+                try
+                {
+                    DataObjStr = EncryptHelper.AESDecrypt(Data, AppKey);
+                }
+                catch (Exception e)
+                {
+                    DataObjStr = "";
+                    DefaultLogService.AddOperationLog(1, e.Message);
+                }
                 
-                if (this.Token.IsNullOrEmpty())
-                {
-                    DataObjStr = Data;
-                    /*
-                    AppKey = ConfigHelper.GetString("RSAPrivateKey");
-                    try
-                    {
-                        DataObjStr = EncryptHelper.RSADecrypt(AppKey, Data);
-                    }
-                    catch(Exception e)
-                    {
-                        DataObjStr = "";
-                        DefaultLogService.AddOperationLog(1, e.Message);
-                    }
-                    */
-                }
-                else
-                {
-                    AppKey = this.memberSetting != null ? this.memberSetting.GetAppKey() : AccessToken.Substring(0,16);
-                    try
-                    {
-                        DataObjStr = EncryptHelper.AESDecrypt(Data, AppKey);
-                    }catch(Exception e)
-                    {
-                        DataObjStr = "";
-                        DefaultLogService.AddOperationLog(1, e.Message);
-                    }
-                }
 
                 if (DataObjStr == "")
                 {
@@ -300,19 +292,29 @@ namespace ZSN.AgentBrook.API.Controllers
                     fileInfo.FType = "png";
                     sourcePath = AppContext.BaseDirectory + "default_file.png";
                 }
+
                 if (fileInfo.FType.IndexOf("jpeg") > -1 || fileInfo.FType.IndexOf("png") > -1 || fileInfo.FType.IndexOf("bmp") > -1)
                 {
-                    System.Drawing.Image bitmap = null;
-                    System.Drawing.Image _sourceImg = System.Drawing.Image.FromFile(sourcePath);
-                    Thumbnail.ImageChange(_sourceImg, out bitmap, _maxWidth, _maxHeight);
-
                     string _tempFileName = DateTime.Now.Ticks + ".jpg";
-                    if (bitmap != null)
+                    using (var image = Image.Load(sourcePath))
                     {
-                        byteFile = new ByteFile();
-                        byteFile.fileStream = Thumbnail.ImageToBytes(bitmap);
-                        byteFile.contentType = "image/jpeg";
-                        byteFile.fileName = _tempFileName;
+                        // 调整大小
+                        int targetWidth = _maxWidth > 0 ? _maxWidth : image.Width;
+                        int targetHeight = _maxHeight > 0 ? _maxHeight : image.Height;
+                        image.Mutate(x => x.Resize(new ResizeOptions
+                        {
+                            Size = new Size(targetWidth, targetHeight),
+                            Mode = ResizeMode.Max
+                        }));
+
+                        using (var ms = new MemoryStream())
+                        {
+                            image.SaveAsJpeg(ms);
+                            byteFile = new ByteFile();
+                            byteFile.fileStream = ms.ToArray();
+                            byteFile.contentType = "image/jpeg";
+                            byteFile.fileName = _tempFileName;
+                        }
                     }
                 }
                 else

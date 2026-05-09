@@ -1,9 +1,10 @@
+using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Data;
-using MySql.Data.MySqlClient;
 using System.Text;
-using ZSN.AI.Entity;
 using ZSN.AI.DAL;
+using ZSN.AI.Entity;
 using ZSN.Utils.Core.Data;
 namespace ZSN.AI.DAL.MySql
 {
@@ -14,11 +15,11 @@ namespace ZSN.AI.DAL.MySql
         ///表名称
         private string WorkflowInfoTableName = "tb_workflow_info";
         ///表字段
-        private const string WorkflowInfoTableField = "WorkflowID,MainType,MainID,SystemStatus,CreateTime,LastUpdateTime,WorkflowName,Description";
+        private const string WorkflowInfoTableField = "WorkflowID,MainType,MainID,SystemStatus,CreateTime,LastUpdateTime,WorkflowName,Description,Config";
         ///添加用表字段
-        private const string WorkflowInfoTableFieldForAdd = "WorkflowID,MainType,MainID,SystemStatus,CreateTime,LastUpdateTime,WorkflowName,Description";
+        private const string WorkflowInfoTableFieldForAdd = "WorkflowID,MainType,MainID,SystemStatus,CreateTime,LastUpdateTime,WorkflowName,Description,Config";
         ///添加用表字段value
-        private const string WorkflowInfoTableFieldAltForAdd = "@WorkflowID,@MainType,@MainID,@SystemStatus,@CreateTime,@LastUpdateTime,@WorkflowName,@Description";
+        private const string WorkflowInfoTableFieldAltForAdd = "@WorkflowID,@MainType,@MainID,@SystemStatus,@CreateTime,@LastUpdateTime,@WorkflowName,@Description,@Config";
         public string SetConnectionName(string connName)
         {
             return WorkflowInfoConnectionName = connName;
@@ -47,6 +48,7 @@ namespace ZSN.AI.DAL.MySql
  new MySqlParameter("@LastUpdateTime", MySqlDbType.DateTime),
  new MySqlParameter("@WorkflowName", MySqlDbType.VarChar,128),
  new MySqlParameter("@Description", MySqlDbType.VarChar,512),
+ new MySqlParameter("@Config", MySqlDbType.JSON),
 
                     };
 			 parameters[0].Value = model.WorkflowID;
@@ -57,6 +59,7 @@ namespace ZSN.AI.DAL.MySql
  parameters[5].Value = model.LastUpdateTime;
             parameters[6].Value = model.WorkflowName;
             parameters[7].Value = model.Description;
+            parameters[8].Value = model.Config;
 
             object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(WorkflowInfoConnectionName), CommandType.Text,strSql.ToString(), parameters);
             if (obj == null)
@@ -83,7 +86,8 @@ strSql.Append("SystemStatus=@SystemStatus,");
 strSql.Append("CreateTime=@CreateTime,");
 strSql.Append("LastUpdateTime=@LastUpdateTime,");
             strSql.Append("WorkflowName=@WorkflowName,");
-            strSql.Append("Description=@Description");
+            strSql.Append("Description=@Description,");
+            strSql.Append("Config=@Config");
 
             strSql.Append(" where WorkflowID=@WorkflowID");
             MySqlParameter[] parameters = {
@@ -95,6 +99,7 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
  new MySqlParameter("@LastUpdateTime", MySqlDbType.DateTime),
  new MySqlParameter("@WorkflowName", MySqlDbType.VarChar,128),
  new MySqlParameter("@Description", MySqlDbType.VarChar,512),
+ new MySqlParameter("@Config", MySqlDbType.JSON),
 
             };
 			 parameters[0].Value = model.WorkflowID;
@@ -105,6 +110,7 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
  parameters[5].Value = model.LastUpdateTime;
             parameters[6].Value = model.WorkflowName;
             parameters[7].Value = model.Description;
+            parameters[8].Value = model.Config;
 
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(WorkflowInfoConnectionName),CommandType.Text,strSql.ToString(), parameters);
             if (rows > 0)
@@ -225,7 +231,7 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
                 }
 				if (row["MainType"] != null )
                 {
-                    model.MainType = int.Parse(row["MainType"].ToString());
+                    model.MainType =(MainType)int.Parse(row["MainType"].ToString());
                 }
 				if (row["MainID"] != null )
                 {
@@ -241,7 +247,7 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
                 }
                 if (row["SystemStatus"] != null )
                 {
-                    model.SystemStatus = DbConvert.ToInt32Nullable(row["SystemStatus"].ToString());
+                    model.SystemStatus =(WorkflowStatus)DbConvert.ToInt32Nullable(row["SystemStatus"].ToString());
                 }
 				if (row["CreateTime"] != null )
                 {
@@ -250,6 +256,10 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
 				if (row["LastUpdateTime"] != null )
                 {
 					model.LastUpdateTime = DbConvert.ToDateTimeNullable(row["LastUpdateTime"].ToString());
+                }
+                if (row["Config"] != null)
+                {
+                    model.Config = JsonConvert.DeserializeObject<WorkFlowConfig>(row["Config"].ToString()); ;
                 }
             }
             return model;

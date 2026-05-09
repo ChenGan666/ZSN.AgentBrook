@@ -1,6 +1,10 @@
-﻿using ZSN.Utils.Core.DI;
+using ZSN.Utils.Core.DI;
 using ZSN.Utils.Core.Extensions;
 using Microsoft.Extensions.Configuration;
+using System.IO;
+using System.Text.Json.Nodes;
+using System.Text.Json;
+using System;
 
 namespace ZSN.Utils.Core.Helpers
 {
@@ -9,9 +13,10 @@ namespace ZSN.Utils.Core.Helpers
     /// </summary>
     public class ConfigHelper
     {
+        private static readonly string ConfigFilePath = "appsettings.json";
         public static IConfiguration Configuration =>
             ServiceLocator.GetInstance<IConfiguration>()
-            ?? new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+            ?? new ConfigurationBuilder().AddJsonFile(ConfigFilePath).Build();
 
 
         public static IConfigurationSection GetSection(string key)
@@ -21,6 +26,25 @@ namespace ZSN.Utils.Core.Helpers
 
         public static string GetConfigurationValue(string key)
         {
+            // 支持嵌套配置项，例如 "PromptTemplates:ClawAITaskPlanningPrompt"
+            if (string.IsNullOrEmpty(key))
+                return null;
+            
+            // 如果包含冒号，使用GetSection方法处理嵌套路径
+            if (key.Contains(':'))
+            {
+                var keys = key.Split(':');
+                IConfigurationSection section = Configuration.GetSection(keys[0]);
+                for (int i = 1; i < keys.Length; i++)
+                {
+                    if (section == null)
+                        return null;
+                    section = section.GetSection(keys[i]);
+                }
+                return section?.Value;
+            }
+            
+            // 简单Key直接访问
             return Configuration[key];
         }
 
@@ -97,5 +121,39 @@ namespace ZSN.Utils.Core.Helpers
         }
 
         #endregion
+
+        /// <summary>
+        /// 更新并保存配置值（支持简单Key，复杂结构可以扩展）
+        /// </summary>
+        /// <param name="key">配置的Key，例如 "Logging:LogLevel:Default"</param>
+        /// <param name="value">要保存的值</param>
+        public static void SetConfigurationValue(string key, string value)
+        {
+            if (!File.Exists(ConfigFilePath))
+                throw new FileNotFoundException("配置文件不存在", ConfigFilePath);
+
+            var jsonText = File.ReadAllText(ConfigFilePath);
+            var jsonObject = JsonNode.Parse(jsonText) as JsonObject;
+            if (jsonObject == null)
+                throw new Exception("配置文件格式错误");
+
+            // 支持嵌套Key，例如 "Logging:LogLevel:Default"
+            var keys = key.Split(':');
+            JsonObject current = jsonObject;
+            for (int i = 0; i < keys.Length - 1; i++)
+            {
+                if (!current.ContainsKey(keys[i]) || current[keys[i]] == null)
+                {
+                    current[keys[i]] = new JsonObject();
+                }
+                current = current[keys[i]]!.AsObject();
+            }
+
+            current[keys[^1]] = value;
+
+            // 保存回文件，格式化写入
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            File.WriteAllText(ConfigFilePath, jsonObject.ToJsonString(options));
+        }
     }
 }

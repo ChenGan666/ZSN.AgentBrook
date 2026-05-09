@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using NPOI.SS.Formula.Functions;
+using NPOI.SS.UserModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,11 +44,21 @@ namespace ZSN.AI.Entity
         /// </summary>
         public int AnswerTokens { get; set; } = 2048;
 
+        /// <summary>
+        /// 是否开启思考链
+        /// </summary>
+        public bool Thinking { get;set; } = false;
+        /// <summary>
+        /// 输出类型:json_object，text
+        /// </summary>
+        public string ResponseFormat { get; set; } = "text";
 
         public List<PluginsInfo> SemanticFunction { get; set; } = new List<PluginsInfo>();
         //public string? SemanticFunctionName { get; set; } = string.Empty;
         public List<PluginsInfo> NativeFunction { get; set; } = new List<PluginsInfo>();
         //public string? NativeFunctionName { get; set; } = string.Empty;
+
+        public McpInfo Mcp { get; set; } = new McpInfo();
     }
 
     public partial class KnowledgeBaseUnit { 

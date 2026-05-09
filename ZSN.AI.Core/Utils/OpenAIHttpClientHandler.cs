@@ -1,5 +1,5 @@
-﻿using NLog.Fluent;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
+using ZSN.Utils.Core.Extensions;
 
 namespace ZSN.AI.Core.Utils
 {
@@ -20,7 +20,6 @@ namespace ZSN.AI.Core.Utils
             {
                 string requestBody = await request.Content.ReadAsStringAsync();
                 //便于调试查看请求prompt
-                Log.Info(requestBody);
             }
             if (match.Success)
             {
@@ -33,16 +32,18 @@ namespace ZSN.AI.Core.Utils
                 // 拼接host和端口号
                 var hostnew = string.IsNullOrEmpty(port) ? host : $"{host}:{port}";
 
+                var baseUri = $"{protocol}://{hostnew}/";
+                var prefix = route.EndsWith("/") ? route : route + "/";//用于兼容Bigmodel
+                prefix = prefix == "/" ? "v1/" : prefix;
+
                 switch (request.RequestUri.LocalPath)
                 {
                     case "/v1/chat/completions":
-                        //替换代理
-                        uriBuilder = new UriBuilder(request.RequestUri)
+
+                        uriBuilder = new UriBuilder(baseUri)
                         {
-                            // 这里是你要修改的 URL
-                            Scheme = $"{protocol}://{hostnew}/",
                             Host = host,
-                            Path = route + "v1/chat/completions",
+                            Path = prefix + "chat/completions",
                         };
                         if (port.ConvertToInt32() != 0)
                         {
@@ -53,12 +54,11 @@ namespace ZSN.AI.Core.Utils
 
                         break;
                     case "/v1/embeddings":
-                        uriBuilder = new UriBuilder(request.RequestUri)
+
+                        uriBuilder = new UriBuilder(baseUri)
                         {
-                            // 这里是你要修改的 URL
-                            Scheme = $"{protocol}://{host}/",
                             Host = host,
-                            Path = route + "v1/embeddings",
+                            Path = prefix + "embeddings",
                         };
                         if (port.ConvertToInt32() != 0)
                         {

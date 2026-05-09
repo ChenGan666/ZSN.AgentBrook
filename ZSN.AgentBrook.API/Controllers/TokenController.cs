@@ -9,6 +9,7 @@ using ZSN.AI.Entity;
 using System.Net;
 using ZSN.Utils.Core.Extensions;
 using ZSN.AI.Service.Attributes;
+using ZSN.AI.Service.Token;
 
 namespace ZSN.AgentBrook.ApiService.Controllers
 {
@@ -44,38 +45,20 @@ namespace ZSN.AgentBrook.ApiService.Controllers
         [HttpPost]
         [Consumes("application/json")]
         [APIChecker(Token = false)]
-        public IActionResult Get([FromBody] PostData paramValue)
+        public JsonMsg<TokenResponse> Get([FromBody] PostData paramValue)
         {
             JObject jObject = this.JsonObj;
             if (jObject.JsonGetValue<int>("status") != -1)
             {
-                
                 string AppID = jObject.JsonGetValue<string>("AppID");
-                /*
-                 * string PWD = jObject.Value<string>("PWD");
                 
-                RoadFlow.Platform.Users users = new RoadFlow.Platform.Users();
-                RoadFlow.Data.Model.Users byAccount = users.GetByAccount(UserName.Trim());
-                if (byAccount == null || string.Compare(byAccount.Password, PWD.Trim(), false) != 0)
-                {
-                    return BuildFailResult(ErrorCode.AccountError);
-                }
-                else if (byAccount.Status == 1)
-                {
-                    return BuildFailResult(ErrorCode.AccountLock);
-                }
-                else
-                {
-                    string AccessToken = GetTokenByUserId(byAccount.ID);
-                    return BuildSuccessResult(new { AccessToken = AccessToken, Expirein= DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
-                }
-                */
                 string AccessToken = GetTokenByAPPID(AppID);
-                return BuildSuccessResult(new { AccessToken = AccessToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
+                TokenResponse token = new TokenResponse() { AccessToken = AccessToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) };
+                return JsonMsg<TokenResponse>.OK(token);// BuildSuccessResult(new { AccessToken = AccessToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
             }
             else
             {
-                return BuildFailResult(ErrorCode.DataFormatError);
+                return JsonMsg<TokenResponse>.Error(null, ErrorCode.DataFormatError);// BuildFailResult(ErrorCode.DataFormatError);
             }
         }
         /// <summary>
@@ -89,7 +72,7 @@ namespace ZSN.AgentBrook.ApiService.Controllers
         [HttpPost]
         [Consumes("application/json")]
         [APIChecker(Token = true)]
-        public async Task<IActionResult> GetOpenID([FromBody] PostData paramValue)
+        public async Task<JsonMsg<TokenResponse>> GetOpenID([FromBody] PostData paramValue)
         {
             JObject jObject = this.JsonObj;
             if (jObject.JsonGetValue<int>("status") != -1)
@@ -116,29 +99,30 @@ namespace ZSN.AgentBrook.ApiService.Controllers
 
                         if(this.GetMemberAccessTokenByOpenID(openid, session_key, unionid,out MemberID,out MemberToken, out RefreshToken))
                         {
-                            return BuildSuccessResult(new { MemberToken = MemberToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
+                            TokenResponse token = new TokenResponse() { MemberToken = MemberToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) };
+                            return JsonMsg<TokenResponse>.OK(token);// BuildSuccessResult(new { MemberToken = MemberToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
                         }
                         else
                         {
-                            return BuildFailResult(ErrorCode.WeixinMiniAppMemberAcctokenError);
+                            return JsonMsg<TokenResponse>.Error(null, ErrorCode.WeixinMiniAppMemberAcctokenError);// BuildFailResult(ErrorCode.WeixinMiniAppMemberAcctokenError);
                         }
                        
                     }
                     else
                     {
-                        return BuildFailResult(ErrorCode.WeixinMiniAppError);
+                        return JsonMsg<TokenResponse>.Error(null, ErrorCode.WeixinMiniAppError); //BuildFailResult(ErrorCode.WeixinMiniAppError);
                     }
                 }
                 else
                 {
-                    return BuildFailResult(ErrorCode.WeixinMiniAppRequestError);
+                    return JsonMsg<TokenResponse>.Error(null, ErrorCode.WeixinMiniAppRequestError); //BuildFailResult(ErrorCode.WeixinMiniAppRequestError);
                 }
 
                 
             }
             else
             {
-                return BuildFailResult(ErrorCode.DataFormatError);
+                return JsonMsg<TokenResponse>.Error(null, ErrorCode.DataFormatError); //BuildFailResult(ErrorCode.DataFormatError);
             }
         }
         /// <summary>
@@ -165,7 +149,7 @@ namespace ZSN.AgentBrook.ApiService.Controllers
         [HttpPost]
         [Consumes("application/json")]
         [APIChecker(Token = true)]
-        public IActionResult GetMemberToken([FromBody] PostData paramValue)
+        public JsonMsg<TokenResponse> GetMemberToken([FromBody] PostData paramValue)
         {
             JObject jObject = this.JsonObj;
             if (jObject.JsonGetValue<int>("status") != -1)
@@ -177,11 +161,11 @@ namespace ZSN.AgentBrook.ApiService.Controllers
                 MemberInfo member = MemberInfoBussiness.GetModelByPhoneNumber(PhoneNumber);
                 if (member == null || string.Compare(member.MPWD, PWD.Trim(), false) != 0)
                 {
-                    return BuildFailResult(ErrorCode.AccountError);
+                    return JsonMsg<TokenResponse>.Error(null, ErrorCode.AccountError);//BuildFailResult(ErrorCode.AccountError);
                 }
                 else if (member.MState == 1)
                 {
-                    return BuildFailResult(ErrorCode.AccountLock);
+                    return JsonMsg<TokenResponse>.Error(null, ErrorCode.AccountLock);//BuildFailResult(ErrorCode.AccountLock);
                 }
                 else
                 {
@@ -193,11 +177,16 @@ namespace ZSN.AgentBrook.ApiService.Controllers
                     
                     if (memberAuthInfoJson.IsNullOrEmpty())
                     {
-                        //MemberToken = GetMemberTokenByUserId(member.MemberID, MemberAuthDeviceID);
-                        //RefreshToken = GetMemberRefreshToken(member.MemberID, MemberToken);
-
                         MemberOtherAuthInfo memberOtherAuthInfo = MemberOtherAuthInfoBussiness.GetModel(member.MemberID);
-                        SetMemberToken(member.MemberID, memberOtherAuthInfo.MemberOtherAuthID, out MemberToken, out RefreshToken);
+                        if (memberOtherAuthInfo != null)
+                        {
+                            MemberTokenHelper.Set(member.MemberID, memberOtherAuthInfo.MemberOtherAuthID,redis, out MemberToken, out RefreshToken);
+                        }
+                        else
+                        {
+                            MemberTokenHelper.Set(member.MemberID, 0, redis, out MemberToken, out RefreshToken);
+                        }
+                        
                     }
                     else
                     {
@@ -208,13 +197,13 @@ namespace ZSN.AgentBrook.ApiService.Controllers
                             RefreshToken = memberAuthInfo.RefreshToken;
                         }
                     }
-
-                    return BuildSuccessResult(new { MemberToken = MemberToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
+                    TokenResponse token = new TokenResponse() { MemberToken = MemberToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) };
+                    return JsonMsg<TokenResponse>.OK(token);//return BuildSuccessResult(new { MemberToken = MemberToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
                 }
             }
             else
             {
-                return BuildFailResult(ErrorCode.DataFormatError);
+                return JsonMsg<TokenResponse>.Error(null, ErrorCode.DataFormatError);// BuildFailResult(ErrorCode.DataFormatError);
             }
         }
 
@@ -229,7 +218,7 @@ namespace ZSN.AgentBrook.ApiService.Controllers
         [HttpPost]
         [Consumes("application/json")]
         [MemberCheck(Token = true,MemberToken = true)]
-        public IActionResult RefreshMemberToken([FromBody] PostData paramValue)
+        public JsonMsg<TokenResponse> RefreshMemberToken([FromBody] PostData paramValue)
         {
             JObject jObject = this.JsonObj;
             if (jObject.JsonGetValue<int>("status") != -1)
@@ -249,29 +238,30 @@ namespace ZSN.AgentBrook.ApiService.Controllers
                         GetMemberIdByToken(memberAuthInfo.AccessToken, out _MemberID, out _MemberOtherAuthID, out _timestamp_FormRefreshToken_MemberAccessToken);
                         if (_MemberOtherAuthID>0)
                         {
-                            SetMemberToken(_MemberID, _MemberOtherAuthID, out MemberAccessToken, out RefreshToken);
+                            MemberTokenHelper.Set(_MemberID, _MemberOtherAuthID,redis, out MemberAccessToken, out RefreshToken);
 
-                            return BuildSuccessResult(new { MemberToken = MemberAccessToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
+                            TokenResponse token = new TokenResponse() { MemberToken = MemberToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) };
+                            return JsonMsg<TokenResponse>.OK(token);//return BuildSuccessResult(new { MemberToken = MemberAccessToken, MemberRefreshToken = RefreshToken, Expirein = DateTimeToTimeStamp(DateTime.Now.AddMilliseconds(ConfigHelper.GetInt("AccessTokenTimeOut"))) });
 
                         }
                         else
                         {
-                            return BuildFailResult(ErrorCode.RefreshTokenError);
+                            return JsonMsg<TokenResponse>.Error(null, ErrorCode.RefreshTokenError); //BuildFailResult(ErrorCode.RefreshTokenError);
                         }
                     }
                     else
                     {
-                        return BuildFailResult(ErrorCode.RefreshTokenError);
+                        return JsonMsg<TokenResponse>.Error(null, ErrorCode.RefreshTokenError); //BuildFailResult(ErrorCode.RefreshTokenError);
                     }
                 }
                 else
                 {
-                    return BuildFailResult(ErrorCode.RefreshTokenError);
+                    return JsonMsg<TokenResponse>.Error(null, ErrorCode.RefreshTokenError); //BuildFailResult(ErrorCode.RefreshTokenError);
                 }
             }
             else
             {
-                return BuildFailResult(ErrorCode.DataFormatError, jObject.JsonGetValue<string>("msg", ErrorCode.DataFormatError.ToString()));
+                return JsonMsg<TokenResponse>.Error(null, ErrorCode.DataFormatError); //BuildFailResult(ErrorCode.DataFormatError, jObject.JsonGetValue<string>("msg", ErrorCode.DataFormatError.ToString()));
             }
         }
 
@@ -286,7 +276,7 @@ namespace ZSN.AgentBrook.ApiService.Controllers
             if(memberOtherAuth != null)
             {
                 MemberID = memberOtherAuth.MemberID;
-                SetMemberToken(MemberID, memberOtherAuth.MemberOtherAuthID, out MemberAccessToken, out MemberRefreshToken);
+                MemberTokenHelper.Set(MemberID, memberOtherAuth.MemberOtherAuthID,redis, out MemberAccessToken, out MemberRefreshToken);
 
                 memberOtherAuth.SessionKey = session_key;
                 memberOtherAuth.UnionID = unionid;
@@ -301,7 +291,6 @@ namespace ZSN.AgentBrook.ApiService.Controllers
                 MemberID = hashEncrypt.MD5System(Guid.NewGuid().ToString());
                 MemberInfo memberInfo = new MemberInfo();
                 memberInfo.MemberID = MemberID;
-                memberInfo.MemberCard = "";
                 memberInfo.MPhoneNumber = "";
                 memberInfo.MNickName = "";
                 memberInfo.MPWD = "";
@@ -324,7 +313,7 @@ namespace ZSN.AgentBrook.ApiService.Controllers
                     memberOtherAuth.MemberOtherAuthID = MemberOtherAuthInfoBussiness.Add(memberOtherAuth);
                     if (memberOtherAuth.MemberOtherAuthID > 0)
                     {
-                        SetMemberToken(MemberID, memberOtherAuth.MemberOtherAuthID, out MemberAccessToken, out MemberRefreshToken);
+                        MemberTokenHelper.Set(MemberID, memberOtherAuth.MemberOtherAuthID,redis, out MemberAccessToken, out MemberRefreshToken);
                         return true;
                     }
                     else
@@ -341,30 +330,5 @@ namespace ZSN.AgentBrook.ApiService.Controllers
 
         }
 
-        private void SetMemberToken(string MemberID,int MemberOtherAuthID,out string MemberToken,out string RefreshToken)
-        {
-            MemberToken = GetMemberTokenByUserId(MemberID, MemberOtherAuthID);
-            RefreshToken = GetMemberRefreshToken(MemberID, MemberToken);
-
-            MemberAuthInfo memberAuthInfo = new MemberAuthInfo();
-            memberAuthInfo.MemberID = MemberID;
-            memberAuthInfo.AccessToken = MemberToken;
-            memberAuthInfo.RefreshToken = RefreshToken;
-            memberAuthInfo.MaAppendTime = DateTime.Now;
-            memberAuthInfo.MaUpdateTime = DateTime.Now;
-
-            redis.StringSet(MemberID, JsonConvert.SerializeObject(memberAuthInfo), TimeSpan.FromMilliseconds(ConfigHelper.GetInt("SignInStepTimeOut", 1000)));
-
-            MemberAuthInfo _MemberAuthInfo = MemberAuthInfoBussiness.GetModel(MemberID);
-            if (_MemberAuthInfo != null)
-            {
-                memberAuthInfo.MemberAuthID = _MemberAuthInfo.MemberAuthID;
-                MemberAuthInfoBussiness.Update(memberAuthInfo);
-            }
-            else
-            {
-                MemberAuthInfoBussiness.Add(memberAuthInfo);
-            }
-        }
     }
 }

@@ -33,7 +33,6 @@ namespace ZSN.AgentBrook.AutoJob
         }
         public async Task<int> Auto()
         {
-            Console.WriteLine("ZSN.AI.AutoJob.Job![JobEvent_AIDispatcher]");
             int num = 0;
             try
             {
@@ -101,7 +100,7 @@ namespace ZSN.AgentBrook.AutoJob
                                 //获取回话记录
                                 List<AppChatLogInfo> appChatLogs = AppChatLogInfoBussiness.GetListBySessionID(AppID, SessionID);
 
-                                history = _chatService.GetChatHistory(appChatLogs, history);
+                                history = await _chatService.GetChatHistory(appChatLogs, history);
 
                                 List<string> chatLogIDs = appChatLogs.Select(x => x.ChatLogID).ToList();
 
@@ -168,6 +167,8 @@ namespace ZSN.AgentBrook.AutoJob
                 task.Results = new Results();
                 task.Results.Data = ex;
                 task.State = TaskState.Failure;
+
+                DefaultLogService.AddOperationLog(ErrorId, ex.Message);
             }
             task.UpdateTime = DateTime.Now;
             TaskInfoBussiness.Update(task);

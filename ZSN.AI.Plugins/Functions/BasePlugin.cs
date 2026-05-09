@@ -1,4 +1,4 @@
-﻿using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel;
 using System;
 using System.ComponentModel;
 using ZSN.Utils.Core.Extensions;
@@ -22,6 +22,7 @@ namespace ZSN.AI.Plugins
         [return: Description("日期与时间")]
         public string get_date_time()
         {
+            
             return DateTime.Now.ToDateTimeString();
         }
 
@@ -94,7 +95,7 @@ namespace ZSN.AI.Plugins
         }
 
         [KernelFunction]
-        [Description("ZSN.AI.Plugins:执行workflow")]
+        [Description("ZSN.AI.Plugins:执行APPWorkflow")]
         [return: Description("TaskID")]
         public string excution_workflow(
             [Description("AppID,不能为空")] string AppID,
@@ -131,12 +132,80 @@ namespace ZSN.AI.Plugins
 
                             //需要传值给StartNode(由于下一节点的输入参数需要跟上一节点的输出参数匹配，StartNode作为下一节点，输入参数名称是input)，所以这个理的Output.varname=input
                             outputs.Add(new Output() { varname = "input", value = inputs });
+                            outputs.Add(new Output { varname = "currentTime", value = DateTime.Now.ToDateTimeString(), nodeId = config.id, sourceId = $"{config.id}_currentTime" });
+
 
                             TaskID = TaskInfoBussiness.toTask(null, outputs, targetNode, AppID, SessionID, ProcessesID, AgentID);
 
                         }
                     }
                 }
+            }
+
+            return TaskID;
+        }
+
+        [KernelFunction]
+        [Description("ZSN.AI.Plugins:执行AgentWorkflow")]
+        [return: Description("TaskID")]
+        public string excution_agent_workflow(
+            [Description("来源节点")] NodeConfig SourceNode,
+            [Description("AppID,不能为空")] string AppID,
+            [Description("SessionID,不能为空")] string SessionID,
+            [Description("ProcessesID,不能为空")] string ProcessesID,
+            [Description("WorkFlowID,不能为空")] string WorkFlowID,
+            [Description("输入的参数或者问题,不能为空")] List<Inputs> inputs,
+            [Description("发起此任务的主任务ID")] string FromMainTaskID = ""
+        )
+        {
+
+            string TaskID = "";
+            WorkflowNodeInfo workflowNode = WorkflowNodeInfoBussiness.GetWorkFlowAgentStartNode(WorkFlowID);
+            if (workflowNode != null)
+            {
+                NodeConfig nodeConfig = JsonConvert.DeserializeObject<NodeConfig>(workflowNode.Config.ToString());
+                if (nodeConfig != null)
+                {
+
+                    List<Output> outputs = new List<Output>();
+                    List<string> Logs = new List<string>();
+                    NodeConfig targetNode = new NodeConfig();
+
+                    if (nodeConfig != null)
+                    {
+                        targetNode = new NodeConfig() { id = workflowNode.NodeID, mainid = nodeConfig.mainid, workflowid = workflowNode.WorkflowID, type = workflowNode.NodeType, data = nodeConfig };
+                    }
+
+                    // 先提取 prompt 和 context
+                    var promptInput = inputs.FirstOrDefault(i => i.varname == "prompt");
+                    var contextInput = inputs.FirstOrDefault(i => i.varname == "context");
+                    
+                    // 如果有 context，将其合并到 prompt 中
+                    string finalPrompt = promptInput?.value ?? "";
+                    if (contextInput != null && !string.IsNullOrEmpty(contextInput.value))
+                    {
+                        finalPrompt = $"{contextInput.value}\n\n用户问题: {finalPrompt}";
+                    }
+                    
+                    // 添加合并后的 input
+                    if (!string.IsNullOrEmpty(finalPrompt))
+                    {
+                        outputs.Add(new Output { varname = "input", value = finalPrompt, nodeId = targetNode.id, sourceId = $"{targetNode.id}_input" });
+                    }
+                    
+                    // 添加其他参数（排除 prompt 和 context，因为已经处理过了）
+                    foreach (Inputs input in inputs)
+                    {
+                        if (input.varname != "prompt" && input.varname != "context")
+                        {
+                            outputs.Add(new Output() { varname = input.varname, value = input.value, nodeId = targetNode.id, sourceId = $"{targetNode.id}_{input.varname}" });
+                        }
+                    }
+
+                    TaskID = TaskInfoBussiness.toTask(SourceNode, outputs, targetNode, AppID, SessionID, ProcessesID, FromMainTaskID: FromMainTaskID);
+
+                }
+
             }
 
             return TaskID;

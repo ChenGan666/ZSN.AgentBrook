@@ -18,6 +18,7 @@ namespace ZSN.AI.DAL
         ApisettingsInfo ApisettingsInfo_DataRowToModel(DataRow row);
         ApisettingsInfo ApisettingsInfo_GetModel(Int32 apiID);
         ApisettingsInfo ApisettingsInfo_GetModelByAppID(string appID);
+        ApisettingsInfo ApisettingsInfo_GetModelByCompanyID(int CompanyID);
         DataSet ApisettingsInfo_GetList(string strWhere);
         DataSet ApisettingsInfo_GetList(int top, string strWhere, string filedOrder);
         int ApisettingsInfo_GetRecordCount(string strWhere);

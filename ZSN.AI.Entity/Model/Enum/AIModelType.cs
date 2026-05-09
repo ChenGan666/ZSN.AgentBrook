@@ -13,34 +13,22 @@ namespace ZSN.AI.Entity.Model.Enum
         
         [Display(Name = "Open AI")]
         OpenAI = 1,
-        /*
-        [Display(Name = "Azure Open AI")]
-        AzureOpenAI = 2,
 
-        [Display(Name = "星火大模型")]
-        SparkDesk = 4,
+        [Display(Name = "Bigmodel")]
+        Bigmodel = 2,
 
-        [Display(Name = "LLamaFactory")]
-        LLamaFactory = 6,
+        [Display(Name = "QWen")]
+        QWen = 3,
 
-        [Display(Name = "Bge Embedding")]
-        BgeEmbedding = 7,
-
-        [Display(Name = "Bge Rerank")]
-        BgeRerank = 8,
-
-        [Display(Name = "StableDiffusion")]
-        StableDiffusion = 9,
-        */
+        [Display(Name = "DeepSeek")]
+        DeepSeek = 4,
 
         [Display(Name = "Ollama")]
         Ollama = 10,
 
-        [Display(Name = "Ollama Embedding")]
-        OllamaEmbedding = 11,
+        [Display(Name = "Compshare")]
+        Compshare = 11,
 
-        [Display(Name = "Ollama Rerank")]
-        OllamaRerank = 12,
 
         [Display(Name = "模拟输出")]
         Mock = 100,
@@ -81,17 +69,26 @@ namespace ZSN.AI.Entity.Model.Enum
     /// </summary>
     public enum AIModelType
     {
-        [Display(Name = "会话模型")]
+        [Display(Name = "Chat")]
         Chat = 1,
 
-        [Display(Name = "向量模型")]
+        [Display(Name = "Embedding")]
         Embedding = 2,
 
-        [Display(Name = "图片模型")]
-        Image =3,
+        [Display(Name = "Rerank")]
+        Rerank = 3,
 
-        [Display(Name = "排序模型")]
-        Rerank =4
+        [Display(Name = "Txt2Image")]
+        T2Image =4,
+
+        [Display(Name = "Image2Image")]
+        I2Image = 5,
+
+        [Display(Name = "Txt2Video")]
+        T2Video = 6,
+
+        [Display(Name = "Image2Video")]
+        I2Video = 7
     }
     public partial class ModelType
     {

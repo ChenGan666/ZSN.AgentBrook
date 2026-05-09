@@ -4,7 +4,15 @@ using System.Data;
 using System.Linq;
 namespace ZSN.AI.Entity
 {
-	/// <summary>
+
+    public enum AppStatus
+    {
+        Disable = -1,
+        Unaudited = 0,
+        Stop = 1,
+        Running = 2
+    }
+    /// <summary>
     /// tb_app_info
     /// </summary>
     public partial class AppInfo
@@ -53,7 +61,7 @@ namespace ZSN.AI.Entity
         /// <summary>
         /// SystemStatus
         /// </summary>
-        public int SystemStatus { get; set; } = 0;
+        public AppStatus SystemStatus { get; set; } = AppStatus.Unaudited;
         /// <summary>
         /// CreateTime
         /// </summary>

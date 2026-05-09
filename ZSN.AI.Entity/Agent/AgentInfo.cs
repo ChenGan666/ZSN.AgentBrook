@@ -60,7 +60,7 @@ namespace ZSN.AI.Entity
 		/// <summary>
         /// SystemStatus
         /// </summary>
-		public Int32 SystemStatus { get; set; } = (Int32)(0);
+		public AgentStatus SystemStatus { get; set; } = AgentStatus.UnderReview;
         /// <summary>
         /// CreateTime
         /// </summary>
@@ -75,5 +75,20 @@ namespace ZSN.AI.Entity
         /// </summary>
         public List<AgentKnowledgeBaseInfo> KnowledgeBases { get; set; } = new List<AgentKnowledgeBaseInfo>();
         #endregion
+    }
+    public enum AgentStatus
+    {
+        /// <summary>
+        /// Õý³£
+        /// </summary>
+        Normal = 1,
+        /// <summary>
+        /// ½ûÓÃ
+        /// </summary>
+        Disable = -1,
+        /// <summary>
+        /// Î´ÉóºË
+        /// </summary>
+        UnderReview = 0
     }
 }

@@ -1,0 +1,319 @@
+@{
+    var containerId = ViewBag.ContainerId as string ?? "dirExplorerContainer";
+}
+<link rel="stylesheet" href="@Url.Content("~/Scripts/codemirror/lib/codemirror.css")" />
+<link rel="stylesheet" href="@Url.Content("~/Scripts/codemirror/theme/eclipse.css")" />
+<style>
+  .CodeMirror { height: 60vh; border: 1px solid #eee; }
+  /* editor layer: hide outer scrollbars inside layer content */
+  .cm-editor-layer .layui-layer-content { overflow: hidden !important; }
+  /* make editor fill dialog via flex */
+  .cm-editor-layer .layui-layer-content { height: 100%; display: flex; flex-direction: column; }
+  .cm-editor-layer .cm-root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .cm-editor-layer .cm-box { flex: 1 1 auto; min-height: 0; display: flex; }
+  .cm-editor-layer .cm-box .CodeMirror { height: 100% !important; width: 100%; border: 1px solid #eee; }
+</style>
+<div id="@containerId" data-basedir="@ZSN.Utils.Core.Helpers.ConfigHelper.GetString("Skill:Directory")" style="display:none;padding:10px;">    <div class="layui-row">
+        <div id="rootPath" class="layui-text" style="font-size:12px;color:#666;margin:0 0 6px 0;word-break:break-all;"></div>
+
+        
+        <div class="layui-col-md3">
+        
+            <div id="dirTree" style="height:calc(100vh - 180px);overflow:auto;border:1px solid #eee;padding:8px;"></div>
+        </div>
+        <div class="layui-col-md9">
+            <table class="layui-table">
+                <colgroup>
+                    <col>
+                    <col width="160">
+                    <col width="120">
+                    <col width="120">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>修改时间</th>
+                        <th>大小</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="fileList"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    var cmBase = '@Url.Content("~/Scripts/codemirror")';
+    function escapeHtml(s){return (s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]})}
+    function joinPath(a,b){ if(!a) return b||''; if(!b) return a; if(a.endsWith('/')) return a + b; return a + '/' + b; }
+
+    function getExt(path){ var i = (path||'').lastIndexOf('.'); return i>=0 ? (path.substring(i+1).toLowerCase()) : ''; }
+    function isEditableExt(ext){ var w = ['txt','md','js','ts','json','yml','yaml','ini','cfg','xml','html','css','cs','csproj','py','sh','bat','ps1']; return w.indexOf((ext||'').toLowerCase())>=0; }
+    function modeByExt(ext){
+        ext = (ext||'').toLowerCase();
+        var m = { js:'javascript', ts:'javascript', json:'application/json', xml:'xml', html:'htmlmixed', htm:'htmlmixed', css:'css', md:'markdown', cs:'text/x-csharp', csproj:'xml', py:'python', yml:'yaml', yaml:'yaml', ini:'properties', cfg:'properties', sh:'shell', bat:'shell', ps1:'shell' };
+        return m[ext]||null;
+    }
+
+    function buildDirNode(container, folder){
+    }
+
+    function toTreeNodes(items, isTop){
+        return (items||[])
+            .filter(function(x){ return x.type === 'dir'; })
+            .map(function(d){
+                var node = {
+                    id: d.path,
+                    title: '<span class="dir-title" data-path="'+ escapeHtml(d.path) +'">' + escapeHtml(d.name) + '</span>',
+                    path: d.path,
+                    spread: false,
+                    icon: 'layui-icon layui-icon-folder'
+                };
+                node.children = d.hasChildren ? [{}] : [];
+                return node;
+            });
+    }
+
+    function buildLayuiTree(rootFolder){
+        layui.use(['tree','layer','jquery'], function(){
+            var tree = layui.tree, layer = layui.layer, $ = layui.$;
+            var $tree = $('#dirTree');
+            $tree.empty();
+
+            loadChildren(rootFolder || '', function(items){
+                var data = toTreeNodes(items, true);
+                window.__dirTreeData = data;
+
+                tree.render({
+                    elem: '#dirTree',
+                    data: data,
+                    showLine: false,
+                    showCheckbox: false,
+                    id: 'dirTreeInst',
+                    onlyIconControl: true,
+                    text: { defaultNodeName: '' },
+                    lazy: false,
+                    click: function(obj){
+                        var node = obj.data;
+                        if(node && node.path){
+                            renderFiles(node.path);
+                        }
+                    }
+                });
+                // 仅图标控制：委托展开图标点击进行一次性懒加载
+                $('#dirTree').off('click.dirload').on('click.dirload', '.layui-tree-spread', function(){
+                    var $set = $(this).closest('.layui-tree-set');
+                    var path = $set.find('> .layui-tree-entry .dir-title').data('path');
+                    if(!path) return;
+                    // 查找数据节点
+                    function findNode(list, id){
+                        for(var i=0;i<list.length;i++){
+                            if(list[i].id===id) return list[i];
+                            if(list[i].children && list[i].children.length){
+                                var r = findNode(list[i].children, id);
+                                if(r) return r;
+                            }
+                        }
+                        return null;
+                    }
+                    var dataRef = window.__dirTreeData || [];
+                    var n = findNode(dataRef, path);
+                    if(!n || n._loaded===true) return;
+                    loadChildren(path, function(childItems){
+                        n.children = toTreeNodes(childItems, false);
+                        n._loaded = true;
+                        layui.tree.reload('dirTreeInst', { data: dataRef });
+                    });
+                });
+                renderFiles(rootFolder || '');
+            });
+        });
+    }
+
+    function loadChildren(folder, cb){
+        $.get('@Url.Action("ListChildren","File")', { folder: folder||'' }, function(res){
+            if(res && res.Status===false && res.ErrorDesc){ layer.msg(res.ErrorDesc,{icon:2}); cb([]); return; }
+            cb(res||[]);
+        });
+    }
+
+    function renderFiles(folder){
+        loadChildren(folder, function(items){
+            var files = items.filter(x=>x.type==='file');
+            var tbody = $('#fileList');
+            tbody.empty();
+            if(files.length===0){ tbody.append('<tr><td colspan="4" style="text-align:center;color:#999;">空</td></tr>'); return; }
+            files.forEach(function(f){
+                var tr = $('<tr></tr>');
+                tr.append($('<td></td>').text(f.name));
+                tr.append($('<td></td>').text(f.mtime||''));
+                tr.append($('<td></td>').text(formatSize(f.size)));
+                var ops = $('<td></td>');
+                var ext = getExt(f.path);
+                if(isEditableExt(ext)){
+                    var edit = $('<a class="layui-btn layui-btn-primary layui-btn-xs" style="margin-right:6px;">编辑</a>');
+                    edit.on('click', function(){ openEditor(f.path, ext); });
+                    ops.append(edit);
+                }
+                var down = $('<a class="layui-btn layui-btn-xs">下载</a>');
+                down.attr('href', '@Url.Action("Download","File")' + '?path=' + encodeURIComponent(f.path));
+                ops.append(down);
+                tr.append(ops);
+                tbody.append(tr);
+            });
+        });
+    }
+
+    function formatSize(sz){ if(!sz && sz!==0) return ''; if(sz<1024) return sz+' B'; if(sz<1024*1024) return (sz/1024).toFixed(1)+' KB'; if(sz<1024*1024*1024) return (sz/1024/1024).toFixed(1)+' MB'; return (sz/1024/1024/1024).toFixed(1)+' GB'; }
+
+    function ensureCodeMirror(cb){
+        if(window.CodeMirror){ cb(); return; }
+        var s1 = document.createElement('script'); s1.src = cmBase + '/lib/codemirror.js';
+        var toLoad = [
+            cmBase + '/mode/javascript/javascript.js',
+            cmBase + '/mode/xml/xml.js',
+            cmBase + '/mode/css/css.js',
+            cmBase + '/mode/htmlmixed/htmlmixed.js',
+            cmBase + '/mode/markdown/markdown.js',
+            cmBase + '/mode/clike/clike.js',
+            cmBase + '/mode/python/python.js',
+            cmBase + '/mode/yaml/yaml.js',
+            cmBase + '/mode/properties/properties.js',
+            cmBase + '/addon/edit/closebrackets.js',
+            cmBase + '/addon/edit/matchbrackets.js'
+        ];
+        s1.onload = function(){
+            var i = 0;
+            (function loadNext(){ if(i>=toLoad.length){ cb(); return; } var s=document.createElement('script'); s.src=toLoad[i++]; s.onload=loadNext; document.body.appendChild(s); })();
+        };
+        document.body.appendChild(s1);
+    }
+
+    function openEditor(path, ext){
+        layui.use(['layer','jquery'], function(){
+            var layer = layui.layer, $ = layui.$;
+            ensureCodeMirror(function(){
+                if(window.__dirLayerIdx!=null){ try { layer.close(window.__dirLayerIdx); } catch(e) {} window.__dirLayerIdx = null; }
+                var contentId = 'cm_editor_'+(Date.now());
+                var html = ''+
+                    '<div class="cm-root" style="display:flex;flex-direction:column;height:100%;padding:10px 10px 0 10px;">'+
+                    '  <div class="cm-path" style="margin-bottom:8px;color:#666;">'+ escapeHtml(path) +'</div>'+
+                    '  <div class="cm-box" style="flex:1;min-height:0;">'+
+                    '    <textarea id="'+contentId+'" style="height:100%;width:100%;border:1px solid #eee;"></textarea>'+
+                    '  </div>'+
+                    '</div>';
+                var idx = layer.open({
+                    type:1,
+                    title:'编辑 - '+ path.split('/').pop(),
+                    area:['80%','80%'],
+                    shadeClose:true,
+                    zIndex: 99999999,
+                    moveOut: true,
+                    skin: 'cm-editor-layer',
+                    btn:['保存','取消'],
+                    content: html,
+                    success:function(layero, index){
+                        try { layer.setTop && layer.setTop($(layero)); } catch(e) {}
+                        try { if(window.__dirLayerIdx!=null){ layer.style(window.__dirLayerIdx, { zIndex: 9999 }); } } catch(e) {}
+                        var $layer = $(layero);
+                        var $content = $layer.find('.layui-layer-content');
+                        $content.css({ overflow: 'hidden', padding: 0 });
+                        var $box = $content.find('.cm-box');
+                        var ta = $layer.find('textarea#'+contentId)[0];
+                        if(!ta){ ta = document.getElementById(contentId); }
+                        if(!ta){ return; }
+                        var cm = window.__cmInst = CodeMirror.fromTextArea(ta, {
+                            lineNumbers:true,
+                            mode: modeByExt(ext),
+                            theme:'eclipse',
+                            matchBrackets:true,
+                            autoCloseBrackets:true,
+                            viewportMargin: Infinity
+                        });
+                        function applyAutoHeight(){
+                            var contentH = $content.height();
+                            var $root = $content.find('.cm-root');
+                            var padTop = parseFloat($root.css('padding-top'))||0;
+                            var padBottom = parseFloat($root.css('padding-bottom'))||0;
+                            var pathH = $content.find('.cm-path').outerHeight(true) || 0;
+                            var h = Math.max(120, contentH - padTop - padBottom - pathH);
+                            cm.setSize('100%', h + 'px');
+                        }
+                        applyAutoHeight();
+                        var wrapEl = cm.getWrapperElement();
+                        wrapEl.style.minHeight = '0px';
+                        wrapEl.style.width = '100%';
+                        wrapEl.style.border = '1px solid #eee';
+                        // 加载文件内容
+                        $.get('@Url.Action("ReadFile","File")', { path: path }, function(r){
+                            if(r && r.Status){
+                                cm.setValue(r.Data || '');
+                            } else {
+                                cm.setValue((r && r.ErrorDesc) || '加载失败');
+                            }
+                            setTimeout(function(){ applyAutoHeight(); cm.refresh(); }, 50);
+                        }).fail(function(){
+                            cm.setValue('加载失败');
+                            setTimeout(function(){ applyAutoHeight(); cm.refresh(); }, 50);
+                        });
+                        // 再次置顶，确保高于目录层
+                        try { layer.setTop && layer.setTop(layero); } catch(e) {}
+                        setTimeout(function(){ applyAutoHeight(); cm.refresh(); }, 200);
+                        setTimeout(function(){ try { layer.setTop && layer.setTop($layer); } catch(e) {} }, 10);
+                        // 绑定窗口尺寸变化时自适应
+                        var resizeNs = 'resize.cm_'+contentId;
+                        $(window).off(resizeNs).on(resizeNs, function(){ applyAutoHeight(); });
+                    },
+                    yes:function(){
+                        try { layer.setTop && layer.setTop($('.layui-layer').last()); } catch(e) {}
+                        var cm = window.__cmInst; if(!cm){ layer.msg('编辑器未初始化',{icon:2}); return; }
+                        var val = cm.getValue();
+                        layer.load(0);
+                        $.ajax({
+                            url:'@Url.Action("SaveFile","File")',
+                            type:'POST',
+                            data:{ path: path, content: val },
+                            success:function(r){ layer.closeAll('loading'); if(r && r.Status){ layer.msg('保存成功',{icon:1}); layer.close(idx); } else { layer.msg((r&&r.ErrorDesc)||'保存失败',{icon:2}); } },
+                            error:function(){ layer.closeAll('loading'); layer.msg('网络错误',{icon:2}); }
+                        });
+                    },
+                    end:function(){
+                        // 解绑尺寸事件
+                        var resizeNs = 'resize.cm_'+contentId;
+                        $(window).off(resizeNs);
+                        // 关闭编辑器后，重新打开目录浏览
+                        try { openDirExplorer(window.__dirCurrentRoot || ''); } catch(e) {}
+                    }
+                });
+            });
+        });
+    }
+
+    window.openDirExplorer = function(rootFolder){
+        var wrap = $('#@containerId');
+        // 重置内容
+        wrap.find('#dirTree').empty();
+        $('#fileList').empty();
+        var dirIdx = layer.open({
+            type:1,
+            title:'目录浏览',
+            area:['80%','80%'],
+            shadeClose:true,
+            content: wrap,
+            success:function(){
+                var baseDir = (wrap.data('basedir') || '').toString().replace(/\\+/g,'/');
+                var fullRoot = baseDir + (rootFolder ? ('/' + rootFolder) : '');
+                wrap.find('#rootPath').text('根目录：' + fullRoot);
+                window.__dirCurrentRoot = rootFolder || '';
+                wrap.find('#rootPath').css('cursor','pointer').off('click.refresh').on('click.refresh', function(){
+                    buildLayuiTree(window.__dirCurrentRoot || '');
+                });
+                buildLayuiTree(rootFolder||'');
+            }
+        });
+        window.__dirLayerIdx = dirIdx;
+    };
+})();
+</script>

@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
@@ -10,30 +10,41 @@
 
   <ItemGroup>
     <Compile Remove="Common\Bge\**" />
+    <Compile Remove="example\**" />
     <EmbeddedResource Remove="Common\Bge\**" />
+    <EmbeddedResource Remove="example\**" />
     <None Remove="Common\Bge\**" />
+    <None Remove="example\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Markdig" Version="0.37.0" />
-    <PackageReference Include="Microsoft.KernelMemory" Version="0.94.241201.1" />
-    <PackageReference Include="Microsoft.KernelMemory.AI.Ollama" Version="0.94.241201.1" />
-    <PackageReference Include="Microsoft.KernelMemory.AI.OpenAI" Version="0.94.241201.1" />
-    <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.94.241201.1" />
-    <PackageReference Include="Microsoft.KernelMemory.MemoryDb.Postgres" Version="0.94.241201.1" />
-    <PackageReference Include="Microsoft.ML" Version="4.0.0" />
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.29.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.29.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Plugins.Core" Version="1.29.0-alpha" />
-    <PackageReference Include="Microsoft.SemanticKernel.Yaml" Version="1.29.0" />
+    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251204.1" />
+    <PackageReference Include="Microsoft.Extensions.AI" Version="10.4.0" />
+	  <PackageReference Include="Microsoft.KernelMemory" Version="0.98.250508.3" />
+	  <PackageReference Include="Microsoft.KernelMemory.AI.Ollama" Version="0.98.250508.3" />
+	  <PackageReference Include="Microsoft.KernelMemory.AI.OpenAI" Version="0.98.250508.3" />
+	  <PackageReference Include="Microsoft.KernelMemory.Core" Version="0.98.250508.3" />
+	  <PackageReference Include="Microsoft.KernelMemory.MemoryDb.Postgres" Version="0.98.250508.3" />
+	  <PackageReference Include="Microsoft.SemanticKernel" Version="1.74.0" />
+	  <PackageReference Include="Microsoft.SemanticKernel.Agents.Abstractions" Version="1.74.0" />
+	  <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.74.0" />
+	  <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.74.0" />
+	  <PackageReference Include="Microsoft.SemanticKernel.Plugins.Core" Version="1.62.0-preview" />
+	  <PackageReference Include="Microsoft.SemanticKernel.Yaml" Version="1.74.0" />
+    <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.3" />
+    <PackageReference Include="ModelContextProtocol.Core" Version="0.3.0-preview.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="pythonnet" Version="3.0.3" />
-    <PackageReference Include="RestSharp" Version="111.4.1" />
+    <PackageReference Include="RestSharp" Version="112.0.0" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="SqlSugarCore" Version="5.1.4.167" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ZSN.AI.BLL\ZSN.AI.BLL.csproj" />
+    <ProjectReference Include="..\ZSN.AI.MCPClient\ZSN.AI.MCPClient.csproj" />
     <ProjectReference Include="..\ZSN.AI.Plugins\ZSN.AI.Plugins.csproj" />
     <ProjectReference Include="..\ZSN.Utils.Core\ZSN.Utils.Core.csproj" />
   </ItemGroup>

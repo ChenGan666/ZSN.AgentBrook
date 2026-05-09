@@ -14,11 +14,11 @@ namespace ZSN.AI.Entity
 		/// <summary>
         /// ApiID
         /// </summary>
-		public Int32 ApiID { get; set; } 
-		/// <summary>
-        /// MemberID
+		public Int32 ApiID { get; set; }
+        /// <summary>
+        /// CompanyID
         /// </summary>
-		public string MemberID { get; set; } = string.Empty;
+        public int CompanyID { get; set; } = 0;
 		/// <summary>
         /// AppID
         /// </summary>
@@ -73,6 +73,9 @@ namespace ZSN.AI.Entity
         public FullMemberInfo FullMember { get; set; }
         public MemberAuthInfo MemberAuth { get; set; }
         public MemberOtherAuthInfo MemberOtherAuth { get; set; }
+        public StaffInfo StaffInfo { get; set; }
+
+        public UserInfo UserInfo { get; set; }
 
         public string GetAppKey()
         {

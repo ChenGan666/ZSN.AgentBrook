@@ -1,0 +1,190 @@
+@{
+    var lst = ViewBag.List as List<SkillInfo>;
+    var sName = ViewBag.SName as string;
+    var systemStatus = ViewBag.SystemStatus?.ToString();
+}
+@section Css{
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <div class="layui-form layui-form-pane">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">名称</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" class="layui-input" id="qName" value="@sName" placeholder="名称">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <label class="layui-form-label">状态</label>
+                                <div class="layui-input-inline">
+                                    <select id="qStatus" data-selected="@systemStatus">
+                                        <option value="">全部</option>
+                                        <option value="0">正常</option>
+                                        <option value="1">屏蔽</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <button class="layui-btn" id="btnSearch"><i class="layui-icon">&#xe615;</i>搜索</button>
+                            </div>
+                            <div class="layui-inline">
+                                <button class="layui-btn add_bt"><i class="layui-icon"></i>新建</button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-table layui-form">
+                        <colgroup>
+                            <col width="220">
+                            <col>
+                            <col width="220">
+                            <col width="160">
+                            <col width="100">
+                            <col width="160">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>描述</th>
+                                <th>目录</th>
+                                <th>创建时间</th>
+                                <th>状态</th>
+                                <th>设置</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (lst!=null)
+                            {
+                                foreach (var it in lst)
+                                {
+                                    <tr data-mid="@it.SkillID">
+                                        <td>@it.SName</td>
+                                        <td>@it.SDescription</td>
+                                        <td>@it.SkillDirectory</td>
+                                        <td>@it.CreateTime</td>
+                                        <td>
+                                            <input type="checkbox" name="switch" lay-text="正常|屏蔽" lay-skin="switch" lay-filter="status" @(it.SystemStatus==0?"checked":"")>
+                                        </td>
+                                        <td>
+                                            <nobr>
+                                                <button class="layui-btn edit_bt">编辑</button>
+                                                <button class="layui-btn del" data-id="@it.SkillID">删除</button>
+                                            </nobr>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="layui-card-body ">
+                    <div class="pagination" id="pageId"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(function () {
+            var form = layui.form;
+            var laypage = layui.laypage;
+            form.render();
+
+            var selected = $('#qStatus').attr('data-selected') || '';
+            $('#qStatus').val(selected);
+            form.render('select');
+
+            function goIndex(curr, limit) {
+                var qs = [];
+                var name = encodeURIComponent($('#qName').val() || '');
+                var status = $('#qStatus').val();
+                if (name) qs.push('sName=' + name);
+                if (status !== '') qs.push('systemStatus=' + status);
+                qs.push('index=' + curr);
+                qs.push('size=' + limit);
+                var url = '@Url.Action("index")' + (qs.length ? ('?' + qs.join('&')) : '');
+                location.href = url;
+            }
+
+            laypage.render({
+                elem: 'pageId',
+                count: @ViewBag.Total,
+                limit: @ViewBag.Size,
+                curr: @ViewBag.Index,
+                layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip'],
+                jump: function (obj, f) {
+                    if (f) return;
+                    goIndex(obj.curr, obj.limit);
+                }
+            });
+
+            $('#btnSearch').on('click', function () {
+                goIndex(1, @ViewBag.Size);
+                return false;
+            });
+
+            /*新增*/
+            $('.add_bt').click(function () {
+                var url = '@Url.Action("Edit")';
+                layer.open({
+                    type: 2,
+                    title: '新增',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['100%', '100%'],
+                    content: url
+                });
+            });
+
+            /*编辑*/
+            $('.edit_bt').click(function () {
+                var mid = $(this).parents("tr").data('mid');
+                var url = '@Url.Action("Edit")' + "?mid=" + mid;
+                layer.open({
+                    type: 2,
+                    title: '编辑',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['100%', '100%'],
+                    content: url
+                });
+            });
+
+            $('.del').click(function () {
+                var id = $(this).data('id');
+                layer.confirm("确认要删除吗，删除后不能恢复!", { title: "删除确认" }, function (index) {
+                    $.ajax({
+                        url: '@Url.Action("Del")',
+                        type: 'POST',
+                        data: { mid: id },
+                        success: function (res) {
+                            layer.msg(res.msg, { icon: 1, time: 1000 }, function () { location.reload(); });
+                        }
+                    });
+                });
+            });
+
+            form.on('switch(status)', function (data) {
+                $.ajax({
+                    url: '@Url.Action("Status")',
+                    type: 'POST',
+                    data: {
+                        mid: $(this).parents("tr").data('mid'),
+                        status: (this.checked ? 'true' : 'false')
+                    },
+                    success: function (res) {
+                        layer.msg('Finish', { icon: 1, time: 1000 });
+                    }
+                });
+            });
+        });
+    </script>
+}

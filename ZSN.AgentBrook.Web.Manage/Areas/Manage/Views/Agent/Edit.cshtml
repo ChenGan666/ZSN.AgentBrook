@@ -194,9 +194,9 @@
                         状态
                     </label>
                     <div class="layui-input-inline">
-                        <input type="radio" name="SystemStatus" value="0" title="未发布" @(Agent.SystemStatus == 0 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="-1" title="屏蔽" @(Agent.SystemStatus == -1 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="1" title="正常" @(Agent.SystemStatus == 1 ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@AgentStatus.UnderReview" title="未发布" @(Agent.SystemStatus == AgentStatus.UnderReview ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@AgentStatus.Disable" title="屏蔽" @(Agent.SystemStatus == AgentStatus.Disable ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="@AgentStatus.Normal" title="正常" @(Agent.SystemStatus == AgentStatus.Normal ? "checked" : "")>
                     </div>
                 </div>
 

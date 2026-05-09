@@ -14,9 +14,11 @@ namespace ZSN.AI.DAL
         bool WorkflowNodeInfo_Delete(string nodeID); 
         bool WorkflowNodeInfo_DeleteList(string nodeIDlist);
         bool WorkflowNodeInfo_DeleteAbsentList(string nodeIDlist, string WorkflowID);
+        bool WorkflowNodeInfo_DeleteByWorkflowID(string WorkflowID);
         WorkflowNodeInfo WorkflowNodeInfo_DataRowToModel(DataRow row);
         WorkflowNodeInfo WorkflowNodeInfo_GetModel(string nodeID); 
         DataSet WorkflowNodeInfo_GetList(string strWhere);
+        DataSet GetAllNextNodeListByNodeID(string NodeID);
         DataSet WorkflowNodeInfo_GetList(int top, string strWhere, string filedOrder);
         int WorkflowNodeInfo_GetRecordCount(string strWhere);
         DataSet WorkflowNodeInfo_GetListByPage(string strWhere, string orderBy, int startIndex, int endIndex);

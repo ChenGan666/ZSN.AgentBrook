@@ -1,0 +1,91 @@
+# ============================================================================
+# ZSN.AI.KnowledgeBase Docker Compose 配置
+# 用于快速部署 PostgreSQL + pgvector + Apache AGE 环境
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库服务
+  postgres:
+    image: pgvector/pgvector:pg16-age
+    container_name: zsn-knowledgebase-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ClawAI
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Q1w2e3r4t5y6
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+      # 允许 pgvector 和 age 扩展
+      POSTGRES_SHARED_PRELOAD_LIBRARIES: 'age.so'
+    ports:
+      - "5432:5432"
+    volumes:
+      # 数据持久化
+      - postgres_data:/var/lib/postgresql/data
+      # 初始化脚本目录（挂载当前目录下的SQL文件）
+      - .:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zsn-network
+
+  # pgAdmin（可选，用于数据库管理）
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: zsn-knowledgebase-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - zsn-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  zsn-network:
+    driver: bridge
+
+# ============================================================================
+# 使用说明：
+#
+# 1. 启动服务：
+#    docker-compose up -d
+#
+# 2. 查看日志：
+#    docker-compose logs -f postgres
+#
+# 3. 停止服务：
+#    docker-compose down
+#
+# 4. 删除所有数据：
+#    docker-compose down -v
+#
+# 5. 连接数据库：
+#    Host: localhost
+#    Port: 5432
+#    Database: ClawAI
+#    Username: postgres
+#    Password: Q1w2e3r4t5y6
+#
+# 6. 访问 pgAdmin：
+#    URL: http://localhost:5050
+#    Email: admin@example.com
+#    Password: admin
+#
+# ============================================================================

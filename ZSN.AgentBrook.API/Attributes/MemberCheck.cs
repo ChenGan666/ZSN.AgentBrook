@@ -20,12 +20,17 @@ namespace ZSN.AgentBrook.API.Attributes
     /// </summary>
     public class MemberCheck: APIChecker
     {
+        public int MarkId = 305;
         /// <summary>
         /// 是否进行MemberToken认证
         /// </summary>
         public bool MemberToken = true;
         /// <summary>
-        /// 是否经行Member签名认证
+        /// 是否管理员认证
+        /// </summary>
+        public bool CheckManage = false;
+        /// <summary>
+        /// 是否进行Member签名认证
         /// </summary>
         public bool MemberSignin = ConfigHelper.GetBool("CheckSign", true);
         /// <summary>
@@ -41,6 +46,8 @@ namespace ZSN.AgentBrook.API.Attributes
         {
             if (MemberToken)
             {
+                var controller = context.Controller as ApiBaseController;
+                
                 var token_checked = CheckToken(context);
                 if (!token_checked)
                 {
@@ -53,6 +60,17 @@ namespace ZSN.AgentBrook.API.Attributes
                     if (!rst)
                     {
                         context.Result = GetErrorResult(ErrorCode.MemberSignError);
+                    }
+                }
+                if (CheckManage)
+                {
+                    if (controller != null)
+                    {
+                        var MemberSetting = controller.MemberSetting;
+                        if (MemberSetting.UserInfo != null)
+                        {
+
+                        }
                     }
                 }
             }
@@ -144,7 +162,7 @@ namespace ZSN.AgentBrook.API.Attributes
                     Dictionary<string, object> dic = new Dictionary<string, object>();
                     foreach (var p in tmpDic)
                     {
-                        var val = p.Value.ToString();
+                        var val = p.Value is bool b ? b.ToString().ToLower(): p.Value.ToString() ?? "";
                         if (val.IndexOf('{') == 0)
                         {
                             var td = JsonConvert.DeserializeObject<Dictionary<string, string>>(val);

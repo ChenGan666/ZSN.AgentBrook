@@ -15,11 +15,11 @@ namespace ZSN.AI.DAL.MySql
         ///表名称
         private string LargeModelInfoTableName = "tb_large_model_info";
         ///表字段
-        private const string LargeModelInfoTableField = "LargeModelID,Name,MICON,TypeCode,TypeName,EndPoint,MConfig,Description,SystemStatus,CreateTime,UpdateTime,ModelOrganizationID,ModelOrganizationName,ModelName,ModelKey";
+        private const string LargeModelInfoTableField = "LargeModelID,Name,MICON,TypeCode,TypeName,EndPoint,MConfig,Description,SystemStatus,CreateTime,UpdateTime,ModelOrganizationID,ModelOrganizationName,ModelName,ModelKey,IsDefaultModel";
         ///添加用表字段
-        private const string LargeModelInfoTableFieldForAdd = "Name,MICON,TypeCode,TypeName,EndPoint,MConfig,Description,SystemStatus,CreateTime,UpdateTime,ModelOrganizationID,ModelOrganizationName,ModelName,ModelKey";
+        private const string LargeModelInfoTableFieldForAdd = "Name,MICON,TypeCode,TypeName,EndPoint,MConfig,Description,SystemStatus,CreateTime,UpdateTime,ModelOrganizationID,ModelOrganizationName,ModelName,ModelKey,IsDefaultModel";
         ///添加用表字段value
-        private const string LargeModelInfoTableFieldAltForAdd = "@Name,@MICON,@TypeCode,@TypeName,@EndPoint,@MConfig,@Description,@SystemStatus,@CreateTime,@UpdateTime,@ModelOrganizationID,@ModelOrganizationName,@ModelName,@ModelKey";
+        private const string LargeModelInfoTableFieldAltForAdd = "@Name,@MICON,@TypeCode,@TypeName,@EndPoint,@MConfig,@Description,@SystemStatus,@CreateTime,@UpdateTime,@ModelOrganizationID,@ModelOrganizationName,@ModelName,@ModelKey,@IsDefaultModel";
         public string SetConnectionName(string connName)
         {
             return LargeModelInfoConnectionName = connName;
@@ -40,7 +40,7 @@ namespace ZSN.AI.DAL.MySql
             strSql.Append(";select @@IDENTITY");
             MySqlParameter[] parameters = {
 			 new MySqlParameter("@Name", MySqlDbType.VarChar,50),
- new MySqlParameter("@TypeCode", MySqlDbType.Int32,10),
+ new MySqlParameter("@TypeCode", MySqlDbType.Int32),
  new MySqlParameter("@TypeName", MySqlDbType.VarChar,50),
  new MySqlParameter("@EndPoint", MySqlDbType.VarChar,255),
  new MySqlParameter("@Description", MySqlDbType.VarChar,512),
@@ -56,6 +56,8 @@ namespace ZSN.AI.DAL.MySql
 
  new MySqlParameter("@ModelName", MySqlDbType.VarChar,50),
  new MySqlParameter("@ModelKey", MySqlDbType.VarChar,128),
+
+ new MySqlParameter("@IsDefaultModel", MySqlDbType.Int32),
                     };
 			 parameters[0].Value = model.Name;
  parameters[1].Value = model.TypeCode;
@@ -72,6 +74,8 @@ namespace ZSN.AI.DAL.MySql
 
             parameters[12].Value = model.ModelName;
             parameters[13].Value = model.ModelKey;
+
+            parameters[14].Value = model.IsDefaultModel;
 
             object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(LargeModelInfoConnectionName), CommandType.Text,strSql.ToString(), parameters);
             if (obj == null)
@@ -107,13 +111,14 @@ strSql.Append("UpdateTime=@UpdateTime,");
             strSql.Append("ModelOrganizationName=@ModelOrganizationName,");
 
             strSql.Append("ModelName=@ModelName, ");
-            strSql.Append("ModelKey=@ModelKey ");
+            strSql.Append("ModelKey=@ModelKey, ");
+            strSql.Append("IsDefaultModel=@IsDefaultModel ");
 
             strSql.Append(" where LargeModelID=@LargeModelID");
             MySqlParameter[] parameters = {
-				 new MySqlParameter("@LargeModelID", MySqlDbType.Int32,10),
+				 new MySqlParameter("@LargeModelID", MySqlDbType.Int32),
  new MySqlParameter("@Name", MySqlDbType.VarChar,50),
- new MySqlParameter("@TypeCode", MySqlDbType.Int32,10),
+ new MySqlParameter("@TypeCode", MySqlDbType.Int32),
  new MySqlParameter("@TypeName", MySqlDbType.VarChar,50),
  new MySqlParameter("@EndPoint", MySqlDbType.VarChar,255),
  new MySqlParameter("@Description", MySqlDbType.VarChar,512),
@@ -127,6 +132,8 @@ strSql.Append("UpdateTime=@UpdateTime,");
 
  new MySqlParameter("@ModelName", MySqlDbType.VarChar,50),
  new MySqlParameter("@ModelKey", MySqlDbType.VarChar,128),
+
+ new MySqlParameter("@IsDefaultModel", MySqlDbType.Int32),
             };
 			 parameters[0].Value = model.LargeModelID;
  parameters[1].Value = model.Name;
@@ -144,6 +151,7 @@ strSql.Append("UpdateTime=@UpdateTime,");
 
             parameters[13].Value = model.ModelName;
             parameters[14].Value = model.ModelKey;
+            parameters[15].Value = model.IsDefaultModel;
 
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(LargeModelInfoConnectionName),CommandType.Text,strSql.ToString(), parameters);
             if (rows > 0)
@@ -224,6 +232,27 @@ strSql.Append("UpdateTime=@UpdateTime,");
                 return null;
             }
         }
+        public LargeModelInfo LargeModelInfo_GetDefaultModel()
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("select ");
+            strSql.Append(LargeModelInfoTableField);
+            strSql.Append(" from ");
+            strSql.Append(LargeModelInfoTableName);
+            strSql.Append(" where IsDefaultModel=1 and SystemStatus=0");
+            strSql.Append(" limit 1");
+
+            LargeModelInfo model = new LargeModelInfo();
+            DataSet ds = DbHelper.ExecuteDataset(DbConfig.GetDbInfo(LargeModelInfoConnectionName), CommandType.Text, strSql.ToString());
+            if (ds.Tables[0].Rows.Count > 0)
+            {
+                return LargeModelInfo_DataRowToModel(ds.Tables[0].Rows[0]);
+            }
+            else
+            {
+                return null;
+            }
+        }
         /// <summary>
         /// 得到一个对象实体
         /// </summary>
@@ -274,7 +303,7 @@ strSql.Append("UpdateTime=@UpdateTime,");
                 }
 				if (row["SystemStatus"] != null )
                 {
-                    model.SystemStatus = int.Parse(row["SystemStatus"].ToString());
+                    model.SystemStatus = (LargeModelStatus) int.Parse(row["SystemStatus"].ToString());
                 }
 				if (row["CreateTime"] != null )
                 {
@@ -291,6 +320,10 @@ strSql.Append("UpdateTime=@UpdateTime,");
                 if (row["ModelOrganizationName"] != null)
                 {
                     model.ModelOrganizationName = row["ModelOrganizationName"].ToString();
+                }
+                if (row["IsDefaultModel"] != null)
+                {
+                    model.IsDefaultModel = int.Parse(row["IsDefaultModel"].ToString());
                 }
             }
             return model;

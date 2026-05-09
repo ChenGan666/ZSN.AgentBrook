@@ -1,8 +1,0 @@
-============================
-Time:2024-12-22 15:39:19.340
-ConnMultiplexer_ConfigurationChanged: 127.0.0.1:6379
-Url:http://192.168.0.28:5003/api/File/Get?fileCode=2dda310095491fb79abed13d57566fdd
-UrlReferrer:http://127.0.0.1:5002/
-UserHostAddress:192.168.0.28;;
-
-

@@ -32,17 +32,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="layui-form-item">
-                    <label class="layui-form-label">
-                        <span class="x-red">*</span>SecretKey
-                    </label>
-                    <div class="layui-input-block">
-                        <div class="layui-col-md9">
-                            <input type="text" name="SecretKey" readonly  value="@App.SecretKey"
-                                   autocomplete="off" class="layui-input">
-                        </div>
-                    </div>
-                </div>
+                
                 <div class="layui-form-item">
                     <label class="layui-form-label">
                         <span class="x-red">*</span>应用名称
@@ -176,10 +166,10 @@
                         状态
                     </label>
                     <div class="layui-input-inline">
-                        <input type="radio" name="SystemStatus" value="0" title="未发布" @(App.SystemStatus == 0 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="-1" title="屏蔽" @(App.SystemStatus == -1 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="1" title="未运行" @(App.SystemStatus == 1 ? "checked" : "")>
-                        <input type="radio" name="SystemStatus" value="2" title="运行中" @(App.SystemStatus == 2 ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="0" title="未发布" @(App.SystemStatus == AppStatus.Unaudited ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="-1" title="屏蔽" @(App.SystemStatus == AppStatus.Disable ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="1" title="未运行" @(App.SystemStatus == AppStatus.Stop ? "checked" : "")>
+                        <input type="radio" name="SystemStatus" value="2" title="运行中" @(App.SystemStatus == AppStatus.Running ? "checked" : "")>
                     </div>
                 </div>
 
