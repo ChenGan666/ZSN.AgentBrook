@@ -1,45 +1,58 @@
 ## .NET
-## 忽略 .NET 构建输出
 bin/
 obj/
 [Ll]og/
 *.log
 
-## 忽略 Visual Studio 用户文件
-.vscode/
+## Visual Studio
 .vs/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
+*.rsuser
+*.userprefs
 
-## 忽略 Rider 和 JetBrains 系列 IDE 文件
+## Rider / JetBrains
 .idea/
 *.sln.iml
+_ReSharper*/
+*.DotSettings.user
 
-## 忽略 ASP.NET 临时文件
+## VS Code
+.vscode/
+
+## ASP.NET
 *.dbmdl
 *.bak
-*.sql
-# 但保留数据库初始化脚本(用于Docker部署)
-!**/Database/*.sql
-!**/Schema/*.sql
 App_Data/
 
-## 忽略发布输出
+## 发布输出
 publish/
 out/
 artifacts/
+[Ll]og/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+bld/
 
-## 忽略 NuGet 本地包
+## NuGet
 *.nupkg
 *.snupkg
 *.nuspec
 packages/
 project.lock.json
 project.fragment.lock.json
+*.nuget.props
+*.nuget.targets
 
-## 忽略调试和测试相关
+## 调试和测试
 *.pidb
 *.psess
 *.vsp
@@ -48,45 +61,88 @@ project.fragment.lock.json
 *.coveragexml
 TestResults/
 *.orig
-
-## 忽略临时文件
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
 *.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.vspscc
+*.vssscc
+*.svclog
+*.scc
+*.cache
+!?*.cache/
+
+## 临时文件
 *.temp
 *.~*
 *.swp
 *.swo
+~$*
 
-## 忽略配置/Secrets
+## 配置 / Secrets
 secrets.json
 appsettings.*.local.json
 appsettings.Development.json
+*.pfx
+*.publishsettings
 
-## 忽略 docker 构建缓存
+## Docker
 docker-compose.override.yml
 docker-compose.*.yml
-.dockerignore
 
-## 忽略环境依赖文件
+## 环境变量
 .env
 .env.*
 
-## 忽略 Resharper 和其他插件缓存
-_ReSharper*/
-*.DotSettings.user
-
-## 忽略 Rider 用户设置
-.idea/
-
-## 忽略系统文件
+## 系统文件
 .DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-## 忽略 Windows Installer 文件
+## 安装包
 *.msi
 *.exe
 
-## 可选：忽略 Git 子模块锁文件
+## Git
 .gitmodules.lock
+
+## 数据库文件
+*.mdf
+*.ldf
+*.ndf
+
+## Node.js
+node_modules/
+
+## Python
+__pycache__/
+*.pyc
+
+## 保留数据库初始化脚本
+!**/Database/*.sql
+!**/Schema/*.sql
+
+## NuGet 还原缓存（项目级）
+**/project.assets.json
+**/*.csproj.nuget.dgspec.json
+**/*.csproj.nuget.g.targets
+**/*.csproj.nuget.g.props
+**/project.nuget.cache
