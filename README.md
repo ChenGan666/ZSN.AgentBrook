@@ -176,15 +176,8 @@ ClawAI 是平台的核心智能体节点，实现了完整的 **Plan-Execute-Ref
 
 Research 节点是一个自主网络研究引擎，能够根据研究目标自动进行多轮搜索、网页抓取、分析和反思：
 
-**核心工作流：**
+[![Research架构总览](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Research.png)](https://agentbrook.com/)
 
-```
-研究目标 → 搜索规划（LLM 生成关键词）
-    → SearXNG 搜索 → 结果排序
-    → Playwright 网页抓取（降级：搜索摘要）
-    → 分析 + 反思（完整度评分）
-    → 迭代搜索（针对信息缺口）→ 生成研究报告
-```
 
 **关键特性：**
 - **双模式抓取**：Playwright 网页抓取优先，不可用时自动降级为搜索摘要模式

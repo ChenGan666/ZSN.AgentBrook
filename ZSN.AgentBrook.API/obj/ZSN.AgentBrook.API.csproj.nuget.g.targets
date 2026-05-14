@@ -3,6 +3,7 @@
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <Import Project="$(NuGetPackageRoot)microsoft.aspnetcore.mvc.razor.runtimecompilation/8.0.6/buildTransitive/net8.0/Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.aspnetcore.mvc.razor.runtimecompilation/8.0.6/buildTransitive/net8.0/Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation.targets')" />
     <Import Project="$(NuGetPackageRoot)sqlitepclraw.lib.e_sqlite3/2.1.6/buildTransitive/net8.0/SQLitePCLRaw.lib.e_sqlite3.targets" Condition="Exists('$(NuGetPackageRoot)sqlitepclraw.lib.e_sqlite3/2.1.6/buildTransitive/net8.0/SQLitePCLRaw.lib.e_sqlite3.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.playwright/1.52.0/buildTransitive/Microsoft.Playwright.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.playwright/1.52.0/buildTransitive/Microsoft.Playwright.targets')" />
     <Import Project="$(NuGetPackageRoot)magick.net-q8-anycpu/14.12.0/buildTransitive/netstandard20/Magick.NET-Q8-AnyCPU.targets" Condition="Exists('$(NuGetPackageRoot)magick.net-q8-anycpu/14.12.0/buildTransitive/netstandard20/Magick.NET-Q8-AnyCPU.targets')" />
     <Import Project="$(NuGetPackageRoot)microsoft.extensions.apidescription.server/6.0.5/build/Microsoft.Extensions.ApiDescription.Server.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.extensions.apidescription.server/6.0.5/build/Microsoft.Extensions.ApiDescription.Server.targets')" />
   </ImportGroup>

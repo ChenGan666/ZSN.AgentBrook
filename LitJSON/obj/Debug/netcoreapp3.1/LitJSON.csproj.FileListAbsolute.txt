@@ -7,3 +7,4 @@
 /Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/obj/Debug/netcoreapp3.1/LitJSON.csproj.CoreCompileInputs.cache
 /Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/obj/Debug/netcoreapp3.1/LitJSON.dll
 /Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/obj/Debug/netcoreapp3.1/LitJSON.pdb
+/Users/chengan/Dev/AI/ZSN.AgentBrook/LitJSON/obj/Debug/netcoreapp3.1/LitJSON.sourcelink.json

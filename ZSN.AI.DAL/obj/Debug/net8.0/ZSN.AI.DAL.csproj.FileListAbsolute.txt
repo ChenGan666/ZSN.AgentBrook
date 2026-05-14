@@ -29,3 +29,4 @@
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/obj/Debug/net8.0/refint/ZSN.AI.DAL.dll
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/obj/Debug/net8.0/ZSN.AI.DAL.pdb
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/obj/Debug/net8.0/ref/ZSN.AI.DAL.dll
+/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL/obj/Debug/net8.0/ZSN.AI.DAL.sourcelink.json

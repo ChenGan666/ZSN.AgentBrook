@@ -25,3 +25,4 @@
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/obj/Debug/net8.0/refint/ZSN.Utils.Core.dll
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/obj/Debug/net8.0/ZSN.Utils.Core.pdb
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/obj/Debug/net8.0/ref/ZSN.Utils.Core.dll
+/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.Utils.Core/obj/Debug/net8.0/ZSN.Utils.Core.sourcelink.json

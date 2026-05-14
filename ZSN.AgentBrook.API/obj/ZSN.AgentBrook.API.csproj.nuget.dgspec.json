@@ -2313,6 +2313,10 @@
             "PdfPig": {
               "target": "Package",
               "version": "[0.1.10, )"
+            },
+            "SixLabors.ImageSharp": {
+              "target": "Package",
+              "version": "[3.1.12, )"
             }
           },
           "imports": [
@@ -3040,6 +3044,10 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "dependencies": {
+            "Microsoft.Playwright": {
+              "target": "Package",
+              "version": "[1.52.0, )"
+            },
             "SharpZipLib": {
               "target": "Package",
               "version": "[1.4.2, )"

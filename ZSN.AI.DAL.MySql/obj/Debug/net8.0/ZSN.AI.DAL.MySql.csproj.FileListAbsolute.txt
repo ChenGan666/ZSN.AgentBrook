@@ -31,3 +31,4 @@
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL.MySql/obj/Debug/net8.0/refint/ZSN.AI.DAL.MySql.dll
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL.MySql/obj/Debug/net8.0/ZSN.AI.DAL.MySql.pdb
 /Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL.MySql/obj/Debug/net8.0/ref/ZSN.AI.DAL.MySql.dll
+/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AI.DAL.MySql/obj/Debug/net8.0/ZSN.AI.DAL.MySql.sourcelink.json

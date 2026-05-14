@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "/4YRuG+C9uc=",
+  "dgSpecHash": "U5mc0T5Q5LY=",
   "success": true,
   "projectFilePath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AgentBrook.AutoJob/ZSN.AgentBrook.AutoJob.csproj",
   "expectedPackageFiles": [
@@ -190,6 +190,7 @@
     "/Users/chengan/.nuget/packages/microsoft.ml.tokenizers.data.p50kbase/1.0.2/microsoft.ml.tokenizers.data.p50kbase.1.0.2.nupkg.sha512",
     "/Users/chengan/.nuget/packages/microsoft.net.http.headers/2.3.0/microsoft.net.http.headers.2.3.0.nupkg.sha512",
     "/Users/chengan/.nuget/packages/microsoft.openapi/1.6.23/microsoft.openapi.1.6.23.nupkg.sha512",
+    "/Users/chengan/.nuget/packages/microsoft.playwright/1.52.0/microsoft.playwright.1.52.0.nupkg.sha512",
     "/Users/chengan/.nuget/packages/microsoft.semantickernel/1.74.0/microsoft.semantickernel.1.74.0.nupkg.sha512",
     "/Users/chengan/.nuget/packages/microsoft.semantickernel.abstractions/1.74.0/microsoft.semantickernel.abstractions.1.74.0.nupkg.sha512",
     "/Users/chengan/.nuget/packages/microsoft.semantickernel.agents.abstractions/1.74.0/microsoft.semantickernel.agents.abstractions.1.74.0.nupkg.sha512",
@@ -294,6 +295,18 @@
       "warningLevel": 1,
       "filePath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AgentBrook.AutoJob/ZSN.AgentBrook.AutoJob.csproj",
       "libraryId": "log4net",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "包 \"SharpCompress\" 0.30.1 具有已知的 中 严重性漏洞，https://github.com/advisories/GHSA-6c8g-7p36-r338",
+      "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AgentBrook.AutoJob/ZSN.AgentBrook.AutoJob.csproj",
+      "warningLevel": 1,
+      "filePath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AgentBrook.AutoJob/ZSN.AgentBrook.AutoJob.csproj",
+      "libraryId": "SharpCompress",
       "targetGraphs": [
         "net10.0"
       ]
