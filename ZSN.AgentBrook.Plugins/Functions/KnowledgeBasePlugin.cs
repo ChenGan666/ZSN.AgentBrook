@@ -194,7 +194,11 @@ namespace ZSN.AgentBrook.Plugins.Functions
 
                 // 启用实体和关系提取
                 EnableEntityExtraction = true,
-                EnableRelationExtraction = true
+                EnableRelationExtraction = true,
+
+                // 图片处理配置（从知识库配置中读取）
+                EnableImageProcessing = knowledgeBaseConfig?.EnableImageProcessing ?? false,
+                VisionModelID = knowledgeBaseConfig?.VisionModelID ?? 0
             };
 
             knowledgeBaseFile.SystemStatus = ImportKmsStatus.Loadding;

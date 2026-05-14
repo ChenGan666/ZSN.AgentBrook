@@ -21,7 +21,8 @@
 - **可视化 DAG 工作流引擎** — 拖拽式设计器，20+ 节点类型，支持条件分支、并行执行、人工审批、子工作流嵌套
 - **ClawAI 智能体** — Plan-Execute-Reflect 循环架构，多层记忆系统（短期/长期/情景/人格/用户画像），支持任务分解与动态重规划
 - **ServiceDesk 客服节点** — FunctionCall 驱动的知识库检索 + 生成一体化，支持多轮对话、意图识别、信息收集
-- **RAG 知识库** — 向量检索 + 全文检索混合搜索，支持 PDF/Word/Markdown 等多种文档格式，自动分块与索引
+- **Research 研究节点** — 自主网络研究，基于 SearXNG 搜索 + Playwright 网页抓取，多轮搜索-分析-反思迭代，自动生成研究报告
+- **RAG 知识库** — 向量检索 + 全文检索混合搜索，支持 PDF/Word/Markdown 等多种文档格式，自动分块与索引，支持图片识别与图片输出
 - **MCP 工具协议** — 内置 MCP Server/Client，快速接入外部工具和数据源
 - **多模型支持** — OpenAI / Claude / DeepSeek / Ollama / 智谱 / 百度 等主流模型，可按节点独立配置
 - **实时流式输出** — 基于 Redis Stream 的流式响应，前端实时展示 LLM 生成过程
@@ -78,7 +79,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AI.DAL** | 数据访问抽象接口 | SqlSugar ORM |
 | **ZSN.AI.DAL.MySql** | MySQL 数据访问实现 | SqlSugar + MySQL |
 | **ZSN.AI.DAL.Postgres** | PostgreSQL 实现（向量检索 + 知识图谱） | Npgsql, pgvector, Apache AGE |
-| **ZSN.AI.KnowledgeBase** | 知识库服务：文档导入、分块、索引、语义检索 | Kernel Memory, pgvector |
+| **ZSN.AI.KnowledgeBase** | 知识库服务：文档导入、分块、索引、语义检索、图片识别 | Npgsql, pgvector, Apache AGE |
 | **ZSN.AI.MCPServer** | MCP 工具服务器，将平台能力暴露为 MCP 工具 | ModelContextProtocol |
 | **ZSN.AI.MCPClient** | MCP 客户端，连接外部 MCP 服务 | ModelContextProtocol |
 | **ZSN.AI.Plugins** | Semantic Kernel 函数插件集合 | |
@@ -109,7 +110,7 @@ AI.Entity ───────────────────────�
 | 类别 | 节点 |
 |---|---|
 | 流程控制 | Start, End, AgentStart, AgentEnd |
-| AI 推理 | MainAI, LargeModel, ClawAI, ServiceDesk |
+| AI 推理 | MainAI, LargeModel, ClawAI, ServiceDesk, Research |
 | 知识检索 | KnowledgeBase, FileToMarkdown |
 | 逻辑路由 | Selector（条件分支）, Merge（汇聚）, IntentionRecognition（意图识别） |
 | 工具集成 | MCP, Plugins, Agent（子工作流） |
@@ -158,6 +159,41 @@ ClawAI 是平台的核心智能体节点，实现了完整的 **Plan-Execute-Ref
 - **知识图谱**：基于 Apache AGE 的实体关系图谱
 - **多格式支持**：PDF、Word、Markdown、TXT、HTML 等
 - **智能分块**：语义感知的文档分块策略
+- **图片识别**：自动提取文档中的图片，通过 VLM（视觉语言模型）生成图片描述、OCR 文字识别，支持 PDF/Word/PPT 文档
+- **图片输出**：知识库检索结果支持返回关联图片，图片与文本分块自动关联，支持混合图文检索
+
+**图片处理管线：**
+
+```
+文档上传 → 图片提取（PDF/Word/PPT）
+    → 内容去重（SHA256 哈希）
+    → VLM 描述生成（图片描述 + OCR + 标签）
+    → 图片存储 + 元数据入库
+    → 图片-分块自动关联
+```
+
+### 4.1 Research — 自主研究节点
+
+Research 节点是一个自主网络研究引擎，能够根据研究目标自动进行多轮搜索、网页抓取、分析和反思：
+
+**核心工作流：**
+
+```
+研究目标 → 搜索规划（LLM 生成关键词）
+    → SearXNG 搜索 → 结果排序
+    → Playwright 网页抓取（降级：搜索摘要）
+    → 分析 + 反思（完整度评分）
+    → 迭代搜索（针对信息缺口）→ 生成研究报告
+```
+
+**关键特性：**
+- **双模式抓取**：Playwright 网页抓取优先，不可用时自动降级为搜索摘要模式
+- **多轮迭代**：最多 3 轮搜索-分析循环，LLM 自动规划关键词
+- **完整度评估**：每轮分析后评估信息覆盖度（0.0-1.0），达到阈值后自动停止
+- **LLM 调用预算**：可配置最大 LLM 调用次数，防止成本失控
+- **内容缓存**：基于 Redis 的网页内容缓存，避免重复抓取
+- **超时保护**：全局超时保护，超时返回已获取内容
+- **流式输出**：实时流式推送研究进度
 
 ### 5. MCP 工具集成
 
@@ -196,7 +232,8 @@ ClawAI 是平台的核心智能体节点，实现了完整的 **Plan-Execute-Ref
 | **ORM** | SqlSugar 5.1 |
 | **数据库** | MySQL（主库）, PostgreSQL + pgvector + Apache AGE（知识库） |
 | **缓存** | Redis (StackExchange.Redis) |
-| **文档处理** | Kernel Memory, PdfPig, OpenXml, Markdig |
+| **文档处理** | PdfPig, OpenXml, Markdig, ImageSharp |
+| **图片处理** | VLM 图片描述, OCR 文字识别, 图片-分块关联 |
 | **任务调度** | Quartz.NET |
 | **前端** | React + Ant Design Pro（用户端）, LayUI（管理端） |
 | **浏览器自动化** | Playwright |

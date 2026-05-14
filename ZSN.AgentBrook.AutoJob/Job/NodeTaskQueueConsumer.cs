@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using ZSN.AI.BLL;
 using ZSN.AI.Core.Interface;
 using ZSN.AI.Entity;
+using ZSN.AI.Node.ResearchNode;
+using ZSN.AI.Node.ResearchNode.Services;
 using ZSN.AI.Node;
 using ZSN.AI.Service.WebHelpers;
 using ZSN.Utils.Core.Helpers;
@@ -288,6 +290,18 @@ namespace ZSN.AgentBrook.AutoJob
                                 chatService, scopeProvider, sdLogger,
                                 sdClassifier, sdGenerator, sdStateManager);
                             re = await executionServiceDesk.ServiceDeskNodeAsync(taskConfig.NodeConfig, taskData);
+                            break;
+                        case NodeType.Research:
+                            var researchLogger = scopeProvider.GetRequiredService<ILogger<ExecutionResearch>>();
+                            var searchService = scopeProvider.GetRequiredService<IWebSearchService>();
+                            var fetcherService = scopeProvider.GetRequiredService<IContentFetcherService>();
+                            var engineService = scopeProvider.GetRequiredService<IResearchEngineService>();
+                            var researchOptions = scopeProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ResearchNodeOptions>>();
+
+                            var executionResearch = new ExecutionResearch(
+                                chatService, scopeProvider, researchLogger,
+                                searchService, fetcherService, engineService, researchOptions);
+                            re = await executionResearch.ResearchNodeAsync(taskConfig.NodeConfig, taskData);
                             break;
                     }
 

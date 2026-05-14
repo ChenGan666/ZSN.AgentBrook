@@ -26,6 +26,9 @@ namespace ZSN.AI.KnowledgeBase.Services
         private readonly IEmbeddingService _embeddingService;
         private readonly IKnowledgeGraphService _knowledgeGraphService;
         private readonly IVectorRepository _vectorRepository;
+        private readonly IImageRepository? _imageRepository;
+        private readonly IImageStorageService? _imageStorageService;
+        private readonly IImageProcessingPipeline? _imageProcessingPipeline;
         private readonly IConfiguration _configuration;
         private readonly ILogger<DocumentProcessingService> _logger;
         private readonly string _documentRootPath;
@@ -38,12 +41,19 @@ namespace ZSN.AI.KnowledgeBase.Services
             IKnowledgeGraphService knowledgeGraphService,
             IVectorRepository vectorRepository,
             IConfiguration configuration,
-            ILogger<DocumentProcessingService> logger)
+            ILogger<DocumentProcessingService> logger,
+            IImageProcessingPipeline? imageProcessingPipeline = null,
+            IImageRepository? imageRepository = null,
+            IImageStorageService? imageStorageService = null)
         {
             _chunkerService = chunkerService;
             _embeddingService = embeddingService;
             _knowledgeGraphService = knowledgeGraphService;
             _vectorRepository = vectorRepository;
+            _vectorRepository = vectorRepository;
+            _imageProcessingPipeline = imageProcessingPipeline;
+            _imageRepository = imageRepository;
+            _imageStorageService = imageStorageService;
             _configuration = configuration;
             _logger = logger;
             _processingStatuses = new Dictionary<string, DocumentProcessingStatus>();
@@ -167,6 +177,73 @@ namespace ZSN.AI.KnowledgeBase.Services
             }
 
             return await ProcessDocumentFromTextAsync(documentId, fileName, content, knowledgeBaseId, options, progress, cancellationToken);
+        }
+
+        /// <summary>
+        /// 处理文件并支持图片处理
+        /// </summary>
+        public async Task<DocumentProcessingResult> ProcessDocumentFromFileWithImagesAsync(
+            string documentId,
+            string filePath,
+            string knowledgeBaseId,
+            DocumentProcessingOptions? options = null,
+            IProgress<DocumentProcessingProgress>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("开始处理文档文件（含图片）: {FilePath}", filePath);
+
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException($"文件不存在: {filePath}");
+
+            var fileName = Path.GetFileName(filePath);
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+            string content;
+            switch (extension)
+            {
+                case ".pdf":
+                    content = await ExtractTextFromPdfAsync(filePath, cancellationToken);
+                    break;
+                case ".docx":
+                    content = await ExtractTextFromWordAsync(filePath, cancellationToken);
+                    break;
+                case ".xlsx":
+                    content = await ExtractTextFromExcelAsync(filePath, cancellationToken);
+                    break;
+                case ".pptx":
+                    content = await ExtractTextFromPowerPointAsync(filePath, cancellationToken);
+                    break;
+                case ".txt":
+                case ".md":
+                    content = await File.ReadAllTextAsync(filePath, cancellationToken);
+                    break;
+                default:
+                    throw new NotSupportedException($"不支持的文件格式: {extension}");
+            }
+
+            var textResult = await ProcessDocumentFromTextAsync(documentId, fileName, content, knowledgeBaseId, options, progress, cancellationToken);
+
+            // 图片处理（独立于文本处理，失败不影响文本入库）
+            if (_imageProcessingPipeline != null && options?.EnableImageProcessing == true)
+            {
+                try
+                {
+                    var imageOptions = new ImageProcessingOptions
+                    {
+                        VisionModelId = options?.VisionModelId
+                    };
+                    var imageResult = await _imageProcessingPipeline.ProcessAsync(
+                        documentId, filePath, textResult.Chunks, imageOptions, progress, cancellationToken);
+                    _logger.LogInformation("图片处理完成: {Status}, 提取{Extracted}张, 处理{Processed}张",
+                        imageResult.Status, imageResult.TotalExtracted, imageResult.TotalProcessed);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "图片处理失败，不影响文本入库");
+                }
+            }
+
+            return textResult;
         }
 
         public async Task<DocumentProcessingResult> ProcessDocumentFromTextAsync(
@@ -617,6 +694,57 @@ namespace ZSN.AI.KnowledgeBase.Services
         }
 
         #region 私有辅助方法
+
+        /// <summary>
+        /// 清理文档旧数据（分块、知识图谱、图片），用于重新处理前
+        /// </summary>
+        private async Task CleanupDocumentDataAsync(
+            string documentId,
+            string knowledgeBaseId,
+            CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("开始清理文档旧数据: {DocumentId}", documentId);
+
+            // 1. 删除旧的向量分块数据
+            try
+            {
+                await _vectorRepository.DeleteDocumentAsync(documentId, cancellationToken);
+                _logger.LogInformation("已清理文档旧分块数据: {DocumentId}", documentId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "清理文档旧分块数据失败: {DocumentId}", documentId);
+            }
+
+            // 2. 删除旧的知识图谱数据
+            try
+            {
+                await _knowledgeGraphService.DeleteDocumentGraphAsync(documentId, knowledgeBaseId, cancellationToken);
+                _logger.LogInformation("已清理文档旧知识图谱数据: {DocumentId}", documentId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "清理文档旧知识图谱数据失败: {DocumentId}", documentId);
+            }
+
+            // 3. 删除旧的图片元数据和文件
+            try
+            {
+                if (_imageRepository != null)
+                {
+                    await _imageRepository.DeleteByDocumentIdAsync(documentId, cancellationToken);
+                }
+                if (_imageStorageService != null)
+                {
+                    await _imageStorageService.DeleteByDocumentAsync(documentId, cancellationToken);
+                }
+                _logger.LogInformation("已清理文档旧图片数据: {DocumentId}", documentId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "清理文档旧图片数据失败: {DocumentId}", documentId);
+            }
+        }
 
         /// <summary>
         /// 从PDF文件提取文本

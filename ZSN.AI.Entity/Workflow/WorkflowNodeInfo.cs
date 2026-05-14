@@ -83,6 +83,7 @@ namespace ZSN.AI.Entity
         ClawAI = 23,
         ClawAIWorkflowStep = 24,  // ClawAI 异步等待中的子 WorkFlow 步骤
         ServiceDesk = 25,
+        Research = 26,
 
         NotNode_FileChunk = 90,
         NotNode_Markdown = 91,
@@ -852,6 +853,40 @@ namespace ZSN.AI.Entity
 
         /// <summary>Embedding 模型配置</summary>
         public LargeModelInfo EmbeddingModel { get; set; }
+    }
+
+    /// <summary>Research 研究节点配置</summary>
+    public class ResearchNodeData : NodeData
+    {
+        /// <summary>研究目标/提示词</summary>
+        public string prompt { get; set; }
+
+        /// <summary>主模型配置</summary>
+        public LargeModelInfo model { get; set; }
+
+        /// <summary>规划模型配置（可选，用于搜索规划）</summary>
+        public LargeModelInfo planModel { get; set; }
+
+        /// <summary>温度参数（0-100）</summary>
+        public int temperature { get; set; } = 30;
+
+        /// <summary>TopP参数（0-100）</summary>
+        public int topp { get; set; } = 80;
+
+        /// <summary>最大搜索迭代轮数</summary>
+        public int MaxIterations { get; set; } = 3;
+
+        /// <summary>每轮最大抓取URL数</summary>
+        public int MaxFetchUrls { get; set; } = 5;
+
+        /// <summary>单页最大内容长度</summary>
+        public int MaxContentLength { get; set; } = 5000;
+
+        /// <summary>LLM调用预算上限</summary>
+        public int MaxLLMCalls { get; set; } = 6;
+
+        /// <summary>完成度阈值（0.0-1.0）</summary>
+        public double CompletionThreshold { get; set; } = 0.8;
     }
 
     /// <summary>置信度计算权重配置</summary>

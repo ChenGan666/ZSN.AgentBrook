@@ -252,6 +252,16 @@ namespace ZSN.AI.Entity
         /// 文件ID（如果文件已经在系统中）
         /// </summary>
         public string FileId { get; set; }
+
+        /// <summary>
+        /// 是否启用图片处理
+        /// </summary>
+        public bool EnableImageProcessing { get; set; } = false;
+
+        /// <summary>
+        /// 视觉模型ID（用于图片描述）
+        /// </summary>
+        public int VisionModelID { get; set; } = 0;
     }
 
     /// <summary>

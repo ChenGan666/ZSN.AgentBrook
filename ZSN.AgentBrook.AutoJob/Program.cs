@@ -27,6 +27,8 @@ using ZSN.AI.KnowledgeBase.Services;
 using ZSN.AI.Node.Claw;
 using ZSN.AI.Node.Claw.Configuration;
 using ZSN.AI.Node;
+using ZSN.AI.Node.ResearchNode;
+using ZSN.AI.Node.ResearchNode.Services;
 using ZSN.AI.Service.Base;
 using ZSN.Utils.Core.Helpers;
 
@@ -159,6 +161,21 @@ namespace ZSN.AgentBrook.AutoJob
                 services.AddScoped<IEmbeddingService, EmbeddingService>();
                 services.AddScoped<IVectorRepository, VectorRepository>();
                 services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
+
+                // Research 节点服务注册
+                services.Configure<ResearchNodeOptions>(context.Configuration.GetSection("ResearchNode"));
+                services.AddSingleton<PlaywrightBrowserPool>();
+                services.AddHttpClient<IWebSearchService, WebSearchService>();
+                services.AddScoped<IContentFetcherService, ContentFetcherService>();
+                services.AddScoped<IResearchEngineService, ResearchEngineService>();
+                services.AddScoped<IContentCache, RedisContentCache>();
+
+                // 知识库图片处理服务注册
+                services.AddScoped<IImageExtractionService, ImageExtractionService>();
+                services.AddScoped<IImageDescriptionService, VLMImageDescriptionService>();
+                services.AddScoped<IImageStorageService, FileImageStorageService>();
+                services.AddScoped<IImageProcessingPipeline, ImageProcessingPipeline>();
+                services.AddScoped<IImageRepository, ImageRepository>();
 
                 services.AddSingleton(sp => new FunctionService(sp, [typeof(ZSN.AI.Plugins.BasePlugin).Assembly]));
                 services.AddSingleton(sp => new FunctionService(sp, [typeof(ZSN.AI.Plugins.Functions.HttpPlugin).Assembly]));

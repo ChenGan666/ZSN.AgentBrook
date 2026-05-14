@@ -42,7 +42,7 @@ namespace ZSN.AI.Entity
         public int VectorModelID { get; set; }
         public string VectorModelName { get; set; } = string.Empty;
         /// <summary>
-        /// ParagraphSlice,�ֿ鳤��
+        /// ParagraphSlice,�ֿ鳤��
         /// </summary>
         public int ParagraphSlice { get; set; } = 1000;
         /// <summary>
@@ -50,7 +50,7 @@ namespace ZSN.AI.Entity
         /// </summary>
         public int LineSliceCount { get; set; } = 1000;
         /// <summary>
-        /// OverlapSection,�ʺ���Ҫ�����������Եĳ���,0=���ص�
+        /// OverlapSection,�ʺ���Ҫ�����������Եĳ���,0=���ص�
         /// </summary>
         public int OverlapSection { get; set; } = 20;
         /// <summary>
@@ -73,6 +73,18 @@ namespace ZSN.AI.Entity
         /// LastUpdateTime
         /// </summary>
         public DateTime LastUpdateTime { get; set; } = DateTime.Now;
+        /// <summary>
+        /// 是否启用图片处理（默认关闭）
+        /// </summary>
+        public bool EnableImageProcessing { get; set; } = false;
+        /// <summary>
+        /// 视觉大模型ID（用于图片描述生成）
+        /// </summary>
+        public int VisionModelID { get; set; } = 0;
+        /// <summary>
+        /// 视觉大模型名称
+        /// </summary>
+        public string VisionModelName { get; set; } = string.Empty;
         #endregion
     }
 

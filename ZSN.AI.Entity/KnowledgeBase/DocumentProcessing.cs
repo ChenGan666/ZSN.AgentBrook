@@ -91,6 +91,16 @@ namespace ZSN.AI.Entity.KnowledgeBase
         /// 最大重试次数
         /// </summary>
         public int MaxRetries { get; set; } = 3;
+
+        /// <summary>
+        /// 是否启用图片处理
+        /// </summary>
+        public bool EnableImageProcessing { get; set; } = false;
+
+        /// <summary>
+        /// 视觉模型ID（用于图片描述）
+        /// </summary>
+        public int? VisionModelId { get; set; }
     }
 
     /// <summary>

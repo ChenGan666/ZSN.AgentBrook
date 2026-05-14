@@ -21,7 +21,8 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 - **Visual DAG Workflow Engine** — Drag-and-drop designer, 20+ node types, supporting conditional branching, parallel execution, human approval, and sub-workflow nesting
 - **ClawAI Agent** — Plan-Execute-Reflect loop architecture, multi-layer memory system (short-term/long-term/episodic/personality/user profile), task decomposition and dynamic replanning
 - **ServiceDesk Customer Service Node** — FunctionCall-driven integrated knowledge base retrieval + generation, supporting multi-turn dialogue, intent recognition, and information collection
-- **RAG Knowledge Base** — Hybrid search combining vector retrieval + full-text search, supporting PDF/Word/Markdown and other document formats, automatic chunking and indexing
+- **Research Node** — Autonomous web research based on SearXNG search + Playwright web scraping, multi-round search-analyze-reflect iterations, automatic research report generation
+- **RAG Knowledge Base** — Hybrid search combining vector retrieval + full-text search, supporting PDF/Word/Markdown and other document formats, automatic chunking and indexing, image recognition and image output support
 - **MCP Tool Protocol** — Built-in MCP Server/Client for quick integration of external tools and data sources
 - **Multi-Model Support** — OpenAI / Claude / DeepSeek / Ollama / Zhipu / Baidu and other mainstream models, configurable per node
 - **Real-time Streaming Output** — Streaming response based on Redis Stream, real-time display of LLM generation process on the frontend
@@ -78,7 +79,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AI.DAL** | Data access abstraction interfaces | SqlSugar ORM |
 | **ZSN.AI.DAL.MySql** | MySQL data access implementation | SqlSugar + MySQL |
 | **ZSN.AI.DAL.Postgres** | PostgreSQL implementation (vector retrieval + knowledge graph) | Npgsql, pgvector, Apache AGE |
-| **ZSN.AI.KnowledgeBase** | Knowledge base service: document import, chunking, indexing, semantic retrieval | Kernel Memory, pgvector |
+| **ZSN.AI.KnowledgeBase** | Knowledge base service: document import, chunking, indexing, semantic retrieval, image recognition | Npgsql, pgvector, Apache AGE |
 | **ZSN.AI.MCPServer** | MCP tool server, exposing platform capabilities as MCP tools | ModelContextProtocol |
 | **ZSN.AI.MCPClient** | MCP client, connecting to external MCP services | ModelContextProtocol |
 | **ZSN.AI.Plugins** | Semantic Kernel function plugin collection | |
@@ -109,7 +110,7 @@ DAG (Directed Acyclic Graph) based visual workflow editor with drag-and-drop des
 | Category | Nodes |
 |---|---|
 | Flow Control | Start, End, AgentStart, AgentEnd |
-| AI Reasoning | MainAI, LargeModel, ClawAI, ServiceDesk |
+| AI Reasoning | MainAI, LargeModel, ClawAI, ServiceDesk, Research |
 | Knowledge Retrieval | KnowledgeBase, FileToMarkdown |
 | Logic Routing | Selector (conditional branching), Merge (convergence), IntentionRecognition (intent recognition) |
 | Tool Integration | MCP, Plugins, Agent (sub-workflow) |
@@ -158,6 +159,41 @@ A quick-response node for customer service scenarios, using FunctionCall to let 
 - **Knowledge Graph**: Entity relationship graph based on Apache AGE
 - **Multi-format Support**: PDF, Word, Markdown, TXT, HTML, etc.
 - **Intelligent Chunking**: Semantic-aware document chunking strategy
+- **Image Recognition**: Automatically extracts images from documents, generates image descriptions through VLM (Vision Language Model) with OCR text recognition, supports PDF/Word/PPT documents
+- **Image Output**: Knowledge base search results support returning associated images, automatic image-text chunk association, hybrid image-text retrieval
+
+**Image Processing Pipeline:**
+
+```
+Document Upload → Image Extraction (PDF/Word/PPT)
+    → Content Deduplication (SHA256 hash)
+    → VLM Description Generation (image description + OCR + tags)
+    → Image Storage + Metadata Persistence
+    → Automatic Image-Chunk Association
+```
+
+### 4.1 Research — Autonomous Research Node
+
+The Research node is an autonomous web research engine that performs multi-round search, web scraping, analysis, and reflection based on research goals:
+
+**Core Workflow:**
+
+```
+Research Goal → Search Planning (LLM generates keywords)
+    → SearXNG Search → Result Ranking
+    → Playwright Web Scraping (Fallback: search snippets)
+    → Analysis + Reflection (completeness scoring)
+    → Iterative Search (targeting information gaps) → Generate Research Report
+```
+
+**Key Features:**
+- **Dual-mode Scraping**: Playwright web scraping prioritized, automatic fallback to search snippet mode when unavailable
+- **Multi-round Iteration**: Up to 3 search-analysis cycles, LLM autonomously plans keywords
+- **Completeness Assessment**: Evaluates information coverage (0.0-1.0) after each analysis round, auto-stops when threshold is reached
+- **LLM Call Budget**: Configurable maximum LLM call count to prevent cost overruns
+- **Content Caching**: Redis-based web content caching to avoid redundant scraping
+- **Timeout Protection**: Global timeout protection, returns collected content on timeout
+- **Streaming Output**: Real-time streaming of research progress
 
 ### 5. MCP Tool Integration
 
@@ -196,7 +232,8 @@ Each workflow node can be independently configured with model, Temperature, TopP
 | **ORM** | SqlSugar 5.1 |
 | **Database** | MySQL (primary), PostgreSQL + pgvector + Apache AGE (knowledge base) |
 | **Cache** | Redis (StackExchange.Redis) |
-| **Document Processing** | Kernel Memory, PdfPig, OpenXml, Markdig |
+| **Document Processing** | PdfPig, OpenXml, Markdig, ImageSharp |
+| **Image Processing** | VLM image description, OCR text recognition, image-chunk association |
 | **Task Scheduling** | Quartz.NET |
 | **Frontend** | React + Ant Design Pro (user-facing), LayUI (admin) |
 | **Browser Automation** | Playwright |

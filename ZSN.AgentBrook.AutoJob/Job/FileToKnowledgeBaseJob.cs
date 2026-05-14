@@ -356,6 +356,13 @@ namespace ZSN.AgentBrook.AutoJob
                 options.EntityModelId = modelId;
             }
 
+            // 图片处理配置
+            options.EnableImageProcessing = config.EnableImageProcessing;
+            if (config.VisionModelID > 0)
+            {
+                options.VisionModelId = config.VisionModelID;
+            }
+
             return options;
         }
 

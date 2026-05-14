@@ -732,6 +732,27 @@ namespace ZSN.AI.Node.Utils
 
                     nodeConfig.data = serviceDeskData;
                     break;
+                case NodeType.Research:
+                    ResearchNodeData researchData = new ResearchNodeData();
+
+                    // 输入参数
+                    researchData.inputs.Add(new Inputs { varname = "prompt", type = "string", txt = "研究目标" });
+
+                    // 输出参数
+                    researchData.output.Add(new Output { varname = "results", type = "string", txt = "详细研究报告" });
+                    researchData.output.Add(new Output { varname = "summary", type = "string", txt = "研究摘要" });
+                    researchData.output.Add(new Output { varname = "sources", type = "string", txt = "信息来源" });
+                    researchData.output.Add(new Output { varname = "key_findings", type = "string", txt = "关键发现" });
+
+                    // 默认配置
+                    researchData.MaxIterations = 3;
+                    researchData.MaxFetchUrls = 5;
+                    researchData.MaxContentLength = 5000;
+                    researchData.MaxLLMCalls = 6;
+                    researchData.CompletionThreshold = 0.8;
+
+                    nodeConfig.data = researchData;
+                    break;
             }
             nodeInfo.Config = nodeConfig;
 

@@ -245,6 +245,7 @@ namespace ZSN.AI.BLL
                 NodeType.ClawAI => JsonConvert.DeserializeObject<ClawAIData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
                 NodeType.ClawAIWorkflowStep => JsonConvert.DeserializeObject<ClawAIData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
                 NodeType.ServiceDesk => JsonConvert.DeserializeObject<ServiceDeskData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.Research => JsonConvert.DeserializeObject<ResearchNodeData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
 
                 _ => new List<Inputs>()
             };
