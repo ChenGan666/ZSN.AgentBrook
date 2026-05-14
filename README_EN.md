@@ -176,15 +176,8 @@ Document Upload → Image Extraction (PDF/Word/PPT)
 
 The Research node is an autonomous web research engine that performs multi-round search, web scraping, analysis, and reflection based on research goals:
 
-**Core Workflow:**
+[![Research Architecture Overview](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Research.png)](https://agentbrook.com/)
 
-```
-Research Goal → Search Planning (LLM generates keywords)
-    → SearXNG Search → Result Ranking
-    → Playwright Web Scraping (Fallback: search snippets)
-    → Analysis + Reflection (completeness scoring)
-    → Iterative Search (targeting information gaps) → Generate Research Report
-```
 
 **Key Features:**
 - **Dual-mode Scraping**: Playwright web scraping prioritized, automatic fallback to search snippet mode when unavailable
