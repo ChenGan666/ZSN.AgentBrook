@@ -1,0 +1,25 @@
+use_default_settings: true
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+
+server:
+  secret_key: "ZSN_Knowbase_SearXNG_2024"
+  bind_address: "0.0.0.0"
+  port: 8080
+  limiter: false
+  image_proxy: true
+
+ui:
+  static_use_hash: true
+
+outgoing:
+  request_timeout: 15
+  max_request_timeout: 30
+  useragent_suffix: ""
+  enable_http2: true
+  retries: 1
+  retry_on_http_error: [408, 429, 500, 502, 503, 504]

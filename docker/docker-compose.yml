@@ -154,6 +154,45 @@ services:
     environment:
       - TZ=Asia/Shanghai
 
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8800:8080"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+
+  funasr:
+    image: registry.cn-hangzhou.aliyuncs.com/funasr_repo/funasr:funasr-runtime-sdk-cpu-0.4.7
+    container_name: funasr
+    privileged: true
+    ports:
+      - "10095:10095"
+    volumes:
+      - ./funasr-runtime-resources/models:/workspace/models
+    command:
+      - bash
+      - -lc
+      - |
+        cd /workspace/FunASR/runtime
+        touch /workspace/models/hotwords.txt
+        nohup bash run_server.sh \
+          --download-model-dir /workspace/models \
+          --vad-dir damo/speech_fsmn_vad_zh-cn-16k-common-onnx \
+          --model-dir damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-onnx \
+          --punc-dir damo/punc_ct-transformer_cn-en-common-vocab471067-large-onnx \
+          --lm-dir damo/speech_ngram_lm_zh-cn-ai-wesp-fst \
+          --itn-dir thuduj12/fst_itn_zh \
+          --hotword /workspace/models/hotwords.txt \
+          --certfile 0 > /workspace/models/funasr.log 2>&1 &
+        tail -f /workspace/models/funasr.log
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+
 volumes:
   postgres_data: {}
   mysql_data: {}

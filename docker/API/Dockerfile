@@ -3,10 +3,12 @@ FROM mcr.m.daocloud.io/dotnet/aspnet:10.0
 WORKDIR /app
 EXPOSE 5003
 
-# 安装 libgdiplus
+# 安装 libgdiplus + FFmpeg (VoiceNode 音频预处理)
 RUN apt-get update && \
-    apt-get install -y libgdiplus && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+    libgdiplus \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 # 将发布的文件复制到容器中
 COPY ./publish/ ./
