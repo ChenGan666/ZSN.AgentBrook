@@ -9,7 +9,18 @@
 Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP Tool Integration
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![Semantic Kernel](https://img.shields.io/badge/Semantic%20Kernel-1.74-0078D4?logo=microsoft)](https://github.com/microsoft/semantic-kernel)
+[![Semantic Kernel](https://img.shields.io/badge/Semantic_Kernel-1.74-0078D4?logo=microsoft)](https://github.com/microsoft/semantic-kernel)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
+[![pgvector](https://img.shields.io/badge/pgvector-0.7-4169E1?logo=postgresql)](https://github.com/pgvector/pgvector)
+[![Apache AGE](https://img.shields.io/badge/Apache_AGE-1.1-4169E1?logo=apache)](https://github.com/apache/age)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql)](https://www.mysql.com/)
+[![Redis](https://img.shields.io/badge/Redis-5.0-DC382D?logo=redis)](https://redis.io/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev/)
+[![Playwright](https://img.shields.io/badge/Playwright-1.x-2EAD33?logo=playwright)](https://playwright.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
+[![FunASR](https://img.shields.io/badge/FunASR-0.4.7-FF6A00)](https://github.com/modelscope/FunASR)
+[![SearXNG](https://img.shields.io/badge/SearXNG-Latest-1D4ED8)](https://github.com/searxng/searxng)
+[![Quartz.NET](https://img.shields.io/badge/Quartz.NET-3.x-512BD4)](https://www.quartz-scheduler.net/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>
