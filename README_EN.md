@@ -19,6 +19,7 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 ## Platform Highlights
 
 - **Visual DAG Workflow Engine** — Drag-and-drop designer, 20+ node types, supporting conditional branching, parallel execution, human approval, and sub-workflow nesting
+- **Voice Transcription Node** — Integrated speech recognition + LLM post-processing, FunASR local deployment, speaker diarization, multi-format output (SRT/VTT/JSON), automatic long-audio segmentation, hotword boosting
 - **ClawAI Agent** — Plan-Execute-Reflect loop architecture, multi-layer memory system (short-term/long-term/episodic/personality/user profile), task decomposition and dynamic replanning
 - **ServiceDesk Customer Service Node** — FunctionCall-driven integrated knowledge base retrieval + generation, supporting multi-turn dialogue, intent recognition, and information collection
 - **Research Node** — Autonomous web research based on SearXNG search + Playwright web scraping, multi-round search-analyze-reflect iterations, automatic research report generation
@@ -110,7 +111,7 @@ DAG (Directed Acyclic Graph) based visual workflow editor with drag-and-drop des
 | Category | Nodes |
 |---|---|
 | Flow Control | Start, End, AgentStart, AgentEnd |
-| AI Reasoning | MainAI, LargeModel, ClawAI, ServiceDesk, Research |
+| AI Reasoning | MainAI, LargeModel, ClawAI, ServiceDesk, Research, Voice |
 | Knowledge Retrieval | KnowledgeBase, FileToMarkdown |
 | Logic Routing | Selector (conditional branching), Merge (convergence), IntentionRecognition (intent recognition) |
 | Tool Integration | MCP, Plugins, Agent (sub-workflow) |
@@ -187,6 +188,51 @@ The Research node is an autonomous web research engine that performs multi-round
 - **Content Caching**: Redis-based web content caching to avoid redundant scraping
 - **Timeout Protection**: Global timeout protection, returns collected content on timeout
 - **Streaming Output**: Real-time streaming of research progress
+
+### 4.2 Voice — Speech Transcription Node
+
+The Voice node is an intelligent speech processing node that integrates speech recognition with LLM post-processing, supporting automatic structured text generation from audio files:
+
+**Core Capabilities:**
+- **Speech Transcription**: Localized speech recognition based on FunASR (WebSocket offline mode), data stays on your server
+- **Speaker Diarization**: Automatically identifies different speakers, supports custom speaker label mapping
+- **Multi-format Output**: Plain text, timestamped segment JSON, SRT subtitles, WebVTT subtitles
+- **LLM Post-processing**: Transcription results are automatically fed to LLM, supporting custom prompts for text refinement, summarization, etc.
+- **Long Audio Segmentation**: Audio exceeding the threshold (default 300s) is automatically segmented by silence detection, transcribed in parallel, then merged
+- **Hotword Boosting**: Configurable hotword list to improve recognition accuracy for domain-specific vocabulary
+- **Multi-format Input**: WAV, MP3, M4A, OGG, FLAC, AAC and 12 other audio/video formats, automatic FFmpeg conversion
+
+**Processing Pipeline:**
+
+```
+Audio Input → Format Conversion (FFmpeg)
+    → Long Audio VAD Segmentation (silencedetect)
+    → FunASR WebSocket Transcription (chunked sending)
+    → Speaker Label Mapping + Output Formatting
+    → LLM Post-processing (optional)
+    → Structured Result Output
+```
+
+**Configuration Example (appsettings.json):**
+
+```json
+{
+  "VoiceNodeOptions": {
+    "DefaultProvider": "FunASR",
+    "MaxConcurrentSegments": 4,
+    "MaxFileSizeMb": 500,
+    "AutoSegmentThresholdSeconds": 300,
+    "TempFileDirectory": "",
+    "FFmpegPath": ""
+  },
+  "FunASROptions": {
+    "ServerUrl": "ws://127.0.0.1:10095",
+    "ChunkSize": 9600,
+    "ConnectTimeoutSeconds": 5,
+    "TranscribeTimeoutMinutes": 10
+  }
+}
+```
 
 ### 5. MCP Tool Integration
 

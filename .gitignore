@@ -124,6 +124,9 @@ $RECYCLE.BIN/
 ## Git
 .gitmodules.lock
 
+## Claude Code (本地开发工具，不纳入开源仓库)
+.claude/
+
 ## 数据库文件
 *.mdf
 *.ldf

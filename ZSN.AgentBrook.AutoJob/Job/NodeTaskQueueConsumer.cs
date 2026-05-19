@@ -11,6 +11,8 @@ using ZSN.AI.Core.Interface;
 using ZSN.AI.Entity;
 using ZSN.AI.Node.ResearchNode;
 using ZSN.AI.Node.ResearchNode.Services;
+using ZSN.AI.Node.VoiceNode;
+using ZSN.AI.Node.VoiceNode.Interfaces;
 using ZSN.AI.Node;
 using ZSN.AI.Service.WebHelpers;
 using ZSN.Utils.Core.Helpers;
@@ -302,6 +304,17 @@ namespace ZSN.AgentBrook.AutoJob
                                 chatService, scopeProvider, researchLogger,
                                 searchService, fetcherService, engineService, researchOptions);
                             re = await executionResearch.ResearchNodeAsync(taskConfig.NodeConfig, taskData);
+                            break;
+                        case NodeType.Voice:
+                            var voiceLogger = scopeProvider.GetRequiredService<ILogger<ExecutionVoice>>();
+                            var voiceProviderFactory = scopeProvider.GetRequiredService<IVoiceProviderFactory>();
+                            var voiceAudioPreprocessor = scopeProvider.GetRequiredService<IAudioPreprocessor>();
+                            var voiceNodeOptions = scopeProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<VoiceNodeOptions>>();
+
+                            var executionVoice = new ExecutionVoice(
+                                chatService, scopeProvider, voiceLogger,
+                                voiceProviderFactory, voiceAudioPreprocessor, voiceNodeOptions);
+                            re = await executionVoice.VoiceNodeAsync(taskConfig.NodeConfig, taskData);
                             break;
                     }
 

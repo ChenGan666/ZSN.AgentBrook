@@ -732,6 +732,19 @@ namespace ZSN.AI.Node.Utils
 
                     nodeConfig.data = serviceDeskData;
                     break;
+                case NodeType.Voice:
+                    var voiceData = new ZSN.AI.Node.VoiceNode.VoiceNodeData();
+
+                    voiceData.inputs.Add(new Inputs { varname = "audioSource", type = "string", txt = "音频来源" });
+
+                    voiceData.prompt = LoadPromptTemplate("VoiceDefaultPrompt");
+                    if (string.IsNullOrEmpty(voiceData.prompt))
+                    {
+                        voiceData.prompt = "请对以下语音转写文本进行整理，修正标点符号和明显错误，并生成简要摘要。";
+                    }
+
+                    nodeConfig.data = voiceData;
+                    break;
                 case NodeType.Research:
                     ResearchNodeData researchData = new ResearchNodeData();
 

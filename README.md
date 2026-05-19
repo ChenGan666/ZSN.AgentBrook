@@ -19,6 +19,7 @@
 ## 平台亮点
 
 - **可视化 DAG 工作流引擎** — 拖拽式设计器，20+ 节点类型，支持条件分支、并行执行、人工审批、子工作流嵌套
+- **Voice 语音转写节点** — 语音识别 + LLM 后处理一体化，支持 FunASR 本地部署，说话人分离、多格式输出（SRT/VTT/JSON）、长音频自动分段、热词增强
 - **ClawAI 智能体** — Plan-Execute-Reflect 循环架构，多层记忆系统（短期/长期/情景/人格/用户画像），支持任务分解与动态重规划
 - **ServiceDesk 客服节点** — FunctionCall 驱动的知识库检索 + 生成一体化，支持多轮对话、意图识别、信息收集
 - **Research 研究节点** — 自主网络研究，基于 SearXNG 搜索 + Playwright 网页抓取，多轮搜索-分析-反思迭代，自动生成研究报告
@@ -110,7 +111,7 @@ AI.Entity ───────────────────────�
 | 类别 | 节点 |
 |---|---|
 | 流程控制 | Start, End, AgentStart, AgentEnd |
-| AI 推理 | MainAI, LargeModel, ClawAI, ServiceDesk, Research |
+| AI 推理 | MainAI, LargeModel, ClawAI, ServiceDesk, Research, Voice |
 | 知识检索 | KnowledgeBase, FileToMarkdown |
 | 逻辑路由 | Selector（条件分支）, Merge（汇聚）, IntentionRecognition（意图识别） |
 | 工具集成 | MCP, Plugins, Agent（子工作流） |
@@ -187,6 +188,51 @@ Research 节点是一个自主网络研究引擎，能够根据研究目标自�
 - **内容缓存**：基于 Redis 的网页内容缓存，避免重复抓取
 - **超时保护**：全局超时保护，超时返回已获取内容
 - **流式输出**：实时流式推送研究进度
+
+### 4.2 Voice — 语音转写节点
+
+Voice 节点是集语音识别与 LLM 后处理于一体的智能语音处理节点，支持从音频文件自动生成结构化文本：
+
+**核心能力：**
+- **语音转写**：基于 FunASR（WebSocket 离线模式）的本地化语音识别，数据不出服务器
+- **说话人分离**：自动识别不同发言人，支持自定义说话人标签映射
+- **多格式输出**：纯文本、带时间戳分段 JSON、SRT 字幕、WebVTT 字幕
+- **LLM 后处理**：转写结果自动接入 LLM，支持自定义提示词进行文本整理、摘要生成等
+- **长音频分段**：超过阈值（默认 300 秒）的音频自动按静音检测分段，并行转写后合并
+- **热词增强**：支持配置热词列表，提升特定领域词汇识别率
+- **多格式输入**：WAV、MP3、M4A、OGG、FLAC、AAC 等 12 种音频/视频格式，FFmpeg 自动转换
+
+**处理流程：**
+
+```
+音频输入 → 格式转换（FFmpeg）
+    → 长音频 VAD 分段（silencedetect）
+    → FunASR WebSocket 转写（分片发送）
+    → 说话人标签映射 + 输出格式化
+    → LLM 后处理（可选）
+    → 结构化结果输出
+```
+
+**配置示例（appsettings.json）：**
+
+```json
+{
+  "VoiceNodeOptions": {
+    "DefaultProvider": "FunASR",
+    "MaxConcurrentSegments": 4,
+    "MaxFileSizeMb": 500,
+    "AutoSegmentThresholdSeconds": 300,
+    "TempFileDirectory": "",
+    "FFmpegPath": ""
+  },
+  "FunASROptions": {
+    "ServerUrl": "ws://127.0.0.1:10095",
+    "ChunkSize": 9600,
+    "ConnectTimeoutSeconds": 5,
+    "TranscribeTimeoutMinutes": 10
+  }
+}
+```
 
 ### 5. MCP 工具集成
 

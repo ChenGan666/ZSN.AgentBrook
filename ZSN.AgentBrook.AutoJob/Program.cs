@@ -29,6 +29,10 @@ using ZSN.AI.Node.Claw.Configuration;
 using ZSN.AI.Node;
 using ZSN.AI.Node.ResearchNode;
 using ZSN.AI.Node.ResearchNode.Services;
+using ZSN.AI.Node.VoiceNode;
+using ZSN.AI.Node.VoiceNode.Interfaces;
+using ZSN.AI.Node.VoiceNode.Providers.FunASR;
+using ZSN.AI.Node.VoiceNode.Services;
 using ZSN.AI.Service.Base;
 using ZSN.Utils.Core.Helpers;
 
@@ -169,6 +173,14 @@ namespace ZSN.AgentBrook.AutoJob
                 services.AddScoped<IContentFetcherService, ContentFetcherService>();
                 services.AddScoped<IResearchEngineService, ResearchEngineService>();
                 services.AddScoped<IContentCache, RedisContentCache>();
+
+                // Voice 节点服务注册
+                services.Configure<VoiceNodeOptions>(context.Configuration.GetSection("VoiceNodeOptions"));
+                services.Configure<FunASROptions>(context.Configuration.GetSection("FunASROptions"));
+                services.AddSingleton<IVoiceProviderFactory, VoiceProviderFactory>();
+                services.AddSingleton<IAudioPreprocessor, AudioPreprocessor>();
+                services.AddSingleton<IVoiceTranscriptionProvider, FunASRProvider>();
+                services.AddTransient<ExecutionVoice>();
 
                 // 知识库图片处理服务注册
                 services.AddScoped<IImageExtractionService, ImageExtractionService>();

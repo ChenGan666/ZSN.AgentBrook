@@ -84,6 +84,7 @@ namespace ZSN.AI.Entity
         ClawAIWorkflowStep = 24,  // ClawAI 异步等待中的子 WorkFlow 步骤
         ServiceDesk = 25,
         Research = 26,
+        Voice = 27,
 
         NotNode_FileChunk = 90,
         NotNode_Markdown = 91,
