@@ -22,6 +22,7 @@ services:
       - mysql
       - postgres
       - redis
+      - funasr
 
   autojob:
     container_name: AutoJob
@@ -42,6 +43,7 @@ services:
       - mysql
       - postgres
       - redis
+      - funasr
       - api
 
   manage:
@@ -92,6 +94,22 @@ services:
       - autojob
       - api
 
+  client:
+    container_name: Client
+    build:
+      context: ./Client
+      dockerfile: Dockerfile
+    ports:
+      - "5006:5006"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - TZ=Asia/Shanghai
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    depends_on:
+      - api
+
   mysql:
     build:
       context: ./mysql
@@ -109,39 +127,16 @@ services:
     build:
       context: ./postgres
       dockerfile: Dockerfile
-    container_name: zsn_agentbrook_base
-    image: zsn-postgres:16.6
+    container_name: zsn_knowledge_base
     environment:
-      # PostgreSQL基础配置
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1q2w3e
-      
-      # 时区设置
       TZ: Asia/Shanghai
-      
-      # PostgreSQL初始化参数
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
-      
-      # 性能优化参数
-      POSTGRES_SHARED_BUFFERS: 256MB
-      POSTGRES_MAX_CONNECTIONS: 200
     ports:
       - "5432:5432"
     volumes:
-      # 数据持久化
       - postgres_data:/var/lib/postgresql/data
-      
-      # 日志目录（可选）
-      # - ./postgres/logs:/var/log/postgresql
     restart: always
-    
-    # 健康检查
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
 
   redis:
     image: redis:5.0.10
@@ -166,7 +161,7 @@ services:
       - TZ=Asia/Shanghai
 
   funasr:
-    image: registry.cn-hangzhou.aliyuncs.com/funasr_repo/funasr:funasr-runtime-sdk-cpu-0.4.7
+    image: registry.cn-hangzhou.aliyuncs.com/funasr_repo/funasr:funasr-runtime-sdk-online-cpu-0.1.13
     container_name: funasr
     privileged: true
     ports:
@@ -179,12 +174,12 @@ services:
       - |
         cd /workspace/FunASR/runtime
         touch /workspace/models/hotwords.txt
-        nohup bash run_server.sh \
+        nohup bash run_server_2pass.sh \
           --download-model-dir /workspace/models \
           --vad-dir damo/speech_fsmn_vad_zh-cn-16k-common-onnx \
           --model-dir damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-onnx \
-          --punc-dir damo/punc_ct-transformer_cn-en-common-vocab471067-large-onnx \
-          --lm-dir damo/speech_ngram_lm_zh-cn-ai-wesp-fst \
+          --online-model-dir damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-online-onnx \
+          --punc-dir damo/punc_ct-transformer_zh-cn-common-vad_realtime-vocab272727-onnx \
           --itn-dir thuduj12/fst_itn_zh \
           --hotword /workspace/models/hotwords.txt \
           --certfile 0 > /workspace/models/funasr.log 2>&1 &

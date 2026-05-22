@@ -22,6 +22,7 @@
 [![SearXNG](https://img.shields.io/badge/SearXNG-Latest-1D4ED8)](https://github.com/searxng/searxng)
 [![Quartz.NET](https://img.shields.io/badge/Quartz.NET-3.x-512BD4)](https://www.quartz-scheduler.net/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![GitHub total clones](https://raw.githubusercontent.com/ChenGan666/ZSN.AgentBrook/traffic/total_clones.svg)
 
 </div>
 
@@ -38,6 +39,7 @@
 - **MCP 工具协议** — 内置 MCP Server/Client，快速接入外部工具和数据源
 - **多模型支持** — OpenAI / Claude / DeepSeek / Ollama / 智谱 / 百度 等主流模型，可按节点独立配置
 - **实时流式输出** — 基于 Redis Stream 的流式响应，前端实时展示 LLM 生成过程
+- **跨平台客户端** — Vue3 + Tauri 桌面客户端，支持 SSE 流式对话、语音输入、文件上传、Human-in-the-loop 交互，Web SPA 模式开箱即用
 - **浏览器自动化** — 基于 Playwright 的 Agent 浏览器，支持网页操作与数据采集
 
 ---
@@ -73,6 +75,8 @@ AI.Entity ───────────────────────�
    │
    ├── AgentBrook.AutoJob ────────────────────── (后台任务调度)
    │
+   ├── AgentBrook.Client ──────────────────────── (跨平台客户端)
+   │
    ├── AgentBrook.Web / Web.Manage ───────────── (前端界面)
    │
    └── Utils.Core / LitJSON / Cache ──────────── (通用工具库)
@@ -97,6 +101,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AI.Plugins** | Semantic Kernel 函数插件集合 | |
 | **ZSN.AI.Functions** | 内置函数库 | |
 | **ZSN.AgentBrook.API** | REST API 网关，Swagger 文档 | ASP.NET Core, SignalR |
+| **ZSN.AgentBrook.Client** | 跨平台客户端（Vue3 + Tauri / Web SPA） | Vue3, TypeScript, Element Plus, Tauri |
 | **ZSN.AgentBrook.Web** | 前端界面（React + Ant Design Pro） | React, Ant Design Pro |
 | **ZSN.AgentBrook.Web.Manage** | 管理后台（LayUI） | LayUI, jQuery |
 | **ZSN.AgentBrook.AutoJob** | 后台任务调度器，轮询执行工作流任务 | Quartz.NET |
@@ -254,6 +259,55 @@ Voice 节点是集语音识别与 LLM 后处理于一体的智能语音处理节
 - 连接外部 MCP 服务，扩展 LLM 工具能力
 - 支持客户端/服务端双向调用模式
 
+### 5.1 跨平台客户端 (ZSN.AgentBrook.Client)
+
+基于 Vue3 + TypeScript + Element Plus + Tauri 的跨平台客户端，支持 Web SPA 和桌面应用两种部署模式：
+
+**核心特性：**
+- **双模式部署** — Tauri 桌面应用（Windows/macOS）+ Web SPA（.NET 宿主），一份前端代码两种部署
+- **SSE 流式对话** — 实时展示 LLM 生成过程，支持工作流节点状态展示
+- **语音输入** — FunASR 2pass 实时语音识别，Tauri 原生音频采集
+- **文件上传** — 多格式支持，大文件分片上传，图片压缩
+- **Human-in-the-loop** — 工作流人工审批交互
+- **本地缓存** — IndexedDB 存储会话消息，离线队列支持
+- **安全机制** — Token 加密存储，API 请求签名，XSS 防护
+
+**技术架构：**
+
+```
+ZSN.AgentBrook.Client/
+├── Program.cs              # .NET 宿主（SPA 静态文件服务）
+├── appsettings.json        # Kestrel 配置
+├── wwwroot/                # Vue3 构建产物（SPA 模式）
+└── client-app/             # Vue3 前端源码
+    ├── src/
+    │   ├── views/          # 页面（Login, Chat, Settings, MeetingTranscribe, MiniChat）
+    │   ├── components/     # 组件（chat, layout, settings, common）
+    │   ├── composables/    # 组合式函数（useAuth, useChat, useVoice, useFileUpload）
+    │   ├── services/       # API 服务（http, auth, chat, session, hitl, voiceApi）
+    │   ├── stores/         # Pinia 状态管理
+    │   ├── platform/       # 平台适配层（Tauri / Web）
+    │   └── utils/          # 工具函数（cache, crypto, db, markdown）
+    └── src-tauri/          # Tauri 桌面端配置
+```
+
+**运行客户端：**
+
+```bash
+# Web SPA 模式（开箱即用）
+dotnet run --project ZSN.AgentBrook.Client
+# 访问 http://localhost:5006
+
+# 开发模式（前端热重载）
+cd ZSN.AgentBrook.Client/client-app
+npm install
+npm run dev
+
+# Tauri 桌面端开发
+cd ZSN.AgentBrook.Client/client-app
+npm run tauri:dev
+```
+
 ### 6. 多模型支持
 
 通过统一的 `IChatService` 接口对接多种 AI 提供商：
@@ -285,7 +339,7 @@ Voice 节点是集语音识别与 LLM 后处理于一体的智能语音处理节
 | **文档处理** | PdfPig, OpenXml, Markdig, ImageSharp |
 | **图片处理** | VLM 图片描述, OCR 文字识别, 图片-分块关联 |
 | **任务调度** | Quartz.NET |
-| **前端** | React + Ant Design Pro（用户端）, LayUI（管理端） |
+| **前端** | React + Ant Design Pro（用户端）, LayUI（管理端）, Vue3 + Element Plus + Tauri（客户端） |
 | **浏览器自动化** | Playwright |
 | **API 文档** | Swagger / OpenAPI |
 
@@ -341,6 +395,9 @@ dotnet run --project ZSN.AgentBrook.AutoJob
 
 # 启动管理后台（可选）
 dotnet run --project ZSN.AgentBrook.Web.Manage
+
+# 启动客户端（Web SPA 模式，可选）
+dotnet run --project ZSN.AgentBrook.Client
 ```
 
 ---

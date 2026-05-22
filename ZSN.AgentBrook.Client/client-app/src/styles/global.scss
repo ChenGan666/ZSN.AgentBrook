@@ -1,0 +1,29 @@
+@use './variables.scss';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--text-placeholder);
+  border-radius: 3px;
+}
+
+[data-theme='dark'] {
+  --el-bg-color: var(--bg-card);
+  --el-text-color-primary: var(--text-primary);
+  --el-border-color: var(--border-color);
+}

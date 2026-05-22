@@ -22,6 +22,7 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 [![SearXNG](https://img.shields.io/badge/SearXNG-Latest-1D4ED8)](https://github.com/searxng/searxng)
 [![Quartz.NET](https://img.shields.io/badge/Quartz.NET-3.x-512BD4)](https://www.quartz-scheduler.net/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![GitHub total clones](https://raw.githubusercontent.com/ChenGan666/ZSN.AgentBrook/traffic/total_clones.svg)
 
 </div>
 
@@ -38,6 +39,7 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 - **MCP Tool Protocol** — Built-in MCP Server/Client for quick integration of external tools and data sources
 - **Multi-Model Support** — OpenAI / Claude / DeepSeek / Ollama / Zhipu / Baidu and other mainstream models, configurable per node
 - **Real-time Streaming Output** — Streaming response based on Redis Stream, real-time display of LLM generation process on the frontend
+- **Cross-Platform Client** — Vue3 + Tauri desktop client, supporting SSE streaming chat, voice input, file upload, Human-in-the-loop interaction, Web SPA mode out-of-the-box
 - **Browser Automation** — Playwright-based agent browser, supporting web page operations and data collection
 
 ---
@@ -73,6 +75,8 @@ AI.Entity ───────────────────────�
    │
    ├── AgentBrook.AutoJob ────────────────────── (Background task scheduling)
    │
+   ├── AgentBrook.Client ──────────────────────── (Cross-platform client)
+   │
    ├── AgentBrook.Web / Web.Manage ───────────── (Frontend interfaces)
    │
    └── Utils.Core / LitJSON / Cache ──────────── (Common utility libraries)
@@ -97,6 +101,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AI.Plugins** | Semantic Kernel function plugin collection | |
 | **ZSN.AI.Functions** | Built-in function library | |
 | **ZSN.AgentBrook.API** | REST API gateway, Swagger documentation | ASP.NET Core, SignalR |
+| **ZSN.AgentBrook.Client** | Cross-platform client (Vue3 + Tauri / Web SPA) | Vue3, TypeScript, Element Plus, Tauri |
 | **ZSN.AgentBrook.Web** | Frontend interface (React + Ant Design Pro) | React, Ant Design Pro |
 | **ZSN.AgentBrook.Web.Manage** | Admin dashboard (LayUI) | LayUI, jQuery |
 | **ZSN.AgentBrook.AutoJob** | Background task scheduler, polling and executing workflow tasks | Quartz.NET |
@@ -254,6 +259,55 @@ Built-in MCP Server and Client, supporting:
 - Connecting to external MCP services to extend LLM tool capabilities
 - Supporting bidirectional client/server invocation mode
 
+### 5.1 Cross-Platform Client (ZSN.AgentBrook.Client)
+
+A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, supporting both Web SPA and desktop application deployment modes:
+
+**Core Features:**
+- **Dual-Mode Deployment** — Tauri desktop app (Windows/macOS) + Web SPA (.NET host), one frontend codebase for both
+- **SSE Streaming Chat** — Real-time display of LLM generation process, workflow node status display
+- **Voice Input** — FunASR 2pass real-time speech recognition, Tauri native audio capture
+- **File Upload** — Multi-format support, large file chunked upload, image compression
+- **Human-in-the-loop** — Workflow human approval interaction
+- **Local Cache** — IndexedDB session/message storage, offline queue support
+- **Security** — Token encrypted storage, API request signing, XSS protection
+
+**Tech Architecture:**
+
+```
+ZSN.AgentBrook.Client/
+├── Program.cs              # .NET host (SPA static file serving)
+├── appsettings.json        # Kestrel configuration
+├── wwwroot/                # Vue3 build output (SPA mode)
+└── client-app/             # Vue3 frontend source
+    ├── src/
+    │   ├── views/          # Pages (Login, Chat, Settings, MeetingTranscribe, MiniChat)
+    │   ├── components/     # Components (chat, layout, settings, common)
+    │   ├── composables/    # Composables (useAuth, useChat, useVoice, useFileUpload)
+    │   ├── services/       # API services (http, auth, chat, session, hitl, voiceApi)
+    │   ├── stores/         # Pinia state management
+    │   ├── platform/       # Platform adapter (Tauri / Web)
+    │   └── utils/          # Utilities (cache, crypto, db, markdown)
+    └── src-tauri/          # Tauri desktop configuration
+```
+
+**Running the Client:**
+
+```bash
+# Web SPA mode (out of the box)
+dotnet run --project ZSN.AgentBrook.Client
+# Visit http://localhost:5006
+
+# Development mode (frontend hot reload)
+cd ZSN.AgentBrook.Client/client-app
+npm install
+npm run dev
+
+# Tauri desktop development
+cd ZSN.AgentBrook.Client/client-app
+npm run tauri:dev
+```
+
 ### 6. Multi-Model Support
 
 Connecting to multiple AI providers through a unified `IChatService` interface:
@@ -285,7 +339,7 @@ Each workflow node can be independently configured with model, Temperature, TopP
 | **Document Processing** | PdfPig, OpenXml, Markdig, ImageSharp |
 | **Image Processing** | VLM image description, OCR text recognition, image-chunk association |
 | **Task Scheduling** | Quartz.NET |
-| **Frontend** | React + Ant Design Pro (user-facing), LayUI (admin) |
+| **Frontend** | React + Ant Design Pro (user-facing), LayUI (admin), Vue3 + Element Plus + Tauri (client) |
 | **Browser Automation** | Playwright |
 | **API Documentation** | Swagger / OpenAPI |
 
@@ -341,6 +395,9 @@ dotnet run --project ZSN.AgentBrook.AutoJob
 
 # Start the admin dashboard (optional)
 dotnet run --project ZSN.AgentBrook.Web.Manage
+
+# Start the client (Web SPA mode, optional)
+dotnet run --project ZSN.AgentBrook.Client
 ```
 
 ---

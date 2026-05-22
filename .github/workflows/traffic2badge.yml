@@ -1,0 +1,24 @@
+name: Traffic2Badge
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "3 2 * * *"
+
+jobs:
+  update-badges:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Traffic Badges
+        uses: yi-Xu-0100/traffic-to-badge@v1.4.0
+        with:
+          my_token: ${{ secrets.TRAFFIC_TOKEN }}
+          static_list: ZSN.AgentBrook
+
+      - name: Deploy to traffic branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          publish_dir: ./traffic
+          publish_branch: traffic
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          commit_message: "Update traffic badges"

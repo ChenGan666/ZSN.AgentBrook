@@ -1,0 +1,1 @@
+import{h as e}from"./http-DdBU9mws.js";import"./index-PF_Waj4J.js";import"./vendor-vue-3pxxU8Ho.js";import"./vendor-ui-DsNuen4N.js";function p(){return e.post("/Member/Get",{})}function i(t){return e.post("/Member/Save",t)}export{p as getMemberInfo,i as saveMemberInfo};

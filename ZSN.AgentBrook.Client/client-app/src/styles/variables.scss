@@ -1,0 +1,46 @@
+:root,
+[data-theme='light'] {
+  --bg-primary: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-sidebar: #f8f9fa;
+  --bg-titlebar: #f0f0f0;
+  --bg-input: #ffffff;
+
+  --text-primary: #303133;
+  --text-secondary: #909399;
+  --text-placeholder: #c0c4cc;
+
+  --border-color: #e4e7ed;
+
+  --msg-user-bg: #ecf5ff;
+  --msg-ai-bg: #f4f4f5;
+  --msg-user-text: #303133;
+  --msg-ai-text: #303133;
+
+  --code-bg: #f6f8fa;
+  --code-border: #e4e7ed;
+
+  --chat-font-size: 14px;
+}
+
+[data-theme='dark'] {
+  --bg-primary: #1a1a2e;
+  --bg-card: #16213e;
+  --bg-sidebar: #0f3460;
+  --bg-titlebar: #0f3460;
+  --bg-input: #1a1a2e;
+
+  --text-primary: #e4e7ed;
+  --text-secondary: #a6a9ad;
+  --text-placeholder: #606266;
+
+  --border-color: #2d3748;
+
+  --msg-user-bg: #1a3a5c;
+  --msg-ai-bg: #2d2d44;
+  --msg-user-text: #e4e7ed;
+  --msg-ai-text: #e4e7ed;
+
+  --code-bg: #1e1e3f;
+  --code-border: #2d3748;
+}

@@ -27,6 +27,8 @@ _ReSharper*/
 *.bak
 App_Data/
 
+funasr-runtime-resources/
+
 ## 发布输出
 publish/
 out/
