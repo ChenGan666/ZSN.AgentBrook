@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: "3 2 * * *"
 
+permissions:
+  contents: write
+
 jobs:
   update-badges:
     runs-on: ubuntu-latest
