@@ -22,7 +22,6 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 [![SearXNG](https://img.shields.io/badge/SearXNG-Latest-1D4ED8)](https://github.com/searxng/searxng)
 [![Quartz.NET](https://img.shields.io/badge/Quartz.NET-3.x-512BD4)](https://www.quartz-scheduler.net/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-![GitHub total clones](https://raw.githubusercontent.com/ChenGan666/ZSN.AgentBrook/traffic/total_clones.svg)
 
 </div>
 
