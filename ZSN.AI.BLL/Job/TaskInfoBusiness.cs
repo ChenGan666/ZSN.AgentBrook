@@ -246,10 +246,12 @@ namespace ZSN.AI.BLL
                 NodeType.ClawAIWorkflowStep => JsonConvert.DeserializeObject<ClawAIData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
                 NodeType.ServiceDesk => JsonConvert.DeserializeObject<ServiceDeskData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
                 NodeType.Research => JsonConvert.DeserializeObject<ResearchNodeData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.Voice => JsonConvert.DeserializeObject<VoiceNodeData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
 
                 _ => new List<Inputs>()
             };
 #pragma warning restore CS8600 // 将 null 字面量或可能为 null 的值转换为非 null 类型。
+
 
 
             //上节点的输出，匹配当前节点的输入,SourceNode.type = NodeType.Agent,时只需要匹配varname
@@ -463,11 +465,13 @@ namespace ZSN.AI.BLL
                         task.State = TaskState.Waiting;
                         task.UpdateTime = DateTime.Now;
                         Update(task);
+                        Console.WriteLine($"[TaskInfoBusiness] 已回退任务状态 - TaskID: {taskId}, State: Processing -> Waiting");
                     }
                 }
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[TaskInfoBusiness-Error] ResetTasksToWaiting异常: {ex.Message}");
                 throw;
             }
         }

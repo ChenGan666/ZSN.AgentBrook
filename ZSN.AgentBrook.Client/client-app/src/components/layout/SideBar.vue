@@ -3,7 +3,7 @@
     <div class="sidebar-header">
       <el-button type="primary" class="new-chat-btn" @click="emit('newChat')">
         <el-icon><Plus /></el-icon>
-        新建对话
+        {{ t('chat.newChat') }}
       </el-button>
     </div>
 
@@ -12,7 +12,7 @@
     </div>
 
     <div class="sidebar-footer">
-      <div class="user-info" v-if="userStore.userInfo">
+      <div class="user-info" v-if="userStore.userInfo" @click="toggleSettings">
         <el-avatar :size="32" :src="userStore.userInfo.avatar">
           {{ userStore.userInfo.name?.charAt(0) || '?' }}
         </el-avatar>
@@ -28,9 +28,11 @@
 <script setup lang="ts">
 import { Plus, Setting } from '@element-plus/icons-vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import SessionList from '@/components/chat/SessionList.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
@@ -78,6 +80,14 @@ function toggleSettings() {
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--el-fill-color-light);
+  }
 }
 
 .user-name {

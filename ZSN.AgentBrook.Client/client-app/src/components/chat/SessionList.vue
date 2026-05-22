@@ -3,12 +3,12 @@
     <div class="session-toolbar">
       <el-input
         v-model="searchQuery"
-        placeholder="搜索会话"
+        :placeholder="t('chat.searchSession')"
         :prefix-icon="Search"
         clearable
         size="small"
       />
-      <el-button text size="small" @click="handleClearAll" title="清空全部">
+      <el-button text size="small" @click="handleClearAll" :title="t('chat.clearAll')">
         <el-icon><Delete /></el-icon>
       </el-button>
     </div>
@@ -29,7 +29,19 @@
           @click="chatStore.selectSession(session.ChatSessionID)"
           @contextmenu.prevent="showContextMenu($event, session)"
         >
-          <div class="session-title">{{ session.TopicSummary || '新对话' }}</div>
+          <div class="session-title">
+            <span
+              v-if="session.SessionStatus === 1"
+              class="session-status running"
+              :title="t('chat.sessionRunning')"
+            ></span>
+            <span
+              v-else-if="session.SessionStatus === -1"
+              class="session-status failed"
+              :title="t('chat.sessionFailed')"
+            ></span>
+            {{ session.TopicSummary || t('chat.newConversation') }}
+          </div>
           <div class="session-meta">
             <span class="session-app">{{ getAppName(session.AppID) }}</span>
             <span class="session-time">{{ formatTime(session.CreateTime) }}</span>
@@ -38,13 +50,13 @@
       </template>
 
       <div v-if="hasMore && !chatStore.loadingSessions" class="load-more" @click="loadMore">
-        加载更多
+        {{ t('chat.loadMore') }}
       </div>
       <div v-if="!hasMore && chatStore.sessions.length > 0" class="load-end">
-        已加载全部历史记录
+        {{ t('chat.allLoaded') }}
       </div>
       <div v-if="!chatStore.loadingSessions && chatStore.sessions.length === 0" class="empty-hint">
-        暂无会话记录
+        {{ t('chat.noSessions') }}
       </div>
     </div>
 
@@ -54,7 +66,7 @@
         class="context-menu"
         :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
       >
-        <div class="context-menu-item danger" @click="handleDelete">删除会话</div>
+        <div class="context-menu-item danger" @click="handleDelete">{{ t('chat.deleteSession') }}</div>
       </div>
     </teleport>
   </div>
@@ -64,9 +76,11 @@
 import { ref, computed, reactive, watch, onMounted, onUnmounted } from 'vue'
 import { Search, Delete } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import type { SessionInfo } from '@/types/chat'
 
+const { t, locale } = useI18n()
 const chatStore = useChatStore()
 const searchQuery = ref('')
 const scrollRef = ref<HTMLElement | null>(null)
@@ -112,27 +126,27 @@ const groupedSessions = computed((): SessionGroup[] => {
 
     if (date >= today) {
       key = 'today'
-      label = '今天'
+      label = t('time.today')
       order = 0
     } else if (date >= yesterday) {
       key = 'yesterday'
-      label = '昨天'
+      label = t('time.yesterday')
       order = 1
     } else if (date >= last7) {
       key = 'last7'
-      label = '前7天'
+      label = t('time.last7days')
       order = 2
     } else if (date >= last30) {
       key = 'last30'
-      label = '前30天'
+      label = t('time.last30days')
       order = 3
     } else if (date.getFullYear() === now.getFullYear()) {
       key = `month_${date.getMonth()}`
-      label = `${date.getMonth() + 1}月`
+      label = locale.value === 'zh-CN' ? `${date.getMonth() + 1}月` : date.toLocaleDateString('en-US', { month: 'short' })
       order = 4 + date.getMonth()
     } else {
       key = `year_${date.getFullYear()}`
-      label = `${date.getFullYear()}年`
+      label = locale.value === 'zh-CN' ? `${date.getFullYear()}年` : `${date.getFullYear()}`
       order = 100 + date.getFullYear()
     }
 
@@ -159,14 +173,15 @@ function formatTime(iso: string): string {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const yesterday = new Date(today.getTime() - 86400000)
+  const loc = locale.value as string
 
   if (date >= today) {
-    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    return date.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
   }
   if (date >= yesterday) {
-    return '昨天'
+    return t('time.yesterday')
   }
-  return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+  return date.toLocaleDateString(loc, { month: '2-digit', day: '2-digit' })
 }
 
 async function loadMore() {
@@ -192,13 +207,13 @@ function showContextMenu(event: MouseEvent, session: SessionInfo) {
 async function handleDelete() {
   if (contextMenu.session) {
     try {
-      await ElMessageBox.confirm('确定要删除这条会话吗？', '删除确认', {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
+      await ElMessageBox.confirm(t('chat.deleteConfirm'), t('chat.deleteTitle'), {
+        confirmButtonText: t('common.delete'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
       })
       await chatStore.deleteSession(contextMenu.session.ChatSessionID)
-      ElMessage.success('已删除')
+      ElMessage.success(t('chat.deleted'))
     } catch { /* cancelled */ }
   }
   contextMenu.visible = false
@@ -206,16 +221,16 @@ async function handleDelete() {
 
 async function handleClearAll() {
   try {
-    await ElMessageBox.confirm('确定要清空所有会话记录吗？此操作不可恢复。', '清空确认', {
-      confirmButtonText: '清空',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('chat.clearConfirm'), t('chat.clearTitle'), {
+      confirmButtonText: t('common.clear'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning',
     })
     await import('@/services/session').then((m) => m.cleanUpSessions())
     chatStore.sessions = []
     chatStore.currentSessionId = null
     chatStore.messages = []
-    ElMessage.success('已清空')
+    ElMessage.success(t('chat.cleared'))
   } catch { /* cancelled */ }
 }
 
@@ -224,7 +239,6 @@ function hideContextMenu() {
 }
 
 watch(searchQuery, () => {
-  // Reset pagination on search
   currentPage = 1
 })
 
@@ -298,6 +312,31 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.session-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.running {
+    background: #3b82f6;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  &.failed {
+    background: #ef4444;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 .session-meta {

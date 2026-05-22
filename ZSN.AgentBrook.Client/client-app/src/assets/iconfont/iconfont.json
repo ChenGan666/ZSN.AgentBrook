@@ -1,0 +1,429 @@
+{
+  "id": "4660360",
+  "name": "馨灵",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "36026614",
+      "name": "voice",
+      "font_class": "Voice",
+      "unicode": "e619",
+      "unicode_decimal": 58905
+    },
+    {
+      "icon_id": "34453245",
+      "name": "Research",
+      "font_class": "Research",
+      "unicode": "e860",
+      "unicode_decimal": 59488
+    },
+    {
+      "icon_id": "6626329",
+      "name": "ServiceDesk",
+      "font_class": "ServiceDesk",
+      "unicode": "e641",
+      "unicode_decimal": 58945
+    },
+    {
+      "icon_id": "15617189",
+      "name": "node",
+      "font_class": "Node",
+      "unicode": "e8ae",
+      "unicode_decimal": 59566
+    },
+    {
+      "icon_id": "41791738",
+      "name": "Skills",
+      "font_class": "Skills",
+      "unicode": "e678",
+      "unicode_decimal": 59000
+    },
+    {
+      "icon_id": "46991678",
+      "name": "clawAI",
+      "font_class": "clawAI",
+      "unicode": "e616",
+      "unicode_decimal": 58902
+    },
+    {
+      "icon_id": "217344",
+      "name": "VideoGeneration",
+      "font_class": "VideoGeneration",
+      "unicode": "e630",
+      "unicode_decimal": 58928
+    },
+    {
+      "icon_id": "45974785",
+      "name": "icon_图片生成",
+      "font_class": "ImageGeneration",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "41862359",
+      "name": "对话历史",
+      "font_class": "ChatHistory",
+      "unicode": "f17e",
+      "unicode_decimal": 61822
+    },
+    {
+      "icon_id": "540414",
+      "name": "ic_skill",
+      "font_class": "skill",
+      "unicode": "e64e",
+      "unicode_decimal": 58958
+    },
+    {
+      "icon_id": "11855546",
+      "name": "参数",
+      "font_class": "param",
+      "unicode": "e603",
+      "unicode_decimal": 58883
+    },
+    {
+      "icon_id": "42282913",
+      "name": "最大化箭头",
+      "font_class": "maximize",
+      "unicode": "e632",
+      "unicode_decimal": 58930
+    },
+    {
+      "icon_id": "8690954",
+      "name": "撤销",
+      "font_class": "Revoke",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "46453540",
+      "name": "重做",
+      "font_class": "Redo",
+      "unicode": "eb95",
+      "unicode_decimal": 60309
+    },
+    {
+      "icon_id": "45221936",
+      "name": "ai-提示词",
+      "font_class": "prompt",
+      "unicode": "e941",
+      "unicode_decimal": 59713
+    },
+    {
+      "icon_id": "4354240",
+      "name": "表单组件-输入框",
+      "font_class": "input",
+      "unicode": "eb94",
+      "unicode_decimal": 60308
+    },
+    {
+      "icon_id": "20305042",
+      "name": "填写",
+      "font_class": "write",
+      "unicode": "e74e",
+      "unicode_decimal": 59214
+    },
+    {
+      "icon_id": "46178465",
+      "name": "help",
+      "font_class": "help",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    },
+    {
+      "icon_id": "45684112",
+      "name": "意图识别",
+      "font_class": "Intention",
+      "unicode": "e62d",
+      "unicode_decimal": 58925
+    },
+    {
+      "icon_id": "41739277",
+      "name": "Human",
+      "font_class": "Human",
+      "unicode": "e601",
+      "unicode_decimal": 58881
+    },
+    {
+      "icon_id": "1444415",
+      "name": "drag",
+      "font_class": "drag",
+      "unicode": "e707",
+      "unicode_decimal": 59143
+    },
+    {
+      "icon_id": "4766474",
+      "name": "file-markdown",
+      "font_class": "file-markdown",
+      "unicode": "e7b8",
+      "unicode_decimal": 59320
+    },
+    {
+      "icon_id": "45509549",
+      "name": "收回",
+      "font_class": "shouhui",
+      "unicode": "eb1b",
+      "unicode_decimal": 60187
+    },
+    {
+      "icon_id": "45509550",
+      "name": "展开",
+      "font_class": "zhankai",
+      "unicode": "eb1c",
+      "unicode_decimal": 60188
+    },
+    {
+      "icon_id": "9686375",
+      "name": "显示 隐藏",
+      "font_class": "xianshiyincang",
+      "unicode": "e622",
+      "unicode_decimal": 58914
+    },
+    {
+      "icon_id": "562693",
+      "name": "Note",
+      "font_class": "note",
+      "unicode": "e628",
+      "unicode_decimal": 58920
+    },
+    {
+      "icon_id": "15838548",
+      "name": "upload",
+      "font_class": "upload",
+      "unicode": "e682",
+      "unicode_decimal": 59010
+    },
+    {
+      "icon_id": "44053047",
+      "name": "MCP",
+      "font_class": "MCP",
+      "unicode": "e751",
+      "unicode_decimal": 59217
+    },
+    {
+      "icon_id": "22303975",
+      "name": "聚合",
+      "font_class": "Merge",
+      "unicode": "e695",
+      "unicode_decimal": 59029
+    },
+    {
+      "icon_id": "15425881",
+      "name": "run-solid",
+      "font_class": "run-solid",
+      "unicode": "e7dc",
+      "unicode_decimal": 59356
+    },
+    {
+      "icon_id": "12004938",
+      "name": "Export",
+      "font_class": "Export",
+      "unicode": "eaab",
+      "unicode_decimal": 60075
+    },
+    {
+      "icon_id": "12004948",
+      "name": "Import",
+      "font_class": "Import",
+      "unicode": "eaac",
+      "unicode_decimal": 60076
+    },
+    {
+      "icon_id": "15425865",
+      "name": "run",
+      "font_class": "run",
+      "unicode": "e7db",
+      "unicode_decimal": 59355
+    },
+    {
+      "icon_id": "42800494",
+      "name": "run-coverage",
+      "font_class": "run-coverage",
+      "unicode": "e842",
+      "unicode_decimal": 59458
+    },
+    {
+      "icon_id": "42800495",
+      "name": "run-errors",
+      "font_class": "run-errors",
+      "unicode": "e843",
+      "unicode_decimal": 59459
+    },
+    {
+      "icon_id": "44044023",
+      "name": "save",
+      "font_class": "save",
+      "unicode": "e627",
+      "unicode_decimal": 58919
+    },
+    {
+      "icon_id": "1138742",
+      "name": "close",
+      "font_class": "close",
+      "unicode": "e644",
+      "unicode_decimal": 58948
+    },
+    {
+      "icon_id": "24342300",
+      "name": "running",
+      "font_class": "running",
+      "unicode": "ea19",
+      "unicode_decimal": 59929
+    },
+    {
+      "icon_id": "26189521",
+      "name": "finish",
+      "font_class": "finish",
+      "unicode": "e626",
+      "unicode_decimal": 58918
+    },
+    {
+      "icon_id": "39097199",
+      "name": "error",
+      "font_class": "error",
+      "unicode": "e77c",
+      "unicode_decimal": 59260
+    },
+    {
+      "icon_id": "29910363",
+      "name": "记录员",
+      "font_class": "Reporter",
+      "unicode": "e606",
+      "unicode_decimal": 58886
+    },
+    {
+      "icon_id": "36182107",
+      "name": "MainAI",
+      "font_class": "MainAI",
+      "unicode": "e69f",
+      "unicode_decimal": 59039
+    },
+    {
+      "icon_id": "39335393",
+      "name": "Agent",
+      "font_class": "Agent",
+      "unicode": "e6f2",
+      "unicode_decimal": 59122
+    },
+    {
+      "icon_id": "9080861",
+      "name": "TimeTrigger",
+      "font_class": "TimeTrigger",
+      "unicode": "e66d",
+      "unicode_decimal": 58989
+    },
+    {
+      "icon_id": "15838501",
+      "name": "menu",
+      "font_class": "menu",
+      "unicode": "e677",
+      "unicode_decimal": 58999
+    },
+    {
+      "icon_id": "880319",
+      "name": "del",
+      "font_class": "del",
+      "unicode": "e6ac",
+      "unicode_decimal": 59052
+    },
+    {
+      "icon_id": "6900737",
+      "name": "add",
+      "font_class": "add",
+      "unicode": "e60c",
+      "unicode_decimal": 58892
+    },
+    {
+      "icon_id": "41577761",
+      "name": "箭头-copy",
+      "font_class": "jiantou-r",
+      "unicode": "e8d5",
+      "unicode_decimal": 59605
+    },
+    {
+      "icon_id": "18829247",
+      "name": "箭头",
+      "font_class": "jiantou-d",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    },
+    {
+      "icon_id": "2076256",
+      "name": "进入箭头",
+      "font_class": "jinrujiantou",
+      "unicode": "e88e",
+      "unicode_decimal": 59534
+    },
+    {
+      "icon_id": "2076424",
+      "name": "进入箭头2小",
+      "font_class": "jinrujiantouxiao",
+      "unicode": "e8d4",
+      "unicode_decimal": 59604
+    },
+    {
+      "icon_id": "14950793",
+      "name": "selector",
+      "font_class": "selector1",
+      "unicode": "e613",
+      "unicode_decimal": 58899
+    },
+    {
+      "icon_id": "24067652",
+      "name": "Selector",
+      "font_class": "selector2",
+      "unicode": "e67a",
+      "unicode_decimal": 59002
+    },
+    {
+      "icon_id": "24989294",
+      "name": "ayout",
+      "font_class": "layout",
+      "unicode": "e8d1",
+      "unicode_decimal": 59601
+    },
+    {
+      "icon_id": "37677201",
+      "name": "Plugins",
+      "font_class": "Plugins",
+      "unicode": "e646",
+      "unicode_decimal": 58950
+    },
+    {
+      "icon_id": "1829071",
+      "name": "结束",
+      "font_class": "end",
+      "unicode": "e660",
+      "unicode_decimal": 58976
+    },
+    {
+      "icon_id": "4591402",
+      "name": "开始",
+      "font_class": "start",
+      "unicode": "e60b",
+      "unicode_decimal": 58891
+    },
+    {
+      "icon_id": "22843422",
+      "name": "知识库",
+      "font_class": "KnowledgeBase",
+      "unicode": "e666",
+      "unicode_decimal": 58982
+    },
+    {
+      "icon_id": "25512457",
+      "name": "大语言模型",
+      "font_class": "LargeModel",
+      "unicode": "e636",
+      "unicode_decimal": 58934
+    },
+    {
+      "icon_id": "36603748",
+      "name": "大语言模型构建工具-icon",
+      "font_class": "dayuyanmoxinggoujiangongju-icon",
+      "unicode": "e62c",
+      "unicode_decimal": 58924
+    }
+  ]
+}

@@ -90,6 +90,7 @@ namespace ZSN.AI.Core.Service
             catch (Exception ex)
             {
                 // 记录错误并返回默认Kernel
+                Console.WriteLine($"创建Kernel时出错：{ex.Message}");
                 return CreateDefaultKernel();
             }
         }
@@ -197,17 +198,24 @@ namespace ZSN.AI.Core.Service
                     var wrappedFunction = KernelFunctionFactory.CreateFromMethod(
                         async (KernelArguments arguments) =>
                         {
+                            Console.WriteLine($"[MCP调用追踪] 开始执行工具: {tool.Name}");
+                            Console.WriteLine($"[MCP调用追踪] 工具描述: {tool.Description}");
+                            Console.WriteLine($"[MCP调用追踪] 参数: {System.Text.Json.JsonSerializer.Serialize(arguments)}");
                             
                             try
                             {
                                 // 调用原始函数
                                 var result = await originalFunction.InvokeAsync(_kernel, arguments);
                                 
+                                Console.WriteLine($"[MCP调用追踪] 工具 {tool.Name} 执行成功");
+                                Console.WriteLine($"[MCP调用追踪] 返回结果: {result.GetValue<object>()}");
                                 
                                 return result.GetValue<object>();
                             }
                             catch (Exception ex)
                             {
+                                Console.WriteLine($"[MCP调用追踪] 工具 {tool.Name} 执行失败: {ex.Message}");
+                                Console.WriteLine($"[MCP调用追踪] 异常堆栈: {ex.StackTrace}");
                                 throw;
                             }
                         },
@@ -221,6 +229,7 @@ namespace ZSN.AI.Core.Service
                 // 将所有函数作为一个插件导入
                 _kernel.ImportPluginFromFunctions("MCPFunctions", kernelFunctions);
                 
+                Console.WriteLine($"[MCP调用追踪] 成功导入 {kernelFunctions.Count} 个MCP工具函数");
             }
         }
 

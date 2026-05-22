@@ -58,11 +58,15 @@ export class WebAdapter implements PlatformAdapter {
   notification = {
     show(title: string, body: string): void {
       if (!('Notification' in window)) return
+      const showNotify = () => {
+        const n = new Notification(title, { body })
+        n.onclick = () => { window.focus(); n.close() }
+      }
       if (Notification.permission === 'granted') {
-        new Notification(title, { body })
+        showNotify()
       } else if (Notification.permission !== 'denied') {
         Notification.requestPermission().then((perm) => {
-          if (perm === 'granted') new Notification(title, { body })
+          if (perm === 'granted') showNotify()
         })
       }
     },

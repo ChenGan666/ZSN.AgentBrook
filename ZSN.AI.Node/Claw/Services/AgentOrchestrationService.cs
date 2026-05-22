@@ -352,6 +352,7 @@ namespace ZSN.AI.Node.Claw.Services
                             if (redis == null)
                             {
                                 Logs.Enqueue($"[并发控制] ❌ Redis 连接失败（redis = null），回退到同步模式");
+                                Console.WriteLine($"[并发控制] ❌ Redis 连接失败 - ProcessesID: {ProcessesID}, LayerIndex: {layerIndex}");
                                 counterRegistered = false;
                             }
                             else
@@ -359,11 +360,13 @@ namespace ZSN.AI.Node.Claw.Services
                                 TimeSpan redisTTL = TimeSpan.FromHours(2);
 
                                 Logs.Enqueue($"[并发控制] 尝试 SETNX: {layerCounterKey} = {asyncStepCount}");
+                                Console.WriteLine($"[并发控制] 尝试 SETNX: {layerCounterKey} = {asyncStepCount}");
 
                                 // 仅计数异步步骤，不是全部并行步骤
                                 counterRegistered = redis.StringSet(layerCounterKey, asyncStepCount, redisTTL, When.NotExists);
 
                                 Logs.Enqueue($"[并发控制] SETNX 结果: {counterRegistered}");
+                                Console.WriteLine($"[并发控制] SETNX 结果: {counterRegistered} - Key: {layerCounterKey}");
 
                                 if (counterRegistered)
                                 {
@@ -381,19 +384,24 @@ namespace ZSN.AI.Node.Claw.Services
                                     redis.StringSet(layerContextKey, JsonConvert.SerializeObject(layerCtx), redisTTL);
 
                                     Logs.Enqueue($"[并发控制] ✅ 注册层级计数器成功: {layerCounterKey} = {asyncStepCount} (异步步骤数)");
+                                    Console.WriteLine($"[并发控制] ✅ 注册成功 - Key: {layerCounterKey}, Value: {asyncStepCount}, StepIDs: {string.Join(",", layerCtx.StepIds)}");
                                 }
                                 else
                                 {
                                     Logs.Enqueue($"[并发控制] ⚠️ 计数器已存在（可能是重复触发或恢复场景）");
+                                    Console.WriteLine($"[并发控制] ⚠️ 计数器已存在 - Key: {layerCounterKey}");
 
                                     var existingValue = redis.StringGet(layerCounterKey);
                                     Logs.Enqueue($"[并发控制] 现有计数器值: {existingValue}");
+                                    Console.WriteLine($"[并发控制] 现有计数器值: {existingValue}");
                                 }
                             }
                         }
                         catch (Exception redisEx)
                         {
                             Logs.Enqueue($"[并发控制] ❌ Redis 注册计数器异常（回退到同步模式）: {redisEx.Message}");
+                            Console.WriteLine($"[并发控制] ❌ Redis 异常 - ProcessesID: {ProcessesID}, LayerIndex: {layerIndex}");
+                            Console.WriteLine($"[并发控制] 异常详情: {redisEx.Message}");
                             counterRegistered = false;
                         }
                     }
@@ -970,6 +978,8 @@ namespace ZSN.AI.Node.Claw.Services
                     Logs.Enqueue($"     - 异步等待 TaskID: {stepTaskID}");
                     Logs.Enqueue($"     - 子 WorkFlow TaskID: {newTaskID}");
 
+                    Console.WriteLine($"[AsyncTrigger] 子 WorkFlow 已创建 - StepID: {step.StepID}, AsyncTaskID: {stepTaskID}, SubWorkflowTaskID: {newTaskID}, ProcessesID: {stepProcessesID}");
+                    Console.WriteLine($"[AsyncTrigger] 等待 NodeJob 下轮轮询捡起子 WorkFlow TaskID: {newTaskID}");
 
                     LoggerHelper.LogInfo(_logger, ClawLogModules.AGENT_ORCHESTRATION,
                         $"[AsyncTrigger] 步骤已异步触发 - StepID: {step.StepID}, " +
@@ -1419,6 +1429,7 @@ namespace ZSN.AI.Node.Claw.Services
         }
 
         
+
         private class StepExecutionResult
         {
             public bool Success { get; set; }

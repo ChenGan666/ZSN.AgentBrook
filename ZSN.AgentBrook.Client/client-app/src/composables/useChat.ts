@@ -1,5 +1,7 @@
 import { ref, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
+import { useSettingsStore } from '@/stores/settings'
 import { secureStorage } from '@/utils/storage'
 import { getChatCompletionsUrl } from '@/services/chat'
 import { createApiRequest, APP_SECRET } from '@/utils/crypto'
@@ -16,6 +18,7 @@ import type {
   AttachmentItem,
 } from '@/types/chat'
 import { useFileUpload } from '@/composables/useFileUpload'
+import { platform } from '@/platform'
 
 const TOKEN_CHECK_ERROR = 80001
 const MEMBER_TOKEN_CHECK_ERROR = 80002
@@ -23,8 +26,23 @@ const STREAM_UI_FLUSH_MS = 200
 const STREAM_MAX_CHARS_PER_NODE = 200000
 const STREAM_TAIL_CHARS = 1200
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, '[代码]')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/#+\s/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '[图片]')
+    .replace(/[#*`\[\]()]/g, '')
+    .trim()
+}
+
 export function useChat() {
   const chatStore = useChatStore()
+  const settingsStore = useSettingsStore()
+  const { t } = useI18n()
   const isStreaming = ref(false)
   const streamError = ref<string | null>(null)
   const { uploadFile } = useFileUpload()
@@ -204,7 +222,31 @@ export function useChat() {
     }
     chatStore.addMessage(aiMsg)
 
+    // 加入运行中会话列表（SSE可能返回新的sessionId，在doSSERequest中更新）
+    if (sessionId) {
+      chatStore.addRunningSession(sessionId)
+    }
+
     await doSSERequest(content, sessionId, appId, aiMsgId, false, attachments)
+
+    // SSE完成后从运行列表移除，避免心跳重复通知
+    if (chatStore.currentSessionId) {
+      chatStore.removeRunningSession(chatStore.currentSessionId)
+    }
+    if (sessionId) {
+      chatStore.removeRunningSession(sessionId)
+    }
+
+    chatStore.fetchSessions(1).catch(() => {})
+
+    if (!document.hasFocus() && settingsStore.notificationEnabled) {
+      const aiMsg = chatStore.messages.find(m => m.id === aiMsgId)
+      const raw = aiMsg?.content || ''
+      const isFailed = aiMsg?.process?.status === 'failed' || aiMsg?.process?.status === 'error'
+      const title = isFailed ? t('chat.notifyFailed') : t('chat.notifyCompleted')
+      const summary = stripMarkdown(raw).slice(0, 120) || (isFailed ? t('chat.notifyViewDetail') : t('chat.notifyViewReply'))
+      platform.notification.show(title, summary)
+    }
   }
 
   async function doSSERequest(
@@ -216,6 +258,8 @@ export function useChat() {
     attachments: AttachmentItem[] = [],
   ) {
     abortController = new AbortController()
+
+    let sessionListFetched = false
 
     // pending state for batched UI flush
     let pendingProcess: any = null
@@ -317,9 +361,19 @@ export function useChat() {
       if (messageData.SessionID) {
         chatStore.currentSessionId = messageData.SessionID
         msg.sessionId = messageData.SessionID
+        chatStore.addRunningSession(messageData.SessionID)
+        if (!sessionListFetched) {
+          sessionListFetched = true
+          chatStore.fetchSessions(1).catch(() => {})
+        }
       } else if (messageData.ProcessInfo?.SessionID) {
         chatStore.currentSessionId = messageData.ProcessInfo.SessionID
         msg.sessionId = messageData.ProcessInfo.SessionID
+        chatStore.addRunningSession(messageData.ProcessInfo.SessionID)
+        if (!sessionListFetched) {
+          sessionListFetched = true
+          chatStore.fetchSessions(1).catch(() => {})
+        }
       }
 
       // Extract ProcessesID
@@ -409,6 +463,13 @@ export function useChat() {
         ) {
           msg.loading = false
           flushProcessUI()
+          // 更新当前会话的 SessionStatus
+          const terminalStatus = String(status).toLowerCase() === 'success' ? 0 : -1
+          const sid = msg.sessionId || chatStore.currentSessionId
+          if (sid) {
+            const session = chatStore.sessions.find(s => s.ChatSessionID === sid)
+            if (session) session.SessionStatus = terminalStatus
+          }
         }
 
         chatStore.updateMessage(aiMsgId, msg)

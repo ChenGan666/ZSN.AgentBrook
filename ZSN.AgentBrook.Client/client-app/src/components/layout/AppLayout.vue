@@ -15,7 +15,7 @@
       </main>
     </div>
 
-    <el-dialog v-model="showAppPicker" title="选择应用" width="400px">
+    <el-dialog v-model="showAppPicker" :title="t('chat.selectApp')" width="400px">
       <div class="app-list">
         <div
           v-for="app in chatStore.apps"
@@ -35,6 +35,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { isTauri } from '@/platform'
 import { useAppStore } from '@/stores/app'
 import { useChatStore } from '@/stores/chat'
@@ -47,6 +48,7 @@ import { useWindowState } from '@/composables/useWindowState'
 import { useGlobalShortcut } from '@/composables/useGlobalShortcut'
 import type { AppInfo } from '@/types/chat'
 
+const { t } = useI18n()
 const appStore = useAppStore()
 const chatStore = useChatStore()
 const showAppPicker = ref(false)

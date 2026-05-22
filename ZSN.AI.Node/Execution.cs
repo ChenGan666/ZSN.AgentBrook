@@ -37,6 +37,7 @@ using ZSN.Utils.Core.Helpers;
 using ZSN.Utils.Core.Utils;
 using ZSN.AI.Node.Utils;
 using ZSN.AI.Node.Utils.Pipeline;
+using ZSN.AI.Node.Claw;
 
 namespace ZSN.AI.Node
 {
@@ -48,7 +49,7 @@ namespace ZSN.AI.Node
         {
         }
 
-        
+
         public static MessageData ExecutionNode(string AppID, string SessionID, string ProcessesID, string nodeId, string MemberID, string TopicSummary, List<Inputs> inputs, string FromTaskID, string FromMainTaskID, string AgentNodeID, string WorkflowID)
         {
             AppChatSessionInfo appChatSession = new AppChatSessionInfo();
@@ -277,6 +278,7 @@ namespace ZSN.AI.Node
                     // ===== 检查是否有 ClawAI 步骤在等待此 WorkFlow 完成 =====
                     if (!string.IsNullOrEmpty(FromMainTaskID))
                     {
+                        Console.WriteLine($"[ClawAI-Resume] EndNodeAsync 完成 - FromMainTaskID: {FromMainTaskID}");
                         await WorkflowNodeInfoBussiness.TryResumeClawAIStepAsync(FromMainTaskID, outputs, Logs);
                     }
                 }
@@ -323,9 +325,11 @@ namespace ZSN.AI.Node
                         ExecutionRecordStatus = ExecutionRecordStatus.Success;
 
                         //处理子工作流返回的结果
+                        Console.WriteLine($"[ClawAI-Debug] AgentEndNodeAsync - AgentNodeID: {AgentNodeID}, FromMainTaskID: {FromMainTaskID}");
                         Logs.Add($"[ClawAI-Debug] AgentEndNodeAsync - AgentNodeID: {AgentNodeID}, FromMainTaskID: {FromMainTaskID}");
                         
                         WorkflowNodeInfo nodeInfo = WorkflowNodeInfoBussiness.GetModel(AgentNodeID);
+                        Console.WriteLine($"[ClawAI-Debug] nodeInfo is null: {nodeInfo == null}");
                         Logs.Add($"[ClawAI-Debug] nodeInfo is null: {nodeInfo == null}");
                         
                         if (nodeInfo != null)
@@ -340,19 +344,24 @@ namespace ZSN.AI.Node
                             outputs.Add(new Output { varname = "currentTime", value = DateTime.Now.ToDateTimeString(), nodeId = config.id, sourceId = $"{config.id}_currentTime" });
                             outputs.Add(new Output { varname = "agentName", value = agentName, nodeId = config.id, sourceId = $"{config.id}_agentName" });
 
+                            Console.WriteLine($"[ClawAI-Debug] 调用 AgentEndToNextNode - FromMainTaskID: {FromMainTaskID}");
                             Logs.Add($"[ClawAI-Debug] 调用 AgentEndToNextNode - FromMainTaskID: {FromMainTaskID}");
                             await WorkflowNodeInfoBussiness.AgentEndToNextNode(AppID, SessionID, ProcessesID, TaskID, FromMainTaskID, AgentNodeID, nodeConfig, outputs, Logs);
+                            Console.WriteLine($"[ClawAI-Debug] AgentEndToNextNode 完成 - FromMainTaskID: {FromMainTaskID}");
                             Logs.Add($"[ClawAI-Debug] AgentEndToNextNode 完成 - FromMainTaskID: {FromMainTaskID}");
                         }
                         else
                         {
                             // AgentNodeID 为空时（如由 ClawAI 异步触发），直接尝试恢复 ClawAI 步骤
+                            Console.WriteLine($"[ClawAI-Debug] nodeInfo 为 null, FromMainTaskID.IsNullOrEmpty: {FromMainTaskID.IsNullOrEmpty()}");
                             Logs.Add($"[ClawAI-Debug] nodeInfo 为 null, FromMainTaskID.IsNullOrEmpty: {FromMainTaskID.IsNullOrEmpty()}");
                             
                             if (!FromMainTaskID.IsNullOrEmpty())
                             {
+                                Console.WriteLine($"[ClawAI-Resume] AgentEndNodeAsync (无AgentNodeID) 尝试恢复 - FromMainTaskID: {FromMainTaskID}");
                                 Logs.Add($"[ClawAI-Resume] AgentEndNodeAsync (无AgentNodeID) 尝试恢复 - FromMainTaskID: {FromMainTaskID}");
                                 await WorkflowNodeInfoBussiness.TryResumeClawAIStepAsync(FromMainTaskID, outputs, Logs);
+                                Console.WriteLine($"[ClawAI-Resume] TryResumeClawAIStepAsync 完成 - FromMainTaskID: {FromMainTaskID}");
                                 Logs.Add($"[ClawAI-Resume] TryResumeClawAIStepAsync 完成 - FromMainTaskID: {FromMainTaskID}");
                             }
                         }
@@ -1826,6 +1835,7 @@ namespace ZSN.AI.Node
 
                         // 存储所有知识库的检索结果
                         var allSearchResults = new List<ZSN.AI.Entity.KnowledgeBase.SearchResult>();
+                        var allChunkImages = new Dictionary<string, List<ZSN.AI.Entity.KnowledgeBase.ImageSearchResult>>();
                         int totalChunks = 0;
 
                         // 遍历所有知识库进行检索
@@ -1851,6 +1861,13 @@ namespace ZSN.AI.Node
                                         allSearchResults.AddRange(searchResult.FusedResults);
                                         totalChunks += searchResult.FusedResults.Count;
                                         Logs.Add($"[KnowledgeBase] 检索到 {searchResult.FusedResults.Count} 个相关文档块");
+
+                                        // 收集图片信息
+                                        if (searchResult.ChunkImages != null && searchResult.ChunkImages.Count > 0)
+                                        {
+                                            foreach (var kv in searchResult.ChunkImages)
+                                                allChunkImages[kv.Key] = kv.Value;
+                                        }
 
                                         // 记录前3个结果的得分
                                         for (int i = 0; i < Math.Min(3, searchResult.FusedResults.Count); i++)
@@ -1906,6 +1923,29 @@ namespace ZSN.AI.Node
                                 foreach (var path in result.RelatedPaths.Take(3))
                                 {
                                     resultBuilder.AppendLine($"  - 路径节点数: {path.Nodes.Count}, 相关性得分: {path.RelevanceScore:F4}");
+                                }
+                                resultBuilder.AppendLine();
+                            }
+
+                            // 关联图片信息
+                            if (allChunkImages.TryGetValue(result.ChunkId, out var images) && images.Count > 0)
+                            {
+                                resultBuilder.AppendLine($"**关联图片**: {images.Count} 张");
+                                foreach (var img in images)
+                                {
+                                    if (!string.IsNullOrEmpty(img.ImageUrl))
+                                    {
+                                        var altText = !string.IsNullOrEmpty(img.Description) ? img.Description : img.ImageId;
+                                        resultBuilder.AppendLine($"  ![{altText}]({img.ImageUrl})");
+                                    }
+                                    else
+                                    {
+                                        resultBuilder.AppendLine($"  - 图片ID: {img.ImageId}");
+                                    }
+                                    if (!string.IsNullOrEmpty(img.Description))
+                                        resultBuilder.AppendLine($"    描述: {img.Description}");
+                                    if (!string.IsNullOrEmpty(img.OcrText))
+                                        resultBuilder.AppendLine($"    OCR文字: {img.OcrText}");
                                 }
                                 resultBuilder.AppendLine();
                             }
@@ -2758,6 +2798,7 @@ namespace ZSN.AI.Node
 
             if (type == null)
             {
+                Console.WriteLine($"[GetTypeFromLoadedAssemblies] NOT FOUND: {fullTypeName}");
             }
 
             return type;
@@ -2831,6 +2872,7 @@ namespace ZSN.AI.Node
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[GetTypeFromLoadedAssemblies] scan baseDir failed: {ex}");
             }
             return null;
         }

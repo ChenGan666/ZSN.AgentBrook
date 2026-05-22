@@ -259,7 +259,7 @@ namespace ZSN.AI.Entity
         public bool EnableImageProcessing { get; set; } = false;
 
         /// <summary>
-        /// 视觉模型ID（用于图片描述）
+        /// 视觉大模型ID（用于图片描述生成）
         /// </summary>
         public int VisionModelID { get; set; } = 0;
     }

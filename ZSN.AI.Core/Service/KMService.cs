@@ -338,10 +338,12 @@ namespace ZSN.AI.Core.Service
             var validTypes = types.Contains(file.Type) || exceptExts.Contains(file.Ext);
             if (!validTypes && file.Ext != ".md")
             {
+                Console.WriteLine("文件格式错误,请重新选择!");
             }
             var IsLt500K = file.Size < 1024 * 1024 * 100;
             if (!IsLt500K)
             {
+                Console.WriteLine("文件需不大于100MB!");
             }
 
             return validTypes && IsLt500K;

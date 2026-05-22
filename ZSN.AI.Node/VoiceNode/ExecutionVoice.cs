@@ -82,6 +82,7 @@ namespace ZSN.AI.Node.VoiceNode
                 throttler.MarkDirty();
             });
 
+            // 超时保护
             var timeoutMinutes = _nodeOptions.Value.MaxProcessingTimeMinutes > 0
                 ? _nodeOptions.Value.MaxProcessingTimeMinutes : 15;
             using var overallCts = new CancellationTokenSource(TimeSpan.FromMinutes(timeoutMinutes));
@@ -92,7 +93,7 @@ namespace ZSN.AI.Node.VoiceNode
                 batchWriter.Append("\n=== Voice 节点开始执行 ===\n");
                 throttler.MarkDirty();
 
-                // 1. 解析配置 + 占位符替换
+                // ── 1. 解析配置 + 占位符替换 ──
                 var nodeData = JsonConvert.DeserializeObject<VoiceNodeData>(config.data.ToString());
                 if (nodeData == null) throw new Exception("Voice 节点配置解析失败");
 
@@ -103,12 +104,12 @@ namespace ZSN.AI.Node.VoiceNode
                 Logs.Enqueue($"[Init] Provider: {nodeData.Provider ?? "默认"}, 语言: {nodeData.Language}");
                 throttler.MarkDirty();
 
-                // 2. 获取音频文件路径
+                // ── 2. 获取音频文件路径 ──
                 string audioFilePath = ResolveAudioSource(nodeData, data);
                 Logs.Enqueue($"[Init] 音频来源: {audioFilePath}");
                 batchWriter.Append($"音频来源: {Path.GetFileName(audioFilePath)}\n");
 
-                // 3. 音频预处理
+                // ── 3. 音频预处理 ──
                 batchWriter.Append("正在进行音频预处理...\n");
                 throttler.MarkDirty();
 
@@ -123,15 +124,17 @@ namespace ZSN.AI.Node.VoiceNode
                 if (preprocessResult.RequiresCleanup && !string.IsNullOrEmpty(preprocessResult.ProcessedFilePath))
                     _tempFiles.Add(preprocessResult.ProcessedFilePath);
 
-                batchWriter.Append($"音频预处理完成: 时长={preprocessResult.DurationSeconds:F1}s\n");
+                batchWriter.Append($"音频预处理完成: 时长={preprocessResult.DurationSeconds:F1}s, 格式转换={preprocessResult.WasConverted}\n");
+                Logs.Enqueue($"[Preprocess] 时长={preprocessResult.DurationSeconds:F1}s, 转换={preprocessResult.WasConverted}");
 
-                // 4. 获取可用 Provider
+                // ── 4. 获取可用 Provider ──
                 var provider = await _providerFactory.GetAvailableProviderAsync(
                     nodeData.Provider ?? _nodeOptions.Value.DefaultProvider, overallCts.Token);
 
                 batchWriter.Append($"使用转写服务: {provider.ProviderName}\n");
+                Logs.Enqueue($"[Provider] 使用: {provider.ProviderName}");
 
-                // 5. 执行转写
+                // ── 5. 执行转写 ──
                 var transcribeRequest = BuildTranscribeRequest(nodeData, preprocessResult);
                 TranscriptionResult result;
 
@@ -148,12 +151,17 @@ namespace ZSN.AI.Node.VoiceNode
                 _providerFactory.RecordSuccess(provider.ProviderName);
 
                 batchWriter.Append($"\n转写完成: {result.Segments.Count} 个分段, {result.Speakers.Count} 个说话人\n");
-                Logs.Enqueue($"[Transcribe] 完成: {result.Segments.Count}段, {result.Speakers.Count}说话人");
+                Logs.Enqueue($"[Transcribe] 完成: {result.Segments.Count}段, {result.Speakers.Count}说话人, 耗时{result.ProcessingTimeMs}ms");
 
-                // 6. 后处理管道
+                // ── 6. 后处理管道 ──
+
+                // 6.1 说话人标签映射
                 SpeakerLabelNormalizer.Normalize(result, nodeData.SpeakerLabelMap);
+
+                // 6.2 格式化输出
                 string formattedOutput = OutputFormatter.Format(result, nodeData.OutputFormat);
 
+                // 6.3 LLM 后处理（可选）
                 string finalResult = formattedOutput;
                 if (nodeData.EnablePostProcessing && !string.IsNullOrWhiteSpace(nodeData.prompt))
                 {
@@ -162,7 +170,7 @@ namespace ZSN.AI.Node.VoiceNode
                     finalResult = await LLMPostProcessAsync(nodeData, formattedOutput, result, batchWriter, throttler, overallCts.Token);
                 }
 
-                // 7. 写入 Output
+                // ── 7. 写入 Output ──
                 outputs.Add(new Output { varname = "results", value = finalResult, nodeId = config.id, sourceId = $"{config.id}_results" });
                 outputs.Add(new Output { varname = "transcription", value = formattedOutput, nodeId = config.id, sourceId = $"{config.id}_transcription" });
                 outputs.Add(new Output { varname = "duration", value = result.DurationSeconds.ToString("F1"), nodeId = config.id, sourceId = $"{config.id}_duration" });
@@ -171,22 +179,25 @@ namespace ZSN.AI.Node.VoiceNode
 
                 throttler.MarkDirty();
 
-                // 8. 触发下游节点
+                // ── 8. 触发下游节点 ──
+                Logs.Enqueue("[NextNode] 准备触发下一节点");
                 WorkflowNodeInfoBussiness.NextNode(
                     AppID, SessionID, ProcessesID, TaskID, FromMainTaskID,
                     AgentNodeID: "", config, inputs, outputs, Logs.ToList());
+                Logs.Enqueue("[NextNode] 下一节点已触发");
             }
             catch (OperationCanceledException)
             {
-                _voiceLogger.LogWarning("Voice 节点执行超时 ({Timeout}分钟)", timeoutMinutes);
+                _voiceLogger.LogWarning("[VoiceNode] 执行超时 ({Timeout}分钟)", timeoutMinutes);
                 Logs.Enqueue($"[Error] Voice 节点执行超时（{timeoutMinutes}分钟）");
+                batchWriter.Append($"\nVoice 节点执行超时（{timeoutMinutes}分钟）\n");
 
                 outputs.Add(new Output { varname = "results", value = "语音处理超时", nodeId = config.id });
                 ExecutionRecordStatus = ExecutionRecordStatus.Fail;
             }
             catch (Exception ex)
             {
-                _voiceLogger.LogError(ex, "Voice 节点执行异常");
+                _voiceLogger.LogError(ex, "[VoiceNode] 执行异常 - SessionID: {SessionID}", data.SessionID);
                 Logs.Enqueue($"[Error] {ex.Message}");
                 batchWriter.Append($"\nVoice 节点执行失败: {ex.Message}\n");
 
@@ -202,11 +213,16 @@ namespace ZSN.AI.Node.VoiceNode
             return RecordID;
         }
 
+        /// <summary>
+        /// 解析音频来源
+        /// </summary>
         private string ResolveAudioSource(VoiceNodeData nodeData, TaskData data)
         {
+            // 优先使用 AudioSource 配置
             if (!string.IsNullOrWhiteSpace(nodeData.AudioSource))
                 return nodeData.AudioSource;
 
+            // 其次从 AttachmentItems 中获取音频文件
             if (data.AttachmentItems?.Count > 0)
             {
                 var supportedFormats = _nodeOptions.Value.SupportedFormats ?? Array.Empty<string>();
@@ -219,6 +235,9 @@ namespace ZSN.AI.Node.VoiceNode
             throw new Exception("未找到音频来源，请配置 AudioSource 或上传音频附件");
         }
 
+        /// <summary>
+        /// 构建转写请求
+        /// </summary>
         private TranscribeRequest BuildTranscribeRequest(VoiceNodeData nodeData, AudioPreprocessResult preprocessResult)
         {
             return new TranscribeRequest
@@ -238,6 +257,9 @@ namespace ZSN.AI.Node.VoiceNode
             };
         }
 
+        /// <summary>
+        /// 长音频多段并行转写
+        /// </summary>
         private async Task<TranscriptionResult> TranscribeSegmentsAsync(
             IVoiceTranscriptionProvider provider,
             List<AudioSegmentInfo> segments,
@@ -255,6 +277,7 @@ namespace ZSN.AI.Node.VoiceNode
                 await semaphore.WaitAsync(cancellationToken);
                 try
                 {
+                    // 如果分段文件不存在（固定时长降级模式），按需切割
                     var segPath = segment.FilePath;
                     if (!File.Exists(segPath))
                     {
@@ -289,6 +312,9 @@ namespace ZSN.AI.Node.VoiceNode
             return MergeSegmentResults(results, segments);
         }
 
+        /// <summary>
+        /// 合并分段转写结果
+        /// </summary>
         private TranscriptionResult MergeSegmentResults(TranscriptionResult[] results, List<AudioSegmentInfo> segments)
         {
             var merged = new TranscriptionResult
@@ -321,6 +347,7 @@ namespace ZSN.AI.Node.VoiceNode
             merged.FullText = fullTextBuilder.ToString().Trim();
             merged.DurationSeconds = totalDuration;
 
+            // 合并说话人信息
             var speakerMap = new Dictionary<string, SpeakerInfo>();
             foreach (var result in results.Where(r => r != null))
             {
@@ -337,6 +364,9 @@ namespace ZSN.AI.Node.VoiceNode
             return merged;
         }
 
+        /// <summary>
+        /// LLM 后处理
+        /// </summary>
         private async Task<string> LLMPostProcessAsync(
             VoiceNodeData nodeData, string transcription, TranscriptionResult result,
             StreamBatchWriter batchWriter, RecordUpdateThrottler throttler,
@@ -344,19 +374,22 @@ namespace ZSN.AI.Node.VoiceNode
         {
             try
             {
+                // 替换提示词内置占位符
                 var prompt = nodeData.prompt
                     .Replace("{{transcription}}", transcription)
                     .Replace("{{duration}}", result.DurationSeconds.ToString("F1"))
                     .Replace("{{speakerCount}}", result.Speakers.Count.ToString())
                     .Replace("{{speakers}}", JsonConvert.SerializeObject(result.Speakers));
 
+                // 构建 LLM 配置
                 var modelConfig = BuildModelConfig(nodeData);
                 if (modelConfig == null)
                 {
-                    _voiceLogger.LogWarning("无可用 LLM 模型，跳过后处理");
+                    _voiceLogger.LogWarning("[VoiceNode] 无可用 LLM 模型，跳过后处理");
                     return transcription;
                 }
 
+                // 构建聊天历史
                 var history = new ChatHistory();
                 history.AddSystemMessage(prompt);
                 history.AddUserMessage("请开始处理");
@@ -373,6 +406,7 @@ namespace ZSN.AI.Node.VoiceNode
                     modelConfig, history, enableStreamingObservation: true,
                     progress: streamProgress, ct: cancellationToken))
                 {
+                    // 流式 token 通过 progress 回调接收，此处仅驱动枚举
                 }
 
                 throttler.MarkDirty();
@@ -380,21 +414,26 @@ namespace ZSN.AI.Node.VoiceNode
             }
             catch (Exception ex)
             {
-                _voiceLogger.LogWarning(ex, "LLM 后处理失败，降级为原始转写文本");
+                _voiceLogger.LogWarning(ex, "[VoiceNode] LLM 后处理失败，降级为原始转写文本");
                 batchWriter.Append("\n[LLM 后处理失败，使用原始转写文本]\n");
                 return transcription;
             }
         }
 
+        /// <summary>
+        /// 构建模型配置，优先使用节点配置的模型，否则回退到系统默认模型
+        /// </summary>
         private LargeModelConfig BuildModelConfig(VoiceNodeData nodeData)
         {
             LargeModelInfo modelInfo = null;
 
+            // 优先使用节点配置的模型
             if (nodeData.model?.LargeModelID > 0)
             {
                 modelInfo = LargeModelInfoBussiness.GetModel(nodeData.model.LargeModelID);
             }
 
+            // 回退到系统默认模型
             if (modelInfo == null)
             {
                 modelInfo = LargeModelInfoBussiness.GetDefaultModel();
@@ -416,6 +455,9 @@ namespace ZSN.AI.Node.VoiceNode
             };
         }
 
+        /// <summary>
+        /// 用 FFmpeg 按时间范围切割音频段（固定时长降级模式使用）
+        /// </summary>
         private async Task<string> CutSegmentAsync(string sourcePath, AudioSegmentInfo segment, CancellationToken ct)
         {
             var tempDir = string.IsNullOrEmpty(_nodeOptions.Value.TempFileDirectory)
@@ -448,6 +490,9 @@ namespace ZSN.AI.Node.VoiceNode
             return outputPath;
         }
 
+        /// <summary>
+        /// 清理临时文件
+        /// </summary>
         private void CleanupTempFiles()
         {
             foreach (var file in _tempFiles)
@@ -457,7 +502,10 @@ namespace ZSN.AI.Node.VoiceNode
                     if (File.Exists(file))
                         File.Delete(file);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _voiceLogger.LogDebug(ex, "[VoiceNode] 清理临时文件失败: {File}", file);
+                }
             }
             _tempFiles.Clear();
         }

@@ -87,6 +87,7 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
 
             ViewBag.PreprocessModeList = ModelList.FindAll(x=>x.TypeCode == AIModelType.Chat);
             ViewBag.VectorModelList = ModelList.FindAll(x => x.TypeCode == AIModelType.Embedding);
+            ViewBag.VisionModelList = ModelList.FindAll(x => x.TypeCode == AIModelType.Chat);
 
             ViewBag.PreviewHost = ConfigHelper.GetString("previewHost");
             return View();
@@ -322,7 +323,11 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
 
                     // 启用实体和关系提取
                     EnableEntityExtraction = true,
-                    EnableRelationExtraction = true
+                    EnableRelationExtraction = true,
+
+                    // 图片处理配置
+                    EnableImageProcessing = knowledgeBaseConfig?.EnableImageProcessing ?? false,
+                    VisionModelID = knowledgeBaseConfig?.VisionModelID ?? 0
                 };
 
                 knowledgeBaseFile.SystemStatus = ImportKmsStatus.Loadding;

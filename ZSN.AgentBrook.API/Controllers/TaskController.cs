@@ -124,6 +124,8 @@ namespace ZSN.AgentBrook.API.Controllers
         }
 
         [HiddenApi]
+        [HttpPost]
+        [HttpGet]
         public bool execHumanInTheLoop(string sessionID, string taskID, string recordID, AI.Entity.Option option, out ErrorCode errorCode)
         {
             errorCode = ErrorCode.None;
@@ -170,6 +172,7 @@ namespace ZSN.AgentBrook.API.Controllers
                 {
                     Logs.Add($"{ex.Message}");
                 }
+
 
 
                 //驱动选中的下一节点,找出对应的下一节点ID
@@ -230,6 +233,8 @@ namespace ZSN.AgentBrook.API.Controllers
         }
 
         [HiddenApi]
+        [HttpPost]
+        [HttpGet]
         public bool execHumanInTheLoopByForm(string sessionID, string taskID, string recordID, List<AI.Entity.InputOption> inputOption, out ErrorCode errorCode)
         {
             errorCode = ErrorCode.None;
@@ -362,7 +367,10 @@ namespace ZSN.AgentBrook.API.Controllers
             }
             return true;
         }
+
         [HiddenApi]
+        [HttpPost]
+        [HttpGet]
         public bool execHumanInTheLoopByUserInput(List<WorkflowNodeExecutionRecordInfo> _HumanTaskRecords, GptMsg Inputs, TaskData data, string sessionID, out ErrorCode errorCode)
         {
             bool result = false;

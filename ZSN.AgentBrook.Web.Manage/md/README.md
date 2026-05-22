@@ -13,9 +13,12 @@ md/
 ├── SkillsAIOptimizePrompts.md          # Skills优化提示词
 ├── ReporterPrompt.md                   # Reporter节点提示词
 ├── FileToMarkdownPrompt.md             # FileToMarkdown节点提示词
-└── ClawAI/
-    ├── TaskPlanningPrompt.md           # ClawAI任务规划提示词
-    └── ReflectionPrompt.md             # ClawAI反思评估提示词
+├── ClawAI/
+│   ├── TaskPlanningPrompt.md           # ClawAI任务规划提示词
+│   └── ReflectionPrompt.md             # ClawAI反思评估提示词
+└── Voice/
+    ├── README.md                       # Voice节点完整文档
+    └── DefaultPrompt.md                # Voice节点默认提示词
 ```
 
 ## 配置文件
@@ -112,6 +115,16 @@ if (string.IsNullOrEmpty(prompt))
 - **用途**：ClawAI反思评估的提示词模板
 - **功能**：指导LLM评估执行质量和决定下一步行动
 - **应用场景**：任务执行过程中的质量评估和决策
+
+### Voice/README.md
+- **用途**：VoiceNode 语音处理节点的完整技术文档
+- **功能**：外部依赖（FunASR Server、FFmpeg）、Docker 部署、配置说明、注意事项
+- **应用场景**：语音转写节点的部署和运维参考
+
+### Voice/DefaultPrompt.md
+- **用途**：VoiceNode LLM 后处理默认提示词模板
+- **功能**：对语音转写文本进行整理、摘要、关键信息提取
+- **应用场景**：语音转写后的自动内容分析
 
 ## 优势
 

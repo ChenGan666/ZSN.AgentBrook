@@ -166,6 +166,7 @@ namespace ZSN.AI.MCPClient
             if (_config.EnableLogging)
             {
                 _logger?.LogInformation(message);
+                Console.WriteLine($"[INFO] {message}");
             }
         }
 
@@ -174,6 +175,7 @@ namespace ZSN.AI.MCPClient
             if (_config.EnableLogging)
             {
                 _logger?.LogWarning(message);
+                Console.WriteLine($"[WARNING] {message}");
             }
         }
 
@@ -182,6 +184,7 @@ namespace ZSN.AI.MCPClient
             if (_config.EnableLogging)
             {
                 _logger?.LogError(message);
+                Console.WriteLine($"[ERROR] {message}");
             }
         }
 

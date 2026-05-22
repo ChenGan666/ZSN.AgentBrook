@@ -20,6 +20,7 @@ namespace ZSN.AI.Core.Utils
             {
                 string requestBody = await request.Content.ReadAsStringAsync();
                 //便于调试查看请求prompt
+                Console.WriteLine(requestBody);
             }
             if (match.Success)
             {

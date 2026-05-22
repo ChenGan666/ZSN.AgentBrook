@@ -45,7 +45,7 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "FunASR 健康检查失败");
+                _logger.LogDebug(ex, "[FunASR] 健康检查失败");
                 return false;
             }
         }
@@ -61,6 +61,7 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(TimeSpan.FromMinutes(_options.TranscribeTimeoutMinutes));
 
+            // 1. 连接
             progress?.Report(new VoiceProgress
             {
                 Stage = "Transcribing",
@@ -72,7 +73,9 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
             connectCts.CancelAfter(TimeSpan.FromSeconds(_options.ConnectTimeoutSeconds));
             await ws.ConnectAsync(new Uri(_options.ServerUrl), connectCts.Token);
 
-            // 发送初始化 JSON
+            _logger.LogInformation("[FunASR] WebSocket 已连接: {Url}", _options.ServerUrl);
+
+            // 2. 发送初始化 JSON
             var initMessage = new Dictionary<string, object>
             {
                 ["mode"] = "offline",
@@ -91,7 +94,7 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
             var initBytes = Encoding.UTF8.GetBytes(initJson);
             await ws.SendAsync(new ArraySegment<byte>(initBytes), WebSocketMessageType.Text, true, cts.Token);
 
-            // 分片发送音频
+            // 3. 分片发送音频
             progress?.Report(new VoiceProgress
             {
                 Stage = "Transcribing",
@@ -120,13 +123,15 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
                 });
             }
 
-            // 发送结束标记
+            // 4. 发送结束标记
             var endJson = JsonConvert.SerializeObject(new { is_speaking = false });
             await ws.SendAsync(
                 new ArraySegment<byte>(Encoding.UTF8.GetBytes(endJson)),
                 WebSocketMessageType.Text, true, cts.Token);
 
-            // 接收结果
+            _logger.LogInformation("[FunASR] 音频发送完成，等待转写结果...");
+
+            // 5. 接收结果
             progress?.Report(new VoiceProgress
             {
                 Stage = "Transcribing",
@@ -159,8 +164,9 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
             }
 
             var responseJson = resultBuilder.ToString();
+            _logger.LogDebug("[FunASR] 收到响应: {Json}", responseJson.Length > 500 ? responseJson[..500] + "..." : responseJson);
 
-            // 解析结果
+            // 6. 解析结果
             progress?.Report(new VoiceProgress
             {
                 Stage = "Transcribing",
@@ -173,10 +179,14 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
             result.DurationSeconds = request.DurationSeconds;
             result.ProcessingTimeMs = sw.ElapsedMilliseconds;
 
+            // 关闭连接
             if (ws.State == WebSocketState.Open)
             {
-                try { await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None); }
-                catch { }
+                try
+                {
+                    await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                }
+                catch { /* 忽略关闭异常 */ }
             }
 
             progress?.Report(new VoiceProgress
@@ -185,6 +195,9 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
                 Message = "转写完成",
                 Percentage = 100
             });
+
+            _logger.LogInformation("[FunASR] 转写完成: 时长={Duration:F1}s, 耗时={Ms}ms, 段数={Segs}",
+                result.DurationSeconds, result.ProcessingTimeMs, result.Segments.Count);
 
             return result;
         }
@@ -198,6 +211,7 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
                 var response = JObject.Parse(json);
                 result.FullText = response["text"]?.ToString() ?? "";
 
+                // 解析 sentence_info（包含说话人分离和时间戳）
                 var sentenceInfo = response["sentence_info"] as JArray;
                 if (sentenceInfo != null)
                 {
@@ -230,6 +244,7 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
                 }
                 else
                 {
+                    // 没有 sentence_info，尝试从 timestamp 构建
                     var timestamps = response["timestamp"] as JArray;
                     if (timestamps != null && timestamps.Count > 0)
                     {
@@ -247,7 +262,7 @@ namespace ZSN.AI.Node.VoiceNode.Providers.FunASR
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "解析 FunASR 响应失败");
+                _logger.LogError(ex, "[FunASR] 解析响应失败: {Json}", json.Length > 200 ? json[..200] : json);
                 result.FullText = json;
             }
 

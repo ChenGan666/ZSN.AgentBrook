@@ -5,7 +5,16 @@ export interface SessionInfo {
   TopicSummary: string
   IsCoCreate: number
   SystemStatus: number
+  SessionStatus: number
   CreateTime: string
+}
+
+export interface SessionStatusInfo {
+  ChatSessionID: string
+  SessionStatus: number
+  Summary: string
+  TopicSummary: string
+  AppID: string
 }
 
 export interface ChatFile {

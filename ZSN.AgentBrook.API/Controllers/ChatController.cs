@@ -10,6 +10,7 @@ using MongoDB.Driver;
 using MySqlX.XDevAPI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net.WebSockets;
 using System.Text;
 using ZSN.AgentBrook.API.Attributes;
 using ZSN.AI.Service.Helpers;
@@ -19,6 +20,7 @@ using ZSN.AI.Entity;
 using ZSN.AI.Entity.Chat;
 using ZSN.AI.Node;
 using ZSN.AI.Service.Attributes;
+using ZSN.AI.Service.Controllers;
 using ZSN.Utils.Core.Extensions;
 using ZSN.Utils.Core.Helpers;
 using ErrorCode = ZSN.AI.Entity.ErrorCode;
@@ -168,6 +170,7 @@ namespace ZSN.AgentBrook.API.Controllers
                                         appChatSession.TopicSummary = "话题:" + DateTime.Now.ToString();
                                         appChatSession.IsCoCreate = 0;
                                         appChatSession.SystemStatus = 0;
+                                        appChatSession.SessionStatus = 0;
                                         appChatSession.CreateTime = DateTime.Now;
 
                                         AppChatSessionInfoBussiness.Add(appChatSession);
@@ -184,6 +187,7 @@ namespace ZSN.AgentBrook.API.Controllers
                                             appChatSession.TopicSummary = "话题:" + DateTime.Now.ToString();
                                             appChatSession.IsCoCreate = 0;
                                             appChatSession.SystemStatus = 0;
+                                            appChatSession.SessionStatus = 0;
                                             appChatSession.CreateTime = DateTime.Now;
                                             AppChatSessionInfoBussiness.Add(appChatSession);
                                         }
@@ -744,6 +748,139 @@ namespace ZSN.AgentBrook.API.Controllers
             {
                 return JsonMsg<string>.Error(null, ErrorCode.DataFormatError);
             }
+        }
+
+        /// <summary>
+        /// FunASR 实时语音识别 WebSocket 代理
+        /// 客户端通过此接口与 FunASR 服务器建立双向 WebSocket 连接
+        /// </summary>
+        [ApiExplorerSettings(GroupName = "V1-Member")]
+        [HttpGet]
+        [MemberCheck(Token = false, MemberToken = true, MemberSignin = false, Sign = false)]
+        public async Task FunASR()
+        {
+            if (!HttpContext.WebSockets.IsWebSocketRequest)
+            {
+                HttpContext.Response.StatusCode = 400;
+                return;
+            }
+
+            // 获取 FunASR 服务器地址
+            string funasrUrl = ConfigHelper.GetString("FunASR:ServerUrl");
+            if (string.IsNullOrEmpty(funasrUrl))
+            {
+                HttpContext.Response.StatusCode = 500;
+                await HttpContext.Response.WriteAsync("FunASR server not configured");
+                return;
+            }
+
+            // 接受客户端 WebSocket 连接
+            using var clientWs = await HttpContext.WebSockets.AcceptWebSocketAsync();
+
+            // 连接到 FunASR 服务器
+            using var funasrWs = new ClientWebSocket();
+            try
+            {
+                await funasrWs.ConnectAsync(new Uri(funasrUrl), HttpContext.RequestAborted);
+            }
+            catch (Exception ex)
+            {
+                ConsoleHelper.WriteError($"FunASR connect failed: {ex.Message}");
+                if (clientWs.State == WebSocketState.Open)
+                {
+                    await clientWs.CloseAsync(WebSocketCloseStatus.InternalServerError, "FunASR server unavailable", HttpContext.RequestAborted);
+                }
+                return;
+            }
+
+            // 双向代理：客户端 <-> FunASR
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(HttpContext.RequestAborted);
+            try
+            {
+                var clientToFunasr = ProxyClientToFunasr(clientWs, funasrWs, cts.Token);
+                var funasrToClient = ProxyFunasrToClient(funasrWs, clientWs, cts.Token);
+
+                await Task.WhenAny(clientToFunasr, funasrToClient);
+                cts.Cancel();
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                ConsoleHelper.WriteError($"FunASR proxy error: {ex.Message}");
+            }
+            finally
+            {
+                if (funasrWs.State == WebSocketState.Open)
+                {
+                    try { await funasrWs.CloseAsync(WebSocketCloseStatus.NormalClosure, "Session ended", CancellationToken.None); } catch { }
+                }
+                if (clientWs.State == WebSocketState.Open)
+                {
+                    try { await clientWs.CloseAsync(WebSocketCloseStatus.NormalClosure, "Session ended", CancellationToken.None); } catch { }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 将客户端消息转发到 FunASR 服务器
+        /// </summary>
+        private static async Task ProxyClientToFunasr(WebSocket clientWs, WebSocket funasrWs, CancellationToken ct)
+        {
+            var buffer = new byte[8192];
+            try
+            {
+                while (clientWs.State == WebSocketState.Open && !ct.IsCancellationRequested)
+                {
+                    var result = await clientWs.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        if (funasrWs.State == WebSocketState.Open)
+                        {
+                            await funasrWs.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client closed", ct);
+                        }
+                        break;
+                    }
+
+                    if (funasrWs.State == WebSocketState.Open)
+                    {
+                        var data = new ArraySegment<byte>(buffer, 0, result.Count);
+                        await funasrWs.SendAsync(data, result.MessageType, result.EndOfMessage, ct);
+                    }
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (WebSocketException) { }
+        }
+
+        /// <summary>
+        /// 将 FunASR 服务器消息转发到客户端
+        /// </summary>
+        private static async Task ProxyFunasrToClient(WebSocket funasrWs, WebSocket clientWs, CancellationToken ct)
+        {
+            var buffer = new byte[8192];
+            try
+            {
+                while (funasrWs.State == WebSocketState.Open && !ct.IsCancellationRequested)
+                {
+                    var result = await funasrWs.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        if (clientWs.State == WebSocketState.Open)
+                        {
+                            await clientWs.CloseAsync(WebSocketCloseStatus.NormalClosure, "FunASR closed", ct);
+                        }
+                        break;
+                    }
+
+                    if (clientWs.State == WebSocketState.Open)
+                    {
+                        var data = new ArraySegment<byte>(buffer, 0, result.Count);
+                        await clientWs.SendAsync(data, result.MessageType, result.EndOfMessage, ct);
+                    }
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (WebSocketException) { }
         }
     }
 }

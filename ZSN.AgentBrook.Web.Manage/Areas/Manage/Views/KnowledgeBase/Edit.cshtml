@@ -4,6 +4,7 @@
     var TagClass = JsonConvert.SerializeObject(ViewBag.TagClass);
     var PreprocessModeList = ViewBag.PreprocessModeList as List<LargeModelInfo>;
     var VectorModelList = ViewBag.VectorModelList as List<LargeModelInfo>;
+    var VisionModelList = ViewBag.VisionModelList as List<LargeModelInfo>;
     var PreviewHost = ViewBag.PreviewHost as string;
 }
 
@@ -123,8 +124,40 @@
                     </div>
                 </div>
 
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        启用图片处理
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="checkbox" name="EnableImageProcessing" value="true"
+                               lay-skin="switch" lay-text="开|关" lay-filter="EnableImageProcessing"
+                               @(KnowledgeBase.EnableImageProcessing ? "checked" : "")>
+                    </div>
+                </div>
 
-                
+                <div class="layui-form-item" id="visionModelSection" style="display:@(KnowledgeBase.EnableImageProcessing ? "block" : "none")">
+                    <label class="layui-form-label">
+                        视觉模型
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <select class="VisionModel" name="VisionModel">
+                                <option value="">请选择视觉模型</option>
+                                @foreach (LargeModelInfo _model in VisionModelList)
+                                {
+                                    <option value="@_model.LargeModelID">@_model.Name</option>
+                                }
+                            </select>
+                            <input type="hidden" name="VisionModelID" value="@KnowledgeBase.VisionModelID"
+                                   autocomplete="off" class="layui-input VisionModelID">
+                            <input type="hidden" name="VisionModelName" value="@KnowledgeBase.VisionModelName"
+                                   autocomplete="off" class="layui-input VisionModelName">
+                        </div>
+                    </div>
+                </div>
+
+
+
 
                 <div class="layui-form-item">
                     <label class="layui-form-label">
@@ -202,7 +235,13 @@
 
             $(".PreprocessMode").val("@KnowledgeBase.PreprocessModelID");
             $(".VectorModel").val("@KnowledgeBase.VectorModelID");
+            $(".VisionModel").val("@KnowledgeBase.VisionModelID");
             form.render("select");
+
+            // 图片处理开关联动
+            form.on('switch(EnableImageProcessing)', function(data){
+                layui.$('#visionModelSection').toggle(data.elem.checked);
+            });
 
             var KnowledgeBasesTypeIDList = [@KnowledgeBase.DicIDList];
 
@@ -231,7 +270,7 @@
                         let blocked = arr.filter(item => item.tag !== true);
                         if (blocked.length > 0) {
                             // 删除不符合规则的项
-                            xm.setValue(arr.filter(item => item.tag === true));
+                            Knowledge_Base_Type.setValue(arr.filter(item => item.tag === true));
                         }
                     }
                 }
@@ -266,6 +305,9 @@
 
                 $('.VectorModelID').val($(".VectorModel option:selected").val());
                 $('.VectorModelName').val($(".VectorModel option:selected").text());
+
+                $('.VisionModelID').val($(".VisionModel option:selected").val());
+                $('.VisionModelName').val($(".VisionModel option:selected").text());
             });
             //提交
             form.on('submit(save)', function (obj) {

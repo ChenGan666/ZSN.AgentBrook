@@ -22,6 +22,7 @@ class Program
             if (name == "World") name = args[0];
         }
 
+        Console.WriteLine($"Hello, {name} from C#");
         return 0;
     }
 }

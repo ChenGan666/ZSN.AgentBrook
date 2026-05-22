@@ -14,14 +14,18 @@ namespace ZSN.AI.Node.VoiceNode.Extensions
         public static IServiceCollection AddVoiceNodeServices(
             this IServiceCollection services, IConfiguration configuration)
         {
+            // 配置绑定
             services.Configure<VoiceNodeOptions>(configuration.GetSection("VoiceNodeOptions"));
             services.Configure<FunASROptions>(configuration.GetSection("FunASROptions"));
 
+            // 核心服务
             services.AddSingleton<IVoiceProviderFactory, VoiceProviderFactory>();
             services.AddSingleton<IAudioPreprocessor, AudioPreprocessor>();
 
+            // Provider 注册
             services.AddSingleton<IVoiceTranscriptionProvider, FunASRProvider>();
 
+            // 执行器
             services.AddTransient<ExecutionVoice>();
 
             return services;

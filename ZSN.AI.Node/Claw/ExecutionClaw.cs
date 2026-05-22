@@ -29,7 +29,7 @@ using ZSN.Utils.Core.Extensions;
 using ZSN.Utils.Core.Helpers;
 using ZSN.AI.Node.Claw.Pipeline;
 
-namespace ZSN.AI.Node
+namespace ZSN.AI.Node.Claw
 {
     /// <summary>
     /// Claw AI 节点执行器
@@ -337,7 +337,7 @@ namespace ZSN.AI.Node
                                 _chatService, masterLogger, tempOptions);
                         }
 
-                        var masterControlContext = new ZSN.AI.Node.Claw.Models.MasterControlContext
+                        var masterControlContext = new MasterControlContext
                         {
                             UserInput = originalTask,
                             SystemPrompt = nodeData.prompt,
@@ -1186,6 +1186,7 @@ namespace ZSN.AI.Node
         }
 
         
+
         /// <summary>
         /// 格式化对话历史供主控判断使用
         /// </summary>
@@ -2354,6 +2355,8 @@ namespace ZSN.AI.Node
                         asyncTaskInfo.UpdateTime = DateTime.Now;
                         TaskInfoBussiness.Update(asyncTaskInfo);
                         
+                        Console.WriteLine($"[ContinueFromStep] 异步任务已完成 (等待新回调) - AsyncTaskID: {asyncTaskID}, " +
+                                        $"Iteration: {resumeIteration}, Pending: {pendingSteps}");
                         return asyncTaskID;
                     }
 
@@ -2458,6 +2461,7 @@ namespace ZSN.AI.Node
                 asyncTaskInfo.State = TaskState.Completed;
                 asyncTaskInfo.UpdateTime = DateTime.Now;
                 TaskInfoBussiness.Update(asyncTaskInfo);
+                Console.WriteLine($"[ContinueFromStep] 异步任务已完成 - AsyncTaskID: {asyncTaskID}");
                 
                 // ✅ 修复: 更新所有相关的 ClawAIWorkflowStep 任务状态为 Completed
                 // 这包括初始异步任务和所有中间层的并行任务
@@ -2475,10 +2479,13 @@ namespace ZSN.AI.Node
                         task.UpdateTime = DateTime.Now;
                         TaskInfoBussiness.Update(task);
                         updatedCount++;
+                        Console.WriteLine($"[ContinueFromStep] 更新相关异步任务 - TaskID: {task.TaskID}, ProcessesID: {task.ProcessesID}");
                     }
+                    Console.WriteLine($"[ContinueFromStep] 共更新 {updatedCount} 个相关异步任务状态为 Completed");
                 }
                 catch (Exception updateEx)
                 {
+                    Console.WriteLine($"[ContinueFromStep] 更新相关异步任务失败: {updateEx.Message}");
                     LoggerHelper.LogWarning(_logger, ClawLogModules.CLAW,
                         $"[ContinueFromStep] 更新相关异步任务失败 - ProcessesID: {ProcessesID}", updateEx);
                 }

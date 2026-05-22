@@ -21,6 +21,7 @@ pub fn run() {
             commands::system::get_app_version,
             commands::audio::start_audio_capture,
             commands::audio::stop_audio_capture,
+            commands::notification::send_system_notification,
         ])
         .manage(commands::audio::AudioState::default())
         .setup(|app| {

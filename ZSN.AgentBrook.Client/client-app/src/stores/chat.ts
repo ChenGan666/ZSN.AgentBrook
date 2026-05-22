@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { SessionInfo, ChatMessage, AppInfo } from '@/types/chat'
+import type { SessionInfo, ChatMessage, AppInfo, SessionStatusInfo } from '@/types/chat'
 import * as sessionApi from '@/services/session'
 import * as chatApi from '@/services/chat'
 import { sessionCache, messageCache } from '@/utils/cache'
@@ -41,6 +41,7 @@ interface ChatState {
   loadingSessions: boolean
   loadingMessages: boolean
   sessionsTotal: number
+  runningSessionIds: string[]
 }
 
 export const useChatStore = defineStore('chat', {
@@ -53,11 +54,15 @@ export const useChatStore = defineStore('chat', {
     loadingSessions: false,
     loadingMessages: false,
     sessionsTotal: 0,
+    runningSessionIds: [],
   }),
 
   getters: {
     currentSession(): SessionInfo | undefined {
       return this.sessions.find((s) => s.ChatSessionID === this.currentSessionId)
+    },
+    hasRunningSessions(): boolean {
+      return this.runningSessionIds.length > 0
     },
   },
 
@@ -130,6 +135,37 @@ export const useChatStore = defineStore('chat', {
 
     addMessage(message: ChatMessage) {
       this.messages.push(message)
+    },
+
+    addRunningSession(sessionId: string) {
+      if (!sessionId || this.runningSessionIds.includes(sessionId)) return
+      this.runningSessionIds.push(sessionId)
+      const session = this.sessions.find(s => s.ChatSessionID === sessionId)
+      if (session) session.SessionStatus = 1
+    },
+
+    removeRunningSession(sessionId: string) {
+      this.runningSessionIds = this.runningSessionIds.filter(id => id !== sessionId)
+      const session = this.sessions.find(s => s.ChatSessionID === sessionId)
+      if (session && session.SessionStatus === 1) {
+        session.SessionStatus = 0
+      }
+    },
+
+    updateSessionStatusFromHeartbeat(list: SessionStatusInfo[]): SessionStatusInfo[] {
+      const completedList: SessionStatusInfo[] = []
+      for (const item of list) {
+        const session = this.sessions.find(s => s.ChatSessionID === item.ChatSessionID)
+        if (session) {
+          session.SessionStatus = item.SessionStatus
+        }
+        // 已完成或失败的会话，从运行列表移除
+        if (item.SessionStatus !== 1) {
+          this.removeRunningSession(item.ChatSessionID)
+          completedList.push(item)
+        }
+      }
+      return completedList
     },
   },
 })

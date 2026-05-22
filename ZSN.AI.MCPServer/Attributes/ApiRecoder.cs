@@ -29,6 +29,7 @@ namespace ZSN.AI.MCPServer.Attributes
             _actionArguments = context.ActionArguments;
             
             // 调试日志
+            System.Diagnostics.Debug.WriteLine($"[ApiRecoder] OnActionExecuting - Path: {context.HttpContext.Request.Path}, Arguments Count: {_actionArguments?.Count ?? 0}");
             
             base.OnActionExecuting(context);
         }
@@ -36,20 +37,24 @@ namespace ZSN.AI.MCPServer.Attributes
         public override void OnActionExecuted(ActionExecutedContext context)
         {
             // 调试日志
+            System.Diagnostics.Debug.WriteLine($"[ApiRecoder] OnActionExecuted - Path: {context.HttpContext.Request.Path}");
             
             IsGetFile = context.HttpContext.Request.Path.Value.IndexOf("api/File/Get") > -1;
             
             // 调试日志
+            System.Diagnostics.Debug.WriteLine($"[ApiRecoder] IsGetFile: {IsGetFile}");
             
             if (!IsGetFile)
             {
                 var r = context.HttpContext.Request;
                 
                 // 调试日志 - 在调用GetRequestBodyParams之前
+                System.Diagnostics.Debug.WriteLine($"[ApiRecoder] 准备调用GetRequestBodyParams...");
                 
                 var bodyParams = this.GetRequestBodyParams(context);
                 
                 // 调试日志 - 查看返回结果
+                System.Diagnostics.Debug.WriteLine($"[ApiRecoder] GetRequestBodyParams返回: {JsonConvert.SerializeObject(bodyParams)}");
                 
                 var log = new
                 {
@@ -110,6 +115,8 @@ namespace ZSN.AI.MCPServer.Attributes
         public object GetRequestBodyParams(ActionExecutedContext actionContext) 
         {
             // 调试日志
+            System.Diagnostics.Debug.WriteLine($"[ApiRecoder] GetRequestBodyParams 被调用");
+            System.Diagnostics.Debug.WriteLine($"[ApiRecoder] _actionArguments is null: {_actionArguments == null}, Count: {_actionArguments?.Count ?? 0}");
             
             try
             {

@@ -47,6 +47,9 @@ namespace ZSN.AI.Core.Service.Providers
                 httpClient.DefaultRequestHeaders.Clear();
                 httpClient.DefaultRequestHeaders.Add("Authorization", modelInfo.ModelKey);
 
+                Console.WriteLine($"[Compshare视频] 提交任务到: {apiUrl}");
+                Console.WriteLine($"[Compshare视频] 模型: {modelInfo.ModelName}");
+                //Console.WriteLine($"[Compshare视频] 请求体: {jsonContent}");
 
                 // 调用API
                 var response = await httpClient.PostAsync(apiUrl, content);
@@ -54,16 +57,19 @@ namespace ZSN.AI.Core.Service.Providers
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[Compshare视频] API错误响应: {errorContent}");
                     throw new Exception($"API调用失败: {response.StatusCode}, {errorContent}");
                 }
 
                 var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[Compshare视频] API响应: {responseContent}");
 
                 // 解析响应
                 return ParseSubmitResponse(responseContent);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[Compshare视频] 提交任务失败: {ex.Message}");
                 throw;
             }
         }
@@ -85,6 +91,7 @@ namespace ZSN.AI.Core.Service.Providers
                 httpClient.DefaultRequestHeaders.Clear();
                 httpClient.DefaultRequestHeaders.Add("Authorization", modelInfo.ModelKey);
 
+                Console.WriteLine($"[Compshare视频] 查询任务状态: {apiUrl}");
 
                 // 调用API
                 var response = await httpClient.GetAsync(apiUrl);
@@ -92,16 +99,19 @@ namespace ZSN.AI.Core.Service.Providers
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[Compshare视频] API错误响应: {errorContent}");
                     throw new Exception($"API调用失败: {response.StatusCode}, {errorContent}");
                 }
 
                 var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[Compshare视频] API响应: {responseContent}");
 
                 // 解析响应
                 return ParseStatusResponse(responseContent);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[Compshare视频] 查询任务状态失败: {ex.Message}");
                 throw;
             }
         }
@@ -429,6 +439,7 @@ namespace ZSN.AI.Core.Service.Providers
                 if (response.TaskStatus == VideoTaskStatus.Failure && string.IsNullOrEmpty(response.ErrorMessage))
                 {
                     // 记录完整的响应以便调试
+                    Console.WriteLine($"[Compshare视频] 任务失败但未返回错误信息，完整响应: {responseContent}");
                     response.ErrorMessage = "任务失败，但API未返回具体错误信息。请检查：1)图片URL是否可访问 2)图片格式是否支持 3)模型参数是否正确";
                 }
             }
@@ -474,6 +485,7 @@ namespace ZSN.AI.Core.Service.Providers
 
             // 否则认为是纯Base64字符串，转换为Data URI格式
             // 默认使用PNG格式，实际应该根据图片内容判断
+            Console.WriteLine($"[Compshare视频] 将Base64字符串转换为Data URI格式");
             return $"data:image/png;base64,{input}";
         }
     }

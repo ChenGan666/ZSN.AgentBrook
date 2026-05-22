@@ -6,6 +6,7 @@ using ZSN.AI.Entity;
 using ZSN.AI.Service.Attributes;
 using ZSN.AI.Service.Controllers;
 using ZSN.Utils.Core.Extensions;
+using ZSN.Utils.Core.Helpers;
 
 namespace ZSN.AgentBrook.API.Controllers
 {
@@ -40,6 +41,11 @@ namespace ZSN.AgentBrook.API.Controllers
             if (jObject.JsonGetValue<int>("status") != -1)
             {
                 List<AppInfo> _list = AppInfoBussiness.GetList(" SystemStatus=2 ");
+
+                foreach (var item in _list)
+                {
+                    item.AICON = string.Format(ConfigHelper.GetString("previewHost"), item.AICON);
+                }
 
                 return JsonMsg<List<AppInfo>>.OK(_list);
             }

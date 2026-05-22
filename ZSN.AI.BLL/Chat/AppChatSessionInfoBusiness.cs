@@ -60,30 +60,30 @@ namespace ZSN.AI.BLL
         /// 获得数据列表
         /// </summary>
 		public static List<AppChatSessionInfo> GetList(string strWhere = "")
-        {
+		{
             return AppChatSessionInfoDataSet_ToList(DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_GetList(strWhere).Tables[0]);
-        }
+		}
         /// <summary>
         /// 获得前几行数据
         /// </summary>
 		public static List<AppChatSessionInfo> GetList(int top, string strWhere, string filedOrder)
-        {
+		{
             return AppChatSessionInfoDataSet_ToList(DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_GetList(top, strWhere, filedOrder).Tables[0]);
-        }
+		}
         /// <summary>
         /// 获取记录总数
         /// </summary>
 		public static int GetRecordCount(string strWhere = "")
-        {
+		{
             return DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_GetRecordCount(strWhere);
-        }
+		}
         /// <summary>
         /// 分页获取数据列表
         /// </summary>
 		public static List<AppChatSessionInfo> GetListByPage(string strWhere, string orderBy, int startIndex, int endIndex)
-        {
+		{
             return AppChatSessionInfoDataSet_ToList(DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_GetListByPage(strWhere, orderBy, startIndex, endIndex).Tables[0]);
-        }
+		}
 		/// <summary>
         /// 分页获取数据列表
         /// </summary>
@@ -110,6 +110,41 @@ namespace ZSN.AI.BLL
             }
             return list;
 		}
-		#endregion 
+		/// <summary>
+        /// 更新会话状态
+        /// </summary>
+		public static bool UpdateSessionStatus(string chatSessionID, int sessionStatus)
+		{
+			return DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_UpdateSessionStatus(chatSessionID, sessionStatus);
+		}
+		/// <summary>
+        /// 根据会话ID列表批量查询会话状态
+        /// </summary>
+		public static List<AppChatSessionInfo> GetSessionStatusList(string sessionIDs)
+		{
+			return DatabaseProvider.GetAppChatSessionInfo(ConnectionName).AppChatSessionInfo_GetSessionStatusList(sessionIDs);
+		}
+		/// <summary>
+        /// 获取会话最后一条assistant消息的摘要（用于通知）
+        /// </summary>
+		public static string GetLastAssistantSummary(string appID, string sessionID, int maxLength = 120)
+		{
+			try
+			{
+				var logs = AppChatLogInfoBussiness.GetListBySessionID(appID, sessionID);
+				if (logs == null || logs.Count == 0) return string.Empty;
+				var lastAssistant = logs.LastOrDefault(l => l.Role != null && l.Role.Equals("Assistant", StringComparison.OrdinalIgnoreCase));
+				if (lastAssistant == null) return string.Empty;
+				string content = lastAssistant.Content?.ToString() ?? string.Empty;
+				if (content.Length > maxLength)
+					content = content.Substring(0, maxLength) + "...";
+				return content;
+			}
+			catch
+			{
+				return string.Empty;
+			}
+		}
+		#endregion
 	}
 }

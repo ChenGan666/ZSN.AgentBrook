@@ -12,6 +12,9 @@ namespace ZSN.AI.Node.VoiceNode.Services
             "发言人F", "发言人G", "发言人H", "发言人I", "发言人J"
         };
 
+        /// <summary>
+        /// 规范化说话人标签（应用自定义映射或默认标签）
+        /// </summary>
         public static void Normalize(TranscriptionResult result, Dictionary<string, string> labelMap)
         {
             if (result.Speakers == null || result.Speakers.Count == 0) return;

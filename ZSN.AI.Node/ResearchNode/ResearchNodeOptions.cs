@@ -18,9 +18,11 @@ namespace ZSN.AI.Node.ResearchNode
         public string BrowserUserAgent { get; set; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
         public List<string> BlockedDomains { get; set; } = new();
 
+        // 缓存配置
         public bool EnableContentCache { get; set; } = true;
         public int CacheExpiryHours { get; set; } = 24;
 
+        // 超时保护
         public int OverallTimeoutMinutes { get; set; } = 5;
     }
 }

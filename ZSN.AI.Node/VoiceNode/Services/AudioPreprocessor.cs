@@ -24,6 +24,8 @@ namespace ZSN.AI.Node.VoiceNode.Services
             AudioPreprocessOptions options,
             CancellationToken cancellationToken = default)
         {
+            _logger.LogInformation("[AudioPreprocessor] 开始预处理: {Path}", inputPath);
+
             var tempDir = string.IsNullOrEmpty(_options.TempFileDirectory)
                 ? Path.GetTempPath()
                 : _options.TempFileDirectory;
@@ -56,9 +58,11 @@ namespace ZSN.AI.Node.VoiceNode.Services
 
             if (needsConversion)
             {
+                // FFmpeg 格式转换
                 processedPath = Path.Combine(tempDir, $"voice_{Guid.NewGuid():N}.wav");
                 await ConvertToWavAsync(localPath, processedPath, options, cancellationToken);
                 wasConverted = true;
+                _logger.LogInformation("[AudioPreprocessor] 格式转换完成: {Src} -> {Dst}", originalFormat, ".wav");
             }
 
             // 获取音频时长
@@ -71,16 +75,17 @@ namespace ZSN.AI.Node.VoiceNode.Services
             // 清理下载的临时文件（如果已转换为新文件）
             if (downloaded && wasConverted)
             {
-                try { File.Delete(localPath); } catch { }
+                try { File.Delete(localPath); } catch { /* 忽略清理失败 */ }
             }
 
             // VAD 分段（长音频超过阈值时自动分段）
             List<AudioSegmentInfo> segments = null;
             if (options.AutoSegmentThresholdSeconds > 0 && durationSeconds > options.AutoSegmentThresholdSeconds)
             {
-                _logger.LogInformation("长音频 {Duration:F1}s 超过阈值 {Threshold}s，开始分段",
+                _logger.LogInformation("[AudioPreprocessor] 长音频 {Duration:F1}s > 阈值 {Threshold}s，开始 VAD 分段",
                     durationSeconds, options.AutoSegmentThresholdSeconds);
                 segments = await SegmentAudioAsync(processedPath, durationSeconds, tempDir, cancellationToken);
+                _logger.LogInformation("[AudioPreprocessor] VAD 分段完成: {Count} 段", segments.Count);
             }
 
             var result = new AudioPreprocessResult
@@ -93,6 +98,9 @@ namespace ZSN.AI.Node.VoiceNode.Services
                 RequiresCleanup = wasConverted || downloaded || (segments != null && segments.Count > 0)
             };
 
+            _logger.LogInformation("[AudioPreprocessor] 预处理完成: 时长={Duration:F1}s, 转换={Converted}, 分段={Segs}",
+                durationSeconds, wasConverted, segments?.Count ?? 0);
+
             return result;
         }
 
@@ -101,16 +109,26 @@ namespace ZSN.AI.Node.VoiceNode.Services
             return extension != ".wav" && extension != ".pcm";
         }
 
+        /// <summary>
+        /// 使用 FFmpeg silencedetect 滤镜检测静音段，按静音位置分割音频
+        /// 如果无法检测静音，则按固定时长分段
+        /// </summary>
         private async Task<List<AudioSegmentInfo>> SegmentAudioAsync(
             string audioPath, double totalDuration, string tempDir, CancellationToken ct)
         {
+            // 先尝试静音检测分段
             var segments = await SegmentBySilenceDetectionAsync(audioPath, totalDuration, tempDir, ct);
             if (segments != null && segments.Count > 1)
                 return segments;
 
+            // 降级：按固定时长分段（每段约 targetSeconds 秒）
+            _logger.LogInformation("[AudioPreprocessor] 静音检测不可用，使用固定时长分段");
             return SegmentByFixedDuration(audioPath, totalDuration, tempDir);
         }
 
+        /// <summary>
+        /// FFmpeg silencedetect 静音检测分段
+        /// </summary>
         private async Task<List<AudioSegmentInfo>> SegmentBySilenceDetectionAsync(
             string audioPath, double totalDuration, string tempDir, CancellationToken ct)
         {
@@ -137,10 +155,11 @@ namespace ZSN.AI.Node.VoiceNode.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "silencedetect 执行失败");
+                _logger.LogWarning(ex, "[AudioPreprocessor] silencedetect 执行失败");
                 return null;
             }
 
+            // 解析静音段：silence_start 和 silence_end
             var silenceRanges = new List<(double Start, double End)>();
             double? silenceStart = null;
 
@@ -169,6 +188,7 @@ namespace ZSN.AI.Node.VoiceNode.Services
             if (silenceRanges.Count == 0)
                 return null;
 
+            // 按静音段中间位置切分
             var segments = new List<AudioSegmentInfo>();
             double segStart = 0;
             var baseName = Path.GetFileNameWithoutExtension(audioPath);
@@ -180,8 +200,10 @@ namespace ZSN.AI.Node.VoiceNode.Services
                 var cutPoint = (silStart + silEnd) / 2.0;
                 var segDuration = cutPoint - segStart;
 
-                if (segDuration < 5.0)
+                if (segDuration < 5.0) // 跳过过短的段
+                {
                     continue;
+                }
 
                 var segPath = Path.Combine(tempDir, $"{baseName}_seg{i}{ext}");
                 var ffmpegArgs = $"-y -i \"{audioPath}\" -ss {segStart:F3} -to {cutPoint:F3} -c copy \"{segPath}\"";
@@ -199,12 +221,13 @@ namespace ZSN.AI.Node.VoiceNode.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "分段 {Index} 切割失败", i);
+                    _logger.LogWarning(ex, "[AudioPreprocessor] 分段 {Index} 切割失败", i);
                 }
 
                 segStart = cutPoint;
             }
 
+            // 最后一段
             if (segStart < totalDuration - 1.0)
             {
                 var segPath = Path.Combine(tempDir, $"{baseName}_seg{silenceRanges.Count}{ext}");
@@ -224,16 +247,20 @@ namespace ZSN.AI.Node.VoiceNode.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "最后一段切割失败");
+                    _logger.LogWarning(ex, "[AudioPreprocessor] 最后一段切割失败");
                 }
             }
 
             return segments.Count > 0 ? segments : null;
         }
 
+        /// <summary>
+        /// 固定时长分段（降级方案）
+        /// </summary>
         private List<AudioSegmentInfo> SegmentByFixedDuration(
             string audioPath, double totalDuration, string tempDir)
         {
+            // 每段目标 240 秒（4分钟），留一些余量
             var targetSeconds = 240.0;
             var segments = new List<AudioSegmentInfo>();
             var baseName = Path.GetFileNameWithoutExtension(audioPath);
@@ -253,12 +280,15 @@ namespace ZSN.AI.Node.VoiceNode.Services
                 });
             }
 
+            // 注意：固定分段模式下，实际切割由 ExecutionVoice 的 TranscribeSegmentsAsync
+            // 在调用时通过 FFmpeg -ss/-to 切割，此处仅生成分段信息
             return segments;
         }
 
         private async Task<string> DownloadFileAsync(string url, string tempDir, CancellationToken ct)
         {
             var fileName = Guid.NewGuid().ToString("N");
+            // 尝试从 URL 提取扩展名
             try
             {
                 var uri = new Uri(url);
@@ -276,6 +306,7 @@ namespace ZSN.AI.Node.VoiceNode.Services
             var outputPath = Path.Combine(tempDir, fileName);
 
             using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+            _logger.LogInformation("[AudioPreprocessor] 下载文件: {Url}", url);
             var data = await httpClient.GetByteArrayAsync(url, ct);
             await File.WriteAllBytesAsync(outputPath, data, ct);
 
@@ -301,6 +332,7 @@ namespace ZSN.AI.Node.VoiceNode.Services
             if (double.TryParse(output?.Trim(), out var duration))
                 return duration;
 
+            // ffprobe 不可用时通过文件大小估算（16kHz 16bit mono）
             var fileInfo = new FileInfo(filePath);
             return fileInfo.Length / (16000.0 * 2);
         }
@@ -353,6 +385,7 @@ namespace ZSN.AI.Node.VoiceNode.Services
 
             if (process.ExitCode != 0)
             {
+                _logger.LogWarning("[AudioPreprocessor] 进程退出码 {Code}: {Error}", process.ExitCode, error);
                 throw new Exception($"音频处理进程失败 (ExitCode={process.ExitCode}): {error}");
             }
 

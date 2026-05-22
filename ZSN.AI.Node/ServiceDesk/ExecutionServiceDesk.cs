@@ -14,7 +14,7 @@ using ZSN.AI.Node.Claw.Pipeline;
 using ZSN.AI.Service.Helpers;
 using ZSN.Utils.Core.Extensions;
 
-namespace ZSN.AI.Node
+namespace ZSN.AI.Node.ServiceDesk
 {
     /// <summary>
     /// ServiceDesk 节点执行器
@@ -78,6 +78,7 @@ namespace ZSN.AI.Node
                 batchWriter.Append("\n=== ServiceDesk 节点开始执行 ===");
                 throttler.MarkDirty();
 
+                // ── 1. 初始化：解析配置 ──
                 var nodeData = JsonConvert.DeserializeObject<ServiceDeskData>(config.data.ToString());
                 if (nodeData == null)
                     throw new Exception("ServiceDesk 节点配置解析失败");
@@ -95,6 +96,7 @@ namespace ZSN.AI.Node
                 Logs.Enqueue($"[Init] 用户消息: {userMessage}");
                 throttler.MarkDirty();
 
+                // ── 2. 获取会话状态 ──
                 var sessionState = await _sessionStateManager.GetOrCreateSessionStateAsync(
                     SessionID, AppID, MemberID);
 
@@ -122,6 +124,7 @@ namespace ZSN.AI.Node
                     }
                 }
 
+                // ── 3. 快速分类（问候/闲聊直接回复，其余走 FunctionCall） ──
                 var memoryContext = BuildSimpleMemoryContext(sessionState);
                 var classification = await _requestClassifier.ClassifyRequestAsync(
                     userMessage, memoryContext, nodeData);
@@ -180,6 +183,7 @@ namespace ZSN.AI.Node
 
                 throttler.MarkDirty();
 
+                // ── 4. 状态更新（检测到意图时） ──
                 if (!string.IsNullOrEmpty(classification.Intent) && nodeData.IntentRules?.Count > 0)
                 {
                     var intentRule = nodeData.IntentRules.FirstOrDefault(r => r.IntentName == classification.Intent);
@@ -204,6 +208,7 @@ namespace ZSN.AI.Node
                     }
                 }
 
+                // ── 5. 输出变量 ──
                 outputs.Add(new Output { varname = "response", value = response.Content ?? "", nodeId = config.id });
                 outputs.Add(new Output { varname = "confidence", value = response.Confidence.ToString("F2"), nodeId = config.id });
                 outputs.Add(new Output { varname = "strategy", value = response.Strategy.ToString(), nodeId = config.id });
@@ -211,6 +216,7 @@ namespace ZSN.AI.Node
 
                 throttler.MarkDirty();
 
+                // ── 6. 触发下一节点 ──
                 Logs.Enqueue("[NextNode] 准备触发下一节点");
                 WorkflowNodeInfoBussiness.NextNode(
                     AppID, SessionID, ProcessesID, TaskID, FromMainTaskID,

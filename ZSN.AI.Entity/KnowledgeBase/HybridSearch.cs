@@ -35,6 +35,12 @@ namespace ZSN.AI.Entity.KnowledgeBase
         /// 检索元数据
         /// </summary>
         public SearchResultMetadata Metadata { get; set; } = new();
+
+        /// <summary>
+        /// chunk关联图片（key=chunkId, value=关联图片列表）
+        /// 仅当 EnableImageSearch=true 时填充
+        /// </summary>
+        public Dictionary<string, List<ImageSearchResult>> ChunkImages { get; set; } = new();
     }
 
     /// <summary>
@@ -153,6 +159,12 @@ namespace ZSN.AI.Entity.KnowledgeBase
         /// 融合策略
         /// </summary>
         public FusionStrategy FusionStrategy { get; set; } = FusionStrategy.WeightedSum;
+
+        /// <summary>
+        /// 是否启用图片检索（返回关联图片信息），默认开启
+        /// 需同时满足知识库 EnableImageProcessing=true 才实际生效
+        /// </summary>
+        public bool EnableImageSearch { get; set; } = true;
     }
 
     /// <summary>

@@ -26,6 +26,7 @@ namespace ZSN.AgentBrook.AutoJob
         }
         public async Task<int> Auto()
         {
+            //Console.WriteLine("ZSN.AI.AutoJob.Job![JobEvent_FileChunkJob]");
             int num = 0;
             try
             {

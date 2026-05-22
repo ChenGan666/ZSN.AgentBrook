@@ -1,14 +1,14 @@
 <template>
   <div class="settings-section">
-    <h3>服务端配置</h3>
+    <h3>{{ t('server.title') }}</h3>
     <el-form label-position="top">
-      <el-form-item label="API 地址">
+      <el-form-item :label="t('server.apiUrl')">
         <el-input v-model="settingsStore.apiBaseUrl" placeholder="https://api.example.com" />
       </el-form-item>
       <el-form-item>
-        <el-button @click="testConnection" :loading="testing">测试连接</el-button>
+        <el-button @click="testConnection" :loading="testing">{{ t('server.testConnection') }}</el-button>
         <el-tag v-if="testResult !== null" :type="testResult ? 'success' : 'danger'" class="test-result">
-          {{ testResult ? '连接成功' : '连接失败' }}
+          {{ testResult ? t('server.connectionSuccess') : t('server.connectionFailed') }}
         </el-tag>
       </el-form-item>
     </el-form>
@@ -17,9 +17,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'
 import http from '@/services/http'
 
+const { t } = useI18n()
 const settingsStore = useSettingsStore()
 const testing = ref(false)
 const testResult = ref<boolean | null>(null)

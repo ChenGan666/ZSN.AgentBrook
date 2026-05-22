@@ -42,6 +42,7 @@ namespace ZSN.AI.Core.Service
                 };
                 process.OutputDataReceived += (sender, eventArgs) =>
                 {
+                    //Console.WriteLine($"{eventArgs.Data.ConvertToString()}");
                     if (!eventArgs.Data.ConvertToString().Contains("The handle is invalid"))
                     {
                         OnLogMessageReceived(eventArgs.Data.ConvertToString());
@@ -49,6 +50,7 @@ namespace ZSN.AI.Core.Service
                 };
                 process.ErrorDataReceived += (sender, eventArgs) =>
                 {
+                    Console.WriteLine($"{eventArgs.Data.ConvertToString()}");
                     if (!eventArgs.Data.ConvertToString().Contains("The handle is invalid"))
                     {
                         OnLogMessageReceived(eventArgs.Data.ConvertToString());

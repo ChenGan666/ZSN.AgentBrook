@@ -479,6 +479,7 @@ strSql.Append("Results=@Results,");
                         {
                             // 1213 = Deadlock found when trying to get lock
                             tran.Rollback();
+                            Console.WriteLine($"[TaskInfoManage] 死锁检测，第 {attempt + 1} 次重试...");
                             System.Threading.Thread.Sleep(100 * (attempt + 1));
                         }
                         catch

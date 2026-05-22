@@ -50,7 +50,6 @@ namespace ZSN.AI.KnowledgeBase.Services
             _embeddingService = embeddingService;
             _knowledgeGraphService = knowledgeGraphService;
             _vectorRepository = vectorRepository;
-            _vectorRepository = vectorRepository;
             _imageProcessingPipeline = imageProcessingPipeline;
             _imageRepository = imageRepository;
             _imageStorageService = imageStorageService;
@@ -176,51 +175,6 @@ namespace ZSN.AI.KnowledgeBase.Services
                     throw new NotSupportedException($"不支持的文件格式: {extension}");
             }
 
-            return await ProcessDocumentFromTextAsync(documentId, fileName, content, knowledgeBaseId, options, progress, cancellationToken);
-        }
-
-        /// <summary>
-        /// 处理文件并支持图片处理
-        /// </summary>
-        public async Task<DocumentProcessingResult> ProcessDocumentFromFileWithImagesAsync(
-            string documentId,
-            string filePath,
-            string knowledgeBaseId,
-            DocumentProcessingOptions? options = null,
-            IProgress<DocumentProcessingProgress>? progress = null,
-            CancellationToken cancellationToken = default)
-        {
-            _logger.LogInformation("开始处理文档文件（含图片）: {FilePath}", filePath);
-
-            if (!File.Exists(filePath))
-                throw new FileNotFoundException($"文件不存在: {filePath}");
-
-            var fileName = Path.GetFileName(filePath);
-            var extension = Path.GetExtension(filePath).ToLowerInvariant();
-
-            string content;
-            switch (extension)
-            {
-                case ".pdf":
-                    content = await ExtractTextFromPdfAsync(filePath, cancellationToken);
-                    break;
-                case ".docx":
-                    content = await ExtractTextFromWordAsync(filePath, cancellationToken);
-                    break;
-                case ".xlsx":
-                    content = await ExtractTextFromExcelAsync(filePath, cancellationToken);
-                    break;
-                case ".pptx":
-                    content = await ExtractTextFromPowerPointAsync(filePath, cancellationToken);
-                    break;
-                case ".txt":
-                case ".md":
-                    content = await File.ReadAllTextAsync(filePath, cancellationToken);
-                    break;
-                default:
-                    throw new NotSupportedException($"不支持的文件格式: {extension}");
-            }
-
             var textResult = await ProcessDocumentFromTextAsync(documentId, fileName, content, knowledgeBaseId, options, progress, cancellationToken);
 
             // 图片处理（独立于文本处理，失败不影响文本入库）
@@ -228,7 +182,7 @@ namespace ZSN.AI.KnowledgeBase.Services
             {
                 try
                 {
-                    var imageOptions = new ImageProcessingOptions
+                    var imageOptions = new Models.ImageProcessingOptions
                     {
                         VisionModelId = options?.VisionModelId
                     };
@@ -267,6 +221,9 @@ namespace ZSN.AI.KnowledgeBase.Services
             try
             {
                 _logger.LogInformation("开始处理文档: {FileName}, ID: {DocumentId}", fileName, documentId);
+
+                // 清理旧数据（重新处理时）
+                await CleanupDocumentDataAsync(documentId, knowledgeBaseId, cancellationToken);
 
                 // 步骤1: 计算MD5并创建存储目录
                 UpdateStatus(documentId, ProcessingStatus.Parsing, "计算文档MD5", 5);

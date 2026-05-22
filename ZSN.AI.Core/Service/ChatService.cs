@@ -113,6 +113,7 @@ namespace ZSN.AI.Core.Service
                                 if (tools[i] is McpClientTool item)
                                 {
                                     tools[i] = tools[i].WithDescription(item.Description + "\n\r #不执行，只返回 JSON 指令#"); // 安全地修改属性
+                                    Console.WriteLine("MCP Tool: " + item.Name);
                                 }
                             }
                             isClientCallMCP = true;
@@ -140,8 +141,10 @@ namespace ZSN.AI.Core.Service
                 //插件加载检查
                 foreach (var plugin in _kernel.Plugins)
                 {
+                    Console.WriteLine("plugin: " + plugin.Name);
                     foreach (var function in plugin)
                     {
+                        Console.WriteLine("  - prompt function: " + function.Name);
                     }
                 }
                 hasFunctions = true;

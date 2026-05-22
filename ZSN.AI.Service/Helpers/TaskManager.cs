@@ -151,6 +151,7 @@ namespace ZSN.AI.Service.Helpers
                 if (taskInfos != null && taskInfos.Count > 0)
                 {
                     var records = getRecords();
+                    //Console.WriteLine(JsonConvert.SerializeObject(records));
                     if (records != null && records.Count > 0)
                     {
                         var endRecord = FindEndRecord(records, isAgentNode); // 尝试定位结束记录

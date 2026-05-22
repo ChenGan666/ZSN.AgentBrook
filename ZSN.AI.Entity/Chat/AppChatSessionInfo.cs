@@ -33,6 +33,10 @@ namespace ZSN.AI.Entity
         /// </summary>
 		public Int32 SystemStatus { get; set; } = (Int32)(0);
 		/// <summary>
+        /// SessionStatus 会话状态 完成=0 运行中=1 失败=-1
+        /// </summary>
+		public Int32 SessionStatus { get; set; } = (Int32)(0);
+		/// <summary>
         /// CreateTime
         /// </summary>
 		public DateTime CreateTime { get; set; } 

@@ -774,6 +774,7 @@ namespace ZSN.AI.Entity
         public new List<Inputs> inputs { get; set; } = new List<Inputs>();
         public new List<Output> output { get; set; } = new List<Output>();
 
+        // ── 知识库配置 ──
 
         /// <summary>绑定的知识库列表</summary>
         public List<KnowledgeBaseInfo> knowledgeBase { get; set; } = new List<KnowledgeBaseInfo>();
@@ -799,6 +800,7 @@ namespace ZSN.AI.Entity
         /// <summary>最大上下文分块数（RAG Prompt 中使用的检索结果数）</summary>
         public int? MaxContextChunks { get; set; }
 
+        // ── 置信度阈值配置 ──
 
         /// <summary>高置信度阈值（直接回复）</summary>
         public float HighConfidenceThreshold { get; set; } = 0.85f;
@@ -812,14 +814,17 @@ namespace ZSN.AI.Entity
         /// <summary>置信度计算权重配置</summary>
         public ConfidenceWeightConfig ConfidenceWeights { get; set; } = new ConfidenceWeightConfig();
 
+        // ── 人设 Prompt 配置 ──
 
         /// <summary>人设 Prompt（覆盖默认）</summary>
         public string PersonaPrompt { get; set; }
 
+        // ── 前端展示配置 ──
 
         /// <summary>是否显示知识来源标注</summary>
         public bool ShowSourceCitation { get; set; } = true;
 
+        // ── 问候/简单对话配置 ──
 
         /// <summary>问候语模式列表</summary>
         public List<string> GreetingPatterns { get; set; } = new List<string>
@@ -833,10 +838,12 @@ namespace ZSN.AI.Entity
             "谢谢", "感谢", "再见", "拜拜", "好的", "知道了", "嗯"
         };
 
+        // ── 意图识别配置 ──
 
         /// <summary>意图规则列表（可配置的业务意图）</summary>
         public List<IntentRule> IntentRules { get; set; } = new List<IntentRule>();
 
+        // ── 升级配置 ──
 
         /// <summary>是否允许升级到 ClawAI</summary>
         public bool EnableEscalation { get; set; } = false;
@@ -847,47 +854,102 @@ namespace ZSN.AI.Entity
         /// <summary>兜底话术</summary>
         public string FallbackMessage { get; set; } = "抱歉，我暂时无法回答您的问题，请稍后再试或联系人工客服。";
 
+        // ── 并发控制 ──
 
         /// <summary>最大并发数</summary>
         public int MaxConcurrency { get; set; } = 15;
 
+        // ── Embedding 模型配置 ──
 
         /// <summary>Embedding 模型配置</summary>
         public LargeModelInfo EmbeddingModel { get; set; }
     }
 
-    /// <summary>Research 研究节点配置</summary>
-    public class ResearchNodeData : NodeData
+    /// <summary>
+    /// Research 节点配置数据
+    /// </summary>
+    public partial class ResearchNodeData : LargeModelData
     {
-        /// <summary>研究目标/提示词</summary>
+        public ResearchNodeData()
+        {
+            label = "Research";
+        }
+
+        public new List<Inputs> inputs { get; set; } = new List<Inputs>();
+        public new List<Output> output { get; set; } = new List<Output>();
+
+        /// <summary>研究目标</summary>
         public string prompt { get; set; }
 
-        /// <summary>主模型配置</summary>
-        public LargeModelInfo model { get; set; }
-
-        /// <summary>规划模型配置（可选，用于搜索规划）</summary>
+        /// <summary>规划模型（可选，默认用主模型）</summary>
         public LargeModelInfo planModel { get; set; }
 
-        /// <summary>温度参数（0-100）</summary>
-        public int temperature { get; set; } = 30;
-
-        /// <summary>TopP参数（0-100）</summary>
-        public int topp { get; set; } = 80;
-
-        /// <summary>最大搜索迭代轮数</summary>
+        // 搜索配置
         public int MaxIterations { get; set; } = 3;
-
-        /// <summary>每轮最大抓取URL数</summary>
+        public int MaxSearchResults { get; set; } = 10;
         public int MaxFetchUrls { get; set; } = 5;
+        public string SearchLanguage { get; set; } = "zh-CN";
+        public string SearchCategories { get; set; } = "general";
+        public string TimeRange { get; set; } = "";
 
-        /// <summary>单页最大内容长度</summary>
+        // 抓取配置
         public int MaxContentLength { get; set; } = 5000;
+        public int PageTimeoutSeconds { get; set; } = 30;
 
-        /// <summary>LLM调用预算上限</summary>
+        // 输出配置
+        public string OutputFormat { get; set; } = "Detailed";
+
+        // 预算控制
         public int MaxLLMCalls { get; set; } = 6;
-
-        /// <summary>完成度阈值（0.0-1.0）</summary>
         public double CompletionThreshold { get; set; } = 0.8;
+    }
+
+    /// <summary>
+    /// Voice 节点配置数据
+    /// </summary>
+    public partial class VoiceNodeData : LargeModelData
+    {
+        public VoiceNodeData()
+        {
+            label = "Voice";
+        }
+
+        public new List<Inputs> inputs { get; set; } = new List<Inputs>();
+        public new List<Output> output { get; set; } = new List<Output>();
+
+
+        /// <summary>音频来源（支持占位符变量）</summary>
+        public string AudioSource { get; set; }
+
+        /// <summary>转写服务商（空则使用默认）</summary>
+        public string Provider { get; set; } = "FunASR";
+
+        /// <summary>是否启用 LLM 后处理</summary>
+        public bool EnablePostProcessing { get; set; } = true;
+
+        /// <summary>语言提示</summary>
+        public string Language { get; set; } = "auto";
+
+        /// <summary>是否启用说话人分离</summary>
+        public bool EnableSpeakerDiarization { get; set; } = true;
+
+        /// <summary>预期说话人数量（0=自动检测）</summary>
+        public int ExpectedSpeakerCount { get; set; } = 0;
+
+        /// <summary>说话人标签映射</summary>
+        public Dictionary<string, string> SpeakerLabelMap { get; set; }
+
+        /// <summary>是否启用情感识别</summary>
+        public bool EnableEmotionDetection { get; set; }
+
+        /// <summary>是否启用音频事件检测</summary>
+        public bool EnableAudioEventDetection { get; set; }
+
+        /// <summary>热词列表</summary>
+        public Dictionary<string, int> Hotwords { get; set; }
+
+        /// <summary>最大音频时长（秒），0=不限制</summary>
+        public int MaxAudioDurationSeconds { get; set; } = 0;
     }
 
     /// <summary>置信度计算权重配置</summary>

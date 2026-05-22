@@ -18,8 +18,8 @@
         </el-avatar>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item @click="router.push('/settings')">设置</el-dropdown-item>
-            <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+            <el-dropdown-item @click="router.push('/settings')">{{ t('status.settings') }}</el-dropdown-item>
+            <el-dropdown-item divided @click="handleLogout">{{ t('status.logout') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -31,11 +31,13 @@
 import { computed } from 'vue'
 import { Fold } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import { useChatStore } from '@/stores/chat'
 import { useAuth } from '@/composables/useAuth'
 
+const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 const appStore = useAppStore()
@@ -44,9 +46,9 @@ const { logout } = useAuth()
 
 const sessionTitle = computed(() => {
   if (chatStore.currentSessionId && chatStore.currentSession) {
-    return chatStore.currentSession.TopicSummary || '新对话'
+    return chatStore.currentSession.TopicSummary || t('chat.newConversation')
   }
-  return '新对话'
+  return t('chat.newConversation')
 })
 
 const emit = defineEmits<{ toggleSidebar: [] }>()
@@ -59,10 +61,10 @@ const connectionClass = computed(() => ({
 
 const connectionText = computed(() => {
   switch (appStore.connectionStatus) {
-    case 'connected': return '已连接'
-    case 'slow': return `连接缓慢 (${appStore.apiLatency}ms)`
-    case 'disconnected': return '连接断开'
-    default: return '检测中...'
+    case 'connected': return t('status.connected')
+    case 'slow': return t('status.slowWithLatency', { latency: appStore.apiLatency })
+    case 'disconnected': return t('status.disconnected')
+    default: return t('status.checking')
   }
 })
 

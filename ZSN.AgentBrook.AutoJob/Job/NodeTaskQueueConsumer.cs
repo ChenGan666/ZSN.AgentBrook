@@ -9,11 +9,13 @@ using System.Threading.Tasks;
 using ZSN.AI.BLL;
 using ZSN.AI.Core.Interface;
 using ZSN.AI.Entity;
-using ZSN.AI.Node.ResearchNode;
-using ZSN.AI.Node.ResearchNode.Services;
+using ZSN.AI.Node;
+using ZSN.AI.Node.Claw;
+using ZSN.AI.Node.ServiceDesk;
 using ZSN.AI.Node.VoiceNode;
 using ZSN.AI.Node.VoiceNode.Interfaces;
-using ZSN.AI.Node;
+using Microsoft.Extensions.Options;
+using ZSN.AI.Node.VoiceNode.Extensions;
 using ZSN.AI.Service.WebHelpers;
 using ZSN.Utils.Core.Helpers;
 
@@ -40,6 +42,7 @@ namespace ZSN.AgentBrook.AutoJob
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            Console.WriteLine("[NodeTaskConsumer] 消费者启动，监听队列: " + NodeJob.QUEUE_KEY);
 
             var semaphore = new SemaphoreSlim(MAX_CONCURRENT, MAX_CONCURRENT);
             var activeTasks = new List<Task>();
@@ -68,6 +71,7 @@ namespace ZSN.AgentBrook.AutoJob
                         var taskInfo = JsonConvert.DeserializeObject<TaskInfo>(item.ToString());
                         if (taskInfo == null)
                         {
+                            Console.WriteLine("[NodeTaskConsumer-Error] 反序列化任务失败，重新入队 - JSON: " + item.ToString().Substring(0, Math.Min(100, item.ToString().Length)));
                             DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, $"反序列化失败: {item.ToString().Substring(0, Math.Min(100, item.ToString().Length))}");
                             
                             redis.ListLeftPush(NodeJob.QUEUE_KEY, item);
@@ -82,11 +86,14 @@ namespace ZSN.AgentBrook.AutoJob
                         {
                             try
                             {
+                                Console.WriteLine($"[NodeTaskConsumer] 开始处理任务 - TaskID: {taskInfo.TaskID}, Type: {taskInfo.TaskType}");
                                 using var scope = _rootProvider.CreateScope();
                                 await ProcessTaskAsync(taskInfo, scope.ServiceProvider);
+                                Console.WriteLine($"[NodeTaskConsumer] 任务处理完成 - TaskID: {taskInfo.TaskID}, State: {taskInfo.State}");
                             }
                             catch (Exception ex)
                             {
+                                Console.WriteLine($"[NodeTaskConsumer-Error] 处理任务异常 - TaskID: {taskInfo.TaskID}: {ex.Message}\n{ex.StackTrace}");
                                 DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, $"处理异常 - TaskID: {taskInfo.TaskID}: {ex.Message}");
                             }
                             finally
@@ -115,11 +122,13 @@ namespace ZSN.AgentBrook.AutoJob
                     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                     {
                         if (semaphoreAcquired) semaphore.Release();
+                        Console.WriteLine("[NodeTaskConsumer] 收到停止信号");
                         break;
                     }
                     catch (Exception ex)
                     {
                         if (semaphoreAcquired) semaphore.Release();
+                        Console.WriteLine($"[NodeTaskConsumer-Error] 消费循环异常: {ex.Message}");
                         try { await Task.Delay(1000, stoppingToken); } catch { break; }
                     }
                 }
@@ -127,20 +136,24 @@ namespace ZSN.AgentBrook.AutoJob
             finally
             {
                 // 等待所有活跃任务完成
+                Console.WriteLine("[NodeTaskConsumer] 等待活跃任务完成...");
                 try
                 {
                     lock (activeTasks)
                     {
                         if (activeTasks.Count > 0)
                         {
+                            Console.WriteLine($"[NodeTaskConsumer] 还有 {activeTasks.Count} 个任务在处理");
                             Task.WaitAll(activeTasks.ToArray(), TimeSpan.FromSeconds(30));
                         }
                     }
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine($"[NodeTaskConsumer-Error] 等待任务超时: {ex.Message}");
                 }
 
+                Console.WriteLine("[NodeTaskConsumer] 消费者已停止");
             }
         }
 
@@ -167,8 +180,12 @@ namespace ZSN.AgentBrook.AutoJob
                     // DI解析失败，设置失败状态
                     task.State = TaskState.Failure;
                     task.Results.Data = $"[DI-Error] 服务解析失败: {diEx.Message}";
+                    Console.WriteLine($"[NodeTaskConsumer-Error] DI异常 - TaskID: {task.TaskID}: {diEx.Message}");
                     DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, $"DI异常 - TaskID: {task.TaskID}: {diEx.Message}");
-                    
+
+                    // 更新会话状态为失败
+                    UpdateSessionStatusSafe(taskConfig?.Data?.SessionID, -1);
+
                     // 更新任务状态并返回
                     try
                     {
@@ -177,6 +194,7 @@ namespace ZSN.AgentBrook.AutoJob
                     }
                     catch (Exception updateEx)
                     {
+                        Console.WriteLine($"[NodeTaskConsumer-Error] Update失败 - TaskID: {task.TaskID}: {updateEx.Message}");
                     }
                     return;
                 }
@@ -186,8 +204,12 @@ namespace ZSN.AgentBrook.AutoJob
                 {
                     task.State = TaskState.Failure;
                     task.Results.Data = "[Config-Error] NodeConfig为null或无效";
+                    Console.WriteLine($"[NodeTaskConsumer-Error] 无效NodeConfig - TaskID: {task.TaskID}");
                     DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, $"无效NodeConfig - TaskID: {task.TaskID}");
-                    
+
+                    // 更新会话状态为失败
+                    UpdateSessionStatusSafe(taskConfig?.Data?.SessionID, -1);
+
                     try
                     {
                         task.UpdateTime = DateTime.Now;
@@ -195,6 +217,7 @@ namespace ZSN.AgentBrook.AutoJob
                     }
                     catch (Exception updateEx)
                     {
+                        Console.WriteLine($"[NodeTaskConsumer-Error] Update失败 - TaskID: {task.TaskID}: {updateEx.Message}");
                     }
                     return;
                 }
@@ -204,6 +227,9 @@ namespace ZSN.AgentBrook.AutoJob
                 taskData.TaskID = task.TaskID;
                 string re = "";
                 NodeType nodeType = taskConfig.NodeConfig.type;
+
+                // 更新会话状态为运行中
+                UpdateSessionStatusSafe(taskData.SessionID, 1);
 
                 var logger = scopeProvider.GetRequiredService<ILogger<Execution>>();
                 Execution excutionNode = new Execution(chatService, scopeProvider, logger);
@@ -268,7 +294,7 @@ namespace ZSN.AgentBrook.AutoJob
                             re = await excutionNode.VideoGenerationNodeAsync(taskConfig.NodeConfig, taskData);
                             break;
                         case NodeType.ClawAI:
-                            var clawLogger = scopeProvider.GetRequiredService<ILogger<ZSN.AI.Node.ExecutionClaw>>();
+                            var clawLogger = scopeProvider.GetRequiredService<ILogger<ExecutionClaw>>();
                             var taskPlanningService = scopeProvider.GetRequiredService<ZSN.AI.Node.Claw.Interfaces.ITaskPlanningService>();
                             var memoryService = scopeProvider.GetRequiredService<ZSN.AI.Node.Claw.Interfaces.IMemoryService>();
                             var reflectionService = scopeProvider.GetRequiredService<ZSN.AI.Node.Claw.Interfaces.IReflectionService>();
@@ -277,43 +303,43 @@ namespace ZSN.AgentBrook.AutoJob
                             var masterControlService = scopeProvider.GetService<ZSN.AI.Node.Claw.Interfaces.IMasterControlService>();
                             var postProcessingQueue = scopeProvider.GetRequiredService<ZSN.AI.Node.Claw.Services.IBackgroundPostProcessingQueue>();
 
-                            ZSN.AI.Node.ExecutionClaw excutionClaw = new ZSN.AI.Node.ExecutionClaw(
+                            ExecutionClaw excutionClaw = new ZSN.AI.Node.Claw.ExecutionClaw(
                                 chatService, scopeProvider, clawLogger,
                                 taskPlanningService, memoryService, reflectionService, agentOrchestrationService, personalityService, masterControlService, postProcessingQueue);
                             re = await excutionClaw.ClawAINodeAsync(taskConfig.NodeConfig, taskData);
                             break;
                         case NodeType.ServiceDesk:
-                            var sdLogger = scopeProvider.GetRequiredService<ILogger<ZSN.AI.Node.ExecutionServiceDesk>>();
+                            var sdLogger = scopeProvider.GetRequiredService<ILogger<ExecutionServiceDesk>>();
                             var sdClassifier = scopeProvider.GetRequiredService<ZSN.AI.Node.ServiceDesk.Interfaces.IRequestClassifier>();
                             var sdGenerator = scopeProvider.GetRequiredService<ZSN.AI.Node.ServiceDesk.Interfaces.IResponseGenerator>();
                             var sdStateManager = scopeProvider.GetRequiredService<ZSN.AI.Node.ServiceDesk.Interfaces.ISessionStateManager>();
 
-                            var executionServiceDesk = new ZSN.AI.Node.ExecutionServiceDesk(
+                            var executionServiceDesk = new ZSN.AI.Node.ServiceDesk.ExecutionServiceDesk(
                                 chatService, scopeProvider, sdLogger,
                                 sdClassifier, sdGenerator, sdStateManager);
                             re = await executionServiceDesk.ServiceDeskNodeAsync(taskConfig.NodeConfig, taskData);
                             break;
                         case NodeType.Research:
-                            var researchLogger = scopeProvider.GetRequiredService<ILogger<ExecutionResearch>>();
-                            var searchService = scopeProvider.GetRequiredService<IWebSearchService>();
-                            var fetcherService = scopeProvider.GetRequiredService<IContentFetcherService>();
-                            var engineService = scopeProvider.GetRequiredService<IResearchEngineService>();
-                            var researchOptions = scopeProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ResearchNodeOptions>>();
+                            var researchLogger = scopeProvider.GetRequiredService<ILogger<ZSN.AI.Node.ResearchNode.ExecutionResearch>>();
+                            var researchSearch = scopeProvider.GetRequiredService<ZSN.AI.Node.ResearchNode.Services.IWebSearchService>();
+                            var researchFetcher = scopeProvider.GetRequiredService<ZSN.AI.Node.ResearchNode.Services.IContentFetcherService>();
+                            var researchEngine = scopeProvider.GetRequiredService<ZSN.AI.Node.ResearchNode.Services.IResearchEngineService>();
+                            var researchOptions = scopeProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ZSN.AI.Node.ResearchNode.ResearchNodeOptions>>();
 
-                            var executionResearch = new ExecutionResearch(
+                            var executionResearch = new ZSN.AI.Node.ResearchNode.ExecutionResearch(
                                 chatService, scopeProvider, researchLogger,
-                                searchService, fetcherService, engineService, researchOptions);
+                                researchSearch, researchFetcher, researchEngine, researchOptions);
                             re = await executionResearch.ResearchNodeAsync(taskConfig.NodeConfig, taskData);
                             break;
                         case NodeType.Voice:
                             var voiceLogger = scopeProvider.GetRequiredService<ILogger<ExecutionVoice>>();
                             var voiceProviderFactory = scopeProvider.GetRequiredService<IVoiceProviderFactory>();
-                            var voiceAudioPreprocessor = scopeProvider.GetRequiredService<IAudioPreprocessor>();
-                            var voiceNodeOptions = scopeProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<VoiceNodeOptions>>();
+                            var voicePreprocessor = scopeProvider.GetRequiredService<IAudioPreprocessor>();
+                            var voiceNodeOptions = scopeProvider.GetRequiredService<IOptions<ZSN.AI.Node.VoiceNode.VoiceNodeOptions>>();
 
                             var executionVoice = new ExecutionVoice(
                                 chatService, scopeProvider, voiceLogger,
-                                voiceProviderFactory, voiceAudioPreprocessor, voiceNodeOptions);
+                                voiceProviderFactory, voicePreprocessor, voiceNodeOptions);
                             re = await executionVoice.VoiceNodeAsync(taskConfig.NodeConfig, taskData);
                             break;
                     }
@@ -327,16 +353,23 @@ namespace ZSN.AgentBrook.AutoJob
                     else
                     {
                         // 业务结果已存在，保留原值
+                        Console.WriteLine($"[NodeTaskConsumer] Results.Data已有业务结果，保留原值 - TaskID: {task.TaskID}");
                     }
                     
                     task.State = TaskState.Completed;
-                
+
+                    // 更新会话状态为完成
+                    UpdateSessionStatusSafe(taskConfig?.Data?.SessionID, 0);
+
             }
             catch (Exception ex)
             {
                 task.Results.Data = ex;
                 task.State = TaskState.Failure;
                 DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, ex.Message);
+
+                // 更新会话状态为失败
+                UpdateSessionStatusSafe(taskConfig?.Data?.SessionID, -1);
             }
 
             // 更新任务状态
@@ -347,7 +380,24 @@ namespace ZSN.AgentBrook.AutoJob
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[NodeTaskConsumer-Error] Update 任务状态失败 - TaskID: {task.TaskID}, State: {task.State}, Error: {ex.Message}");
                 DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, $"Update 任务状态失败 - TaskID: {task.TaskID}: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 安全更新会话状态
+        /// </summary>
+        private static void UpdateSessionStatusSafe(string sessionID, int status)
+        {
+            if (string.IsNullOrEmpty(sessionID)) return;
+            try
+            {
+                AppChatSessionInfoBussiness.UpdateSessionStatus(sessionID, status);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[NodeTaskConsumer-Warning] 更新会话状态失败 - SessionID: {sessionID}, Status: {status}: {ex.Message}");
             }
         }
     }

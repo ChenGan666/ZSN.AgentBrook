@@ -56,7 +56,9 @@ namespace ZSN.AgentBrook.AutoJob
                     NodeType.ImageGeneration,
                     NodeType.VideoGeneration,
                     NodeType.ClawAI,
-                    NodeType.ServiceDesk
+                    NodeType.ServiceDesk,
+                    NodeType.Research,
+                    NodeType.Voice
                 };
 
                 List<TaskInfo> tasks = null;
@@ -70,10 +72,13 @@ namespace ZSN.AgentBrook.AutoJob
 
                     if (tasks != null && tasks.Count > 0)
                     {
+                        Console.WriteLine($"[NodeJob] 本轮查询到 {tasks.Count} 个任务 (QueryTime: {queryTime:HH:mm:ss.fff})");
                     }
                 }
                 catch (Exception e)
                 {
+                    Console.WriteLine($"[NodeJob-Error] GetList 异常: {e.Message}");
+                    Console.WriteLine(e);
                 }
                 finally
                 {
@@ -98,15 +103,18 @@ namespace ZSN.AgentBrook.AutoJob
                                     string taskJson = JsonConvert.SerializeObject(task);
                                     redis.ListLeftPush(QUEUE_KEY, taskJson);
                                     successCount++;
+                                    Console.WriteLine($"[NodeJob] 任务入队 - TaskID: {task.TaskID}, Type: {task.TaskType}, FromMainTaskID: {task.FromMainTaskID}");
                                 }
                                 catch (Exception itemEx)
                                 {
                                     // 单个任务入队失败，记录失败ID
                                     failedTaskIds.Add(task.TaskID);
+                                    Console.WriteLine($"[NodeJob-Error] 单个任务入队失败 - TaskID: {task.TaskID}: {itemEx.Message}");
                                 }
                             }
                         }
                         
+                        Console.WriteLine($"[NodeJob] 本轮入队完成，成功: {successCount}/{tasks.Count}");
                         
                         // ✅ 修改: 如果有失败任务，回退状态到Waiting
                         if (failedTaskIds.Count > 0)
@@ -114,11 +122,13 @@ namespace ZSN.AgentBrook.AutoJob
                             try
                             {
                                 TaskInfoBussiness.ResetTasksToWaiting(failedTaskIds);
+                                Console.WriteLine($"[NodeJob] 已回退 {failedTaskIds.Count} 个失败任务到Waiting状态");
                                 DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, 
                                     $"Redis入队失败，已回退{failedTaskIds.Count}个任务: {string.Join(",", failedTaskIds)}");
                             }
                             catch (Exception resetEx)
                             {
+                                Console.WriteLine($"[NodeJob-Error] 回退任务状态失败: {resetEx.Message}");
                                 DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, $"回退失败: {resetEx.Message}");
                             }
                         }
@@ -128,15 +138,18 @@ namespace ZSN.AgentBrook.AutoJob
                     catch (Exception redisEx)
                     {
                         // 整体Redis异常，回退所有任务
+                        Console.WriteLine($"[NodeJob-Error] Redis异常，回退所有任务: {redisEx.Message}");
                         DefaultLogService.AddOperationLog(NodeExcutionErrorLogID, $"Redis异常: {redisEx.Message}");
                         
                         try
                         {
                             List<string> allTaskIds = tasks.Select(t => t.TaskID).ToList();
                             TaskInfoBussiness.ResetTasksToWaiting(allTaskIds);
+                            Console.WriteLine($"[NodeJob] 已回退所有 {allTaskIds.Count} 个任务到Waiting状态");
                         }
                         catch (Exception resetEx)
                         {
+                            Console.WriteLine($"[NodeJob-Error] 回退任务状态失败: {resetEx.Message}");
                         }
                         
                         num = 0;

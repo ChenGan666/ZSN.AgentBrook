@@ -24,6 +24,9 @@ namespace ZSN.AI.Node.ResearchNode
             _pageSemaphore = new SemaphoreSlim(_options.MaxConcurrentFetches);
         }
 
+        /// <summary>
+        /// 延迟初始化 Playwright + Browser（仅首次调用时执行）
+        /// </summary>
         private async Task EnsureInitializedAsync()
         {
             if (_initialized) return;
@@ -57,6 +60,9 @@ namespace ZSN.AI.Node.ResearchNode
             }
         }
 
+        /// <summary>
+        /// 获取一个 Page（受并发信号量控制）
+        /// </summary>
         public async Task<IPage> AcquirePageAsync(CancellationToken ct = default)
         {
             await _pageSemaphore.WaitAsync(ct);
@@ -72,6 +78,9 @@ namespace ZSN.AI.Node.ResearchNode
             return page;
         }
 
+        /// <summary>
+        /// 释放 Page（关闭 Context 并释放信号量）
+        /// </summary>
         public async Task ReleasePageAsync(IPage page)
         {
             try
@@ -90,6 +99,9 @@ namespace ZSN.AI.Node.ResearchNode
             }
         }
 
+        /// <summary>
+        /// 检测 Playwright 是否可用（浏览器已安装）
+        /// </summary>
         public async Task<bool> IsAvailableAsync()
         {
             if (!_available) return false;

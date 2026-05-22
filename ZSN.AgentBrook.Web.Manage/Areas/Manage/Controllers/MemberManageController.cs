@@ -52,6 +52,7 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
             ViewBag.DepartmentList = departmentList;
             ViewBag.StaffInfo = staffInfo == null ? new StaffInfo() : staffInfo;
             ViewBag.PreviewHost = ConfigHelper.GetString("previewHost");
+            ViewBag.DefaultPassword = ConfigHelper.GetString("DefaultPassword");
             return View();
         }
 

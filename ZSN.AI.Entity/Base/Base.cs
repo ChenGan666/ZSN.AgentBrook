@@ -149,11 +149,20 @@ namespace ZSN.AI.Entity
         public string Url { get; set; }
     }
     
+    public class SessionStatusInfo
+    {
+        public string ChatSessionID { get; set; } = string.Empty;
+        public int SessionStatus { get; set; }
+        public string Summary { get; set; } = string.Empty;
+        public string TopicSummary { get; set; } = string.Empty;
+        public string AppID { get; set; } = string.Empty;
+    }
+
     public class BaseInfo
     {
         public CompanyInfo CompanyInfo { get; set; } = new CompanyInfo();
         public List<AppInfo> AppList { get; set; } = new List<AppInfo>();
         public List<BaseDictionaryInfo> TagClassList { get; set; } = new List<BaseDictionaryInfo>();
-
+        public List<SessionStatusInfo> SessionStatusList { get; set; } = new List<SessionStatusInfo>();
     }
 }

@@ -157,6 +157,7 @@ namespace ZSN.AI.Core.Service
 
                 KnowledgeBaseInfoBussiness.Update(km);
 
+                Console.WriteLine(ex.Message);
                 _logger.LogError("后台导入任务异常:" + ex.Message);
             }
             return req;

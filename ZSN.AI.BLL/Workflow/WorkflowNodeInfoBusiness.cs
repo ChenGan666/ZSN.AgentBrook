@@ -305,6 +305,7 @@ namespace ZSN.AI.BLL
 
                             if (!string.IsNullOrEmpty(FromMainTaskID))
                             {
+                                Console.WriteLine($"[NextNode] {SourceNode.type}({SourceNode.id}) → {node.NodeType}({node.NodeID}), FromMainTaskID: {FromMainTaskID}, NewTaskID: {newTaskID}");
                             }
 
                             Logs.Add($"{newTaskID}");
@@ -332,6 +333,7 @@ namespace ZSN.AI.BLL
         {
 
             
+
             string newTaskID = Guid.NewGuid().ToString();
 
             NodeConfig targetNode = new NodeConfig();
@@ -382,7 +384,9 @@ namespace ZSN.AI.BLL
             Logs.Add($"{newTaskID}");
 
             // ===== 检查是否有 ClawAI 步骤在等待此 WorkFlow 完成 =====
+            Console.WriteLine($"[ClawAI-Resume] AgentEndToNextNode 调用 TryResumeClawAIStep - FromMainTaskID: {FromMainTaskID}");
             await TryResumeClawAIStepAsync(FromMainTaskID, outputs, Logs);
+            Console.WriteLine($"[ClawAI-Resume] AgentEndToNextNode TryResumeClawAIStepAsync 完成 - FromMainTaskID: {FromMainTaskID}");
             Logs.Add($"[ClawAI-Resume] AgentEndToNextNode TryResumeClawAIStepAsync 完成 - FromMainTaskID: {FromMainTaskID}");
 
             return newTaskID;
@@ -407,15 +411,18 @@ namespace ZSN.AI.BLL
                 var asyncTaskInfo = TaskInfoBussiness.GetModel(fromMainTaskID);
                 if (asyncTaskInfo == null)
                 {
+                    Console.WriteLine($"[ClawAI-Resume] 未找到 TaskInfo: {fromMainTaskID}，跳过恢复");
                     return;
                 }
                 if (asyncTaskInfo.TaskType != NodeType.ClawAIWorkflowStep)
                 {
+                    Console.WriteLine($"[ClawAI-Resume] TaskType 不匹配: {asyncTaskInfo.TaskType} (期望: ClawAIWorkflowStep={NodeType.ClawAIWorkflowStep})，跳过恢复");
                     return;
                 }
                 // 状态检查：Waiting 或 Processing 都可恢复（GetList 可能将状态改为 Processing）
                 if (asyncTaskInfo.State != TaskState.Waiting && asyncTaskInfo.State != TaskState.Processing)
                 {
+                    Console.WriteLine($"[ClawAI-Resume] State 不可恢复: {asyncTaskInfo.State}，跳过恢复");
                     return;
                 }
 
@@ -424,9 +431,12 @@ namespace ZSN.AI.BLL
                     JsonConvert.SerializeObject(asyncTaskInfo.TaskConfig.NotNodeConfig));
                 if (context == null)
                 {
+                    Console.WriteLine("[ClawAI-Resume] NotNodeConfig 反序列化失败，跳过恢复");
                     return;
                 }
 
+                Console.WriteLine($"[ClawAI-Resume] 检测到 ClawAI 异步步骤等待中 - StepID: {context.TriggeredStepId}, " +
+                         $"FromMainTaskID: {fromMainTaskID}");
 
                 Logs.Add($"[ClawAI-Resume] 检测到 ClawAI 异步步骤等待中 - StepID: {context.TriggeredStepId}, " +
                          $"FromMainTaskID: {fromMainTaskID}");
@@ -447,22 +457,26 @@ namespace ZSN.AI.BLL
                 Logs.Add($"[ClawAI-Resume] ProcessesID: {context.ProcessesID}");
                 Logs.Add($"[ClawAI-Resume] CurrentLayerIndex: {context.CurrentLayerIndex}");
                 Logs.Add($"[ClawAI-Resume] TriggeredStepId: {context.TriggeredStepId}");
+                Console.WriteLine($"[ClawAI-Resume] 步骤完成 - ProcessesID: {context.ProcessesID}, LayerIndex: {context.CurrentLayerIndex}, StepID: {context.TriggeredStepId}");
 
                 // 4. 检查是否存在层级计数器（区分串行/并行）
                 string layerCounterKey = $"clawai:layer:{context.ProcessesID}:{context.CurrentLayerIndex}";
                 
                 // ✅ 增强：记录检查
                 Logs.Add($"[ClawAI-Resume] 检查计数器 Key: {layerCounterKey}");
+                Console.WriteLine($"[ClawAI-Resume] 检查计数器 - Key: {layerCounterKey}");
                 
                 var counterExists = redis.KeyExists(layerCounterKey);
                 
                 // ✅ 增强：记录结果
                 Logs.Add($"[ClawAI-Resume] 计数器存在: {counterExists}");
+                Console.WriteLine($"[ClawAI-Resume] 计数器存在: {counterExists} - Key: {layerCounterKey}");
 
                 if (!counterExists)
                 {
                     // ===== 串行步骤（无计数器） → 直接恢复 =====
                     Logs.Add($"[ClawAI-Resume] 串行步骤完成，直接恢复: {fromMainTaskID}");
+                    Console.WriteLine($"[ClawAI-Resume] 串行步骤 - FromMainTaskID: {fromMainTaskID}, StepID: {context.TriggeredStepId}");
 
                     await FireAndResumeClawAI(fromMainTaskID, new Dictionary<string, string>
                     {
@@ -475,10 +489,12 @@ namespace ZSN.AI.BLL
                 // ✅ 增强：记录 DECR 前的值
                 var beforeValue = redis.StringGet(layerCounterKey);
                 Logs.Add($"[并发控制] DECR 前计数器值: {beforeValue}");
+                Console.WriteLine($"[并发控制] DECR 前 - Key: {layerCounterKey}, Value: {beforeValue}");
                 
                 long remaining = redis.StringDecrement(layerCounterKey);
 
                 Logs.Add($"[并发控制] DECR {layerCounterKey}: remaining={remaining}");
+                Console.WriteLine($"[并发控制] DECR 后 - Key: {layerCounterKey}, Remaining: {remaining}, StepID: {context.TriggeredStepId}");
 
                 if (remaining > 0)
                 {
@@ -489,6 +505,7 @@ namespace ZSN.AI.BLL
 
                 // ===== remaining == 0 → 本层全部完成，触发汇聚恢复 =====
                 Logs.Add($"[并发控制] 本层全部完成，开始汇聚恢复");
+                Console.WriteLine($"[并发控制] 本层全部完成 - ProcessesID: {context.ProcessesID}, LayerIndex: {context.CurrentLayerIndex}, FromMainTaskID: {fromMainTaskID}");
 
                 // 获取分布式锁（防止极端情况重复恢复）
                 string lockKey = $"clawai:lock:{context.ProcessesID}";
@@ -497,15 +514,18 @@ namespace ZSN.AI.BLL
 
                 // ✅ 增强：记录锁操作
                 Logs.Add($"[并发控制] 尝试获取分布式锁: {lockKey}");
+                Console.WriteLine($"[并发控制] 尝试获取锁 - Key: {lockKey}, Value: {lockValue}");
 
                 if (!distributedLock.TryAcquire(lockKey, lockValue, TimeSpan.FromMinutes(5)))
                 {
                     Logs.Add($"[并发控制] ❌ 获取恢复锁失败，可能已有其他线程在恢复");
+                    Console.WriteLine($"[并发控制] ❌ 获取锁失败 - Key: {lockKey}");
                     return;
                 }
                 
                 // ✅ 增强：记录锁成功
                 Logs.Add($"[并发控制] ✅ 获取分布式锁成功");
+                Console.WriteLine($"[并发控制] ✅ 获取锁成功 - Key: {lockKey}, Value: {lockValue}");
 
                 try
                 {
@@ -514,23 +534,27 @@ namespace ZSN.AI.BLL
                     
                     // ✅ 增强：记录读取
                     Logs.Add($"[并发控制] 读取层级上下文: {layerCtxKey}");
+                    Console.WriteLine($"[并发控制] 读取上下文 - Key: {layerCtxKey}");
                     
                     var layerCtxJson = redis.StringGet(layerCtxKey);
                     if (layerCtxJson.IsNullOrEmpty)
                     {
                         Logs.Add($"[并发控制] ❌ 层级上下文已过期或不存在，跳过");
+                        Console.WriteLine($"[并发控制] ❌ 上下文为空 - Key: {layerCtxKey}");
                         distributedLock.Release(lockKey, lockValue);
                         return;
                     }
 
                     // ✅ 增强：记录上下文内容
                     Logs.Add($"[并发控制] 上下文 JSON 长度: {layerCtxJson.ToString().Length}");
+                    Console.WriteLine($"[并发控制] 上下文 JSON: {layerCtxJson}");
 
                     var layerCtx = JsonConvert.DeserializeObject<ClawAILayerContext>(
                         layerCtxJson.ToString());
 
                     // ✅ 增强：记录上下文详情
                     Logs.Add($"[并发控制] 上下文解析成功 - TotalStepCount: {layerCtx.TotalStepCount}, LayerIndex: {layerCtx.LayerIndex}");
+                    Console.WriteLine($"[并发控制] 上下文详情 - StepIDs: {string.Join(",", layerCtx.StepIds)}");
 
                     // 收集所有并行步骤结果
                     var allResults = new Dictionary<string, string>();
@@ -544,22 +568,28 @@ namespace ZSN.AI.BLL
                         allResults[stepId] = resultValue;
                         
                         Logs.Add($"[并发控制] 读取步骤结果 - StepID: {stepId}, 长度: {resultValue.Length}");
+                        Console.WriteLine($"[并发控制] 步骤结果 - Key: {stepResultKey}, 长度: {resultValue.Length}, 为空: {stepResult.IsNullOrEmpty}");
                     }
 
                     Logs.Add($"[并发控制] 汇聚完成: {allResults.Count}/{layerCtx.TotalStepCount} 个步骤");
+                    Console.WriteLine($"[并发控制] 汇聚完成 - 收集结果: {allResults.Count}/{layerCtx.TotalStepCount}");
+                    Console.WriteLine($"[ClawAI-Resume] 开始并行恢复 - FromMainTaskID: {fromMainTaskID}");
 
                     // ✅ 直接执行恢复，不使用 Task.Run（确保完成后才释放锁）
                     try
                     {
+                        Console.WriteLine($"[ClawAI-Resume] 开始执行恢复 - FromMainTaskID: {fromMainTaskID}");
                         
                         string mergedResult = string.Join("\n\n",
                             allResults.Values.Where(v => !string.IsNullOrEmpty(v)));
 
+                        Console.WriteLine($"[ClawAI-Resume] 调用 ResumeAsync - FromMainTaskID: {fromMainTaskID}, ResultCount: {allResults.Count}");
                         
                         // ✅ 直接 await，确保恢复完成
                         await ClawAIResumeCallback.ResumeAsync(
                             fromMainTaskID, mergedResult, allResults);
                         
+                        Console.WriteLine($"[ClawAI-Resume] ResumeAsync 完成 - FromMainTaskID: {fromMainTaskID}");
                         Logs.Add($"[并发控制] 并行恢复成功完成");
                         
                         // ✅ 修复: 更新所有并行步骤的异步任务状态为 Completed
@@ -582,16 +612,19 @@ namespace ZSN.AI.BLL
                                         asyncTask.State = TaskState.Completed;
                                         asyncTask.UpdateTime = DateTime.Now;
                                         TaskInfoBussiness.Update(asyncTask);
+                                        Console.WriteLine($"[并发控制] 更新并行任务状态 - AsyncTaskID: {asyncTask.TaskID}, StepID: {stepId}, State: Completed");
                                     }
                                 }
                             }
                             catch (Exception updateEx)
                             {
+                                Console.WriteLine($"[并发控制] 更新并行任务状态失败 - StepID: {stepId}, Error: {updateEx.Message}");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
+                        Console.WriteLine($"[ClawAI-Resume] 恢复执行失败 - FromMainTaskID: {fromMainTaskID}, Error: {ex.Message}\n{ex.StackTrace}");
                         Logs.Add($"[ClawAI-Resume] 恢复执行失败: {ex.Message}");
                         var task = TaskInfoBussiness.GetModel(fromMainTaskID);
                         if (task != null)
@@ -603,6 +636,7 @@ namespace ZSN.AI.BLL
                     }
                     finally
                     {
+                        Console.WriteLine($"[ClawAI-Resume] 释放锁并清理 Redis - FromMainTaskID: {fromMainTaskID}");
                         // 释放锁 + 清理 Redis 临时数据
                         distributedLock.Release(lockKey, lockValue);
                         foreach (var stepId in layerCtx.StepIds)
@@ -620,6 +654,7 @@ namespace ZSN.AI.BLL
                     // 需要在这里释放锁
                     distributedLock.Release(lockKey, lockValue);
                     Logs.Add($"[并发控制] 汇聚异常（启动前失败）: {ex.Message}");
+                    Console.WriteLine($"[ClawAI-Resume] 汇聚异常（启动前失败）: {ex.Message}\n{ex.StackTrace}");
                 }
             }
             catch (Exception ex)
@@ -636,14 +671,17 @@ namespace ZSN.AI.BLL
             Dictionary<string, string> stepResults,
             List<string> Logs)
         {
+            Console.WriteLine($"[ClawAI-Resume] FireAndResumeClawAI 触发 - AsyncTaskID: {asyncTaskID}, CallbackRegistered: {ClawAIResumeCallback.IsRegistered}");
             try
             {
                 string merged = string.Join("\n\n",
                     stepResults.Values.Where(v => !string.IsNullOrEmpty(v)));
                 await ClawAIResumeCallback.ResumeAsync(asyncTaskID, merged, stepResults);
+                Console.WriteLine($"[ClawAI-Resume] FireAndResumeClawAI 完成 - AsyncTaskID: {asyncTaskID}");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[ClawAI-Resume] 串行恢复失败: {ex.Message}\n{ex.StackTrace}");
                 Logs.Add($"[ClawAI-Resume] 串行恢复失败: {ex.Message}");
                 var task = TaskInfoBussiness.GetModel(asyncTaskID);
                 if (task != null)

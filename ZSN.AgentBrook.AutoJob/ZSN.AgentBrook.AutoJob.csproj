@@ -23,6 +23,16 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+    <Content Include="Config\entity_type_mapping.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="playwright.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -50,8 +60,12 @@
     <ProjectReference Include="..\ZSN.Utils.Core\ZSN.Utils.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="plugins\SemanticFunction\" />
-  </ItemGroup>
+  <!-- Linux/macOS 下为 playwright.sh 添加可执行权限 -->
+  <Target Name="ChmodPlaywrightSh" AfterTargets="CopyFilesToOutputDirectory;CopyFilesToPublishDirectory" Condition="'$(OS)' != 'Windows_NT' And Exists('$(OutputPath)playwright.sh')">
+    <Exec Command="chmod +x &quot;$(OutputPath)playwright.sh&quot;" />
+  </Target>
+  <Target Name="ChmodPlaywrightShPublish" AfterTargets="CopyFilesToPublishDirectory" Condition="'$(OS)' != 'Windows_NT' And Exists('$(PublishDir)playwright.sh')">
+    <Exec Command="chmod +x &quot;$(PublishDir)playwright.sh&quot;" />
+  </Target>
 
 </Project>

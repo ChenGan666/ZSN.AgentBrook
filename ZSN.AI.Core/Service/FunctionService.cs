@@ -111,6 +111,7 @@ namespace ZSN.AI.Core.Service
             }
             catch (Exception ex)
             {
+                Console.WriteLine("FuncLoad Error:" + ex.Message + " ---- " + ex.StackTrace);
             }
         }    
     }

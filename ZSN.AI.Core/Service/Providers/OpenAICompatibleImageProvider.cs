@@ -52,6 +52,10 @@ namespace ZSN.AI.Core.Service.Providers
                 httpClient.DefaultRequestHeaders.Clear();
                 httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {modelInfo.ModelKey}");
                 
+                Console.WriteLine($"[图片生成] 调用API: {apiUrl}");
+                Console.WriteLine($"[图片生成] 服务商: {modelInfo.ModelOrganizationID}");
+                Console.WriteLine($"[图片生成] 模型: {modelInfo.ModelName}");
+                //Console.WriteLine($"[图片生成] 请求体: {jsonContent}");
                 
                 // 调用 /v1/images/generations API
                 var response = await httpClient.PostAsync(apiUrl, content);
@@ -59,19 +63,26 @@ namespace ZSN.AI.Core.Service.Providers
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[图片生成] API错误响应: {errorContent}");
                     throw new Exception($"API调用失败: {response.StatusCode}, {errorContent}");
                 }
                 
                 var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[图片生成] API响应: {responseContent}");
                 
                 // 解析响应
                 var imageUrl = ParseResponse(responseContent);
                 
+                Console.WriteLine($"[图片生成] 成功生成图片，提示词: {request.Prompt}");
+                Console.WriteLine($"[图片生成] 参数: {request.Width}x{request.Height}");
+                Console.WriteLine($"[图片生成] 图片URL: {imageUrl}");
                 
                 return imageUrl;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[图片生成] 生成图片时出错: {ex.Message}");
+                Console.WriteLine($"[图片生成] 异常堆栈: {ex.StackTrace}");
                 throw;
             }
         }
@@ -96,6 +107,7 @@ namespace ZSN.AI.Core.Service.Providers
                             ["prompt"] = request.Prompt,
                             ["size"] = $"{request.Width}x{request.Height}"
                         };
+                        Console.WriteLine($"[图片生成] 使用 Compshare 文生图格式");
                     }
                     else if (modelInfo.TypeCode == AIModelType.I2Image)
                     {
@@ -116,6 +128,7 @@ namespace ZSN.AI.Core.Service.Providers
                         // 处理图片输入
                         var imageBase64 = ProcessImageInput(request.ImageInput).Result;
                         requestBodyDict["image"] = $"data:image/png;base64,{imageBase64}";
+                        Console.WriteLine($"[图片生成] 使用 Compshare 图生图格式（包含 image 参数）");
                     }
                     else
                     {
@@ -145,6 +158,7 @@ namespace ZSN.AI.Core.Service.Providers
                             requestBodyDict["style"] = request.Style;
                         }
                     }
+                    Console.WriteLine($"[图片生成] 使用 OpenAI 标准格式");
                     break;
                     
                 default:
@@ -155,6 +169,7 @@ namespace ZSN.AI.Core.Service.Providers
                         ["prompt"] = request.Prompt,
                         ["size"] = $"{request.Width}x{request.Height}"
                     };
+                    Console.WriteLine($"[图片生成] 使用通用格式");
                     break;
             }
             
@@ -179,6 +194,7 @@ namespace ZSN.AI.Core.Service.Providers
             if (imageInput.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || 
                 imageInput.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
+                Console.WriteLine($"[图片生成] 检测到URL格式,开始下载图片: {imageInput}");
                 using (var imageHttpClient = new HttpClient())
                 {
                     var imageResponse = await imageHttpClient.GetAsync(imageInput);
@@ -193,6 +209,7 @@ namespace ZSN.AI.Core.Service.Providers
                         await imageResponse.Content.CopyToAsync(memoryStream);
                         var imageBytes = memoryStream.ToArray();
                         var base64 = Convert.ToBase64String(imageBytes);
+                        Console.WriteLine($"[图片生成] 图片下载完成,大小: {imageBytes.Length} 字节");
                         return base64;
                     }
                 }
@@ -235,6 +252,7 @@ namespace ZSN.AI.Core.Service.Providers
                 {
                     var b64String = b64Element.GetString();
                     imageUrl = $"data:image/png;base64,{b64String}";
+                    Console.WriteLine($"[图片生成] 返回 Base64 格式图像");
                 }
             }
             

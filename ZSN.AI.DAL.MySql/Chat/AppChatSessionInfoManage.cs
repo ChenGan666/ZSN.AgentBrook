@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using MySql.Data.MySqlClient;
 using System.Text;
 using ZSN.AI.Entity;
 using ZSN.AI.DAL;
 using ZSN.Utils.Core.Data;
+using JiebaNet.Segmenter.Common;
 namespace ZSN.AI.DAL.MySql
 {
     public partial class AppChatSessionInfoManage : IAppChatSessionInfoManage
@@ -14,11 +16,11 @@ namespace ZSN.AI.DAL.MySql
         ///表名称
         private string AppChatSessionInfoTableName = "tb_app_chat_session_info";
         ///表字段
-        private const string AppChatSessionInfoTableField = "ChatSessionID,MemberID,TopicSummary,IsCoCreate,SystemStatus,CreateTime,AppID";
+        private const string AppChatSessionInfoTableField = "ChatSessionID,MemberID,TopicSummary,IsCoCreate,SystemStatus,SessionStatus,CreateTime,AppID";
         ///添加用表字段
-        private const string AppChatSessionInfoTableFieldForAdd = "ChatSessionID,MemberID,TopicSummary,IsCoCreate,SystemStatus,CreateTime,AppID";
+        private const string AppChatSessionInfoTableFieldForAdd = "ChatSessionID,MemberID,TopicSummary,IsCoCreate,SystemStatus,SessionStatus,CreateTime,AppID";
         ///添加用表字段value
-        private const string AppChatSessionInfoTableFieldAltForAdd = "@ChatSessionID,@MemberID,@TopicSummary,@IsCoCreate,@SystemStatus,@CreateTime,@AppID";
+        private const string AppChatSessionInfoTableFieldAltForAdd = "@ChatSessionID,@MemberID,@TopicSummary,@IsCoCreate,@SystemStatus,@SessionStatus,@CreateTime,@AppID";
         public string SetConnectionName(string connName)
         {
             return AppChatSessionInfoConnectionName = connName;
@@ -31,29 +33,30 @@ namespace ZSN.AI.DAL.MySql
             StringBuilder strSql = new StringBuilder();
             strSql.Append("insert into ");
             strSql.Append(AppChatSessionInfoTableName);
-			strSql.Append(" (");
+				strSql.Append(" (");
             strSql.Append(AppChatSessionInfoTableFieldForAdd);
             strSql.Append(") values (");
             strSql.Append(AppChatSessionInfoTableFieldAltForAdd);
             strSql.Append(")");
             strSql.Append(";select @@IDENTITY");
             MySqlParameter[] parameters = {
-			 new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar,64),
- new MySqlParameter("@MemberID", MySqlDbType.VarChar,64),
- new MySqlParameter("@TopicSummary", MySqlDbType.VarChar,255),
- new MySqlParameter("@IsCoCreate", MySqlDbType.Int32,10),
- new MySqlParameter("@SystemStatus", MySqlDbType.Int32,10),
- new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
- new MySqlParameter("@AppID", MySqlDbType.VarChar,64),
-
-                    };
-			 parameters[0].Value = model.ChatSessionID;
- parameters[1].Value = model.MemberID;
- parameters[2].Value = model.TopicSummary;
- parameters[3].Value = model.IsCoCreate;
- parameters[4].Value = model.SystemStatus;
- parameters[5].Value = model.CreateTime;
-            parameters[6].Value = model.AppID;
+				 new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar,64),
+	 new MySqlParameter("@MemberID", MySqlDbType.VarChar,64),
+	 new MySqlParameter("@TopicSummary", MySqlDbType.VarChar,255),
+	 new MySqlParameter("@IsCoCreate", MySqlDbType.Int32,10),
+	 new MySqlParameter("@SystemStatus", MySqlDbType.Int32,10),
+	 new MySqlParameter("@SessionStatus", MySqlDbType.Int32,10),
+	 new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
+	 new MySqlParameter("@AppID", MySqlDbType.VarChar,64),
+            };
+			parameters[0].Value = model.ChatSessionID;
+			parameters[1].Value = model.MemberID;
+			parameters[2].Value = model.TopicSummary;
+			parameters[3].Value = model.IsCoCreate;
+			parameters[4].Value = model.SystemStatus;
+			parameters[5].Value = model.SessionStatus;
+			parameters[6].Value = model.CreateTime;
+			parameters[7].Value = model.AppID;
 
             object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(AppChatSessionInfoConnectionName), CommandType.Text,strSql.ToString(), parameters);
             if (obj == null)
@@ -74,31 +77,33 @@ namespace ZSN.AI.DAL.MySql
             strSql.Append("update ");
             strSql.Append(AppChatSessionInfoTableName);
             strSql.Append(" set ");
-			strSql.Append("MemberID=@MemberID,");
-strSql.Append("TopicSummary=@TopicSummary,");
-strSql.Append("IsCoCreate=@IsCoCreate,");
-strSql.Append("SystemStatus=@SystemStatus,");
-            strSql.Append("AppID=@AppID,");
-            strSql.Append("CreateTime=@CreateTime");
+				strSql.Append("MemberID=@MemberID,");
+				strSql.Append("TopicSummary=@TopicSummary,");
+				strSql.Append("IsCoCreate=@IsCoCreate,");
+				strSql.Append("SystemStatus=@SystemStatus,");
+				strSql.Append("SessionStatus=@SessionStatus,");
+				strSql.Append("AppID=@AppID,");
+				strSql.Append("CreateTime=@CreateTime");
 
-            strSql.Append(" where ChatSessionID=@ChatSessionID");
+				strSql.Append(" where ChatSessionID=@ChatSessionID");
             MySqlParameter[] parameters = {
 				 new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar,64),
- new MySqlParameter("@MemberID", MySqlDbType.VarChar,64),
- new MySqlParameter("@TopicSummary", MySqlDbType.VarChar,255),
- new MySqlParameter("@IsCoCreate", MySqlDbType.Int32,10),
- new MySqlParameter("@SystemStatus", MySqlDbType.Int32,10),
- new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
- new MySqlParameter("@AppID", MySqlDbType.VarChar,64),
-
+	 new MySqlParameter("@MemberID", MySqlDbType.VarChar,64),
+	 new MySqlParameter("@TopicSummary", MySqlDbType.VarChar,255),
+	 new MySqlParameter("@IsCoCreate", MySqlDbType.Int32,10),
+	 new MySqlParameter("@SystemStatus", MySqlDbType.Int32,10),
+	 new MySqlParameter("@SessionStatus", MySqlDbType.Int32,10),
+	 new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
+	 new MySqlParameter("@AppID", MySqlDbType.VarChar,64),
             };
-			 parameters[0].Value = model.ChatSessionID;
- parameters[1].Value = model.MemberID;
- parameters[2].Value = model.TopicSummary;
- parameters[3].Value = model.IsCoCreate;
- parameters[4].Value = model.SystemStatus;
- parameters[5].Value = model.CreateTime;
-            parameters[6].Value = model.AppID;
+			parameters[0].Value = model.ChatSessionID;
+			parameters[1].Value = model.MemberID;
+			parameters[2].Value = model.TopicSummary;
+			parameters[3].Value = model.IsCoCreate;
+			parameters[4].Value = model.SystemStatus;
+			parameters[5].Value = model.SessionStatus;
+			parameters[6].Value = model.CreateTime;
+			parameters[7].Value = model.AppID;
 
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(AppChatSessionInfoConnectionName),CommandType.Text,strSql.ToString(), parameters);
             if (rows > 0)
@@ -120,8 +125,8 @@ strSql.Append("SystemStatus=@SystemStatus,");
             strSql.Append(AppChatSessionInfoTableName);
             strSql.Append(" where ChatSessionID=@ChatSessionID");
             MySqlParameter[] parameters = {
-					new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar, 64)
-			};
+						new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar, 64)
+				};
             parameters[0].Value = chatSessionID;
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(AppChatSessionInfoConnectionName), CommandType.Text,strSql.ToString(), parameters);
             if (rows > 0)
@@ -206,10 +211,9 @@ strSql.Append("SystemStatus=@SystemStatus,");
             strSql.Append(" where ChatSessionID=@ChatSessionID");
             strSql.Append(" limit 1");
             MySqlParameter[] parameters = {
-					new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar, 64)
-			};
+						new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar, 64)
+				};
             parameters[0].Value = chatSessionID;
-            AppChatSessionInfo model = new AppChatSessionInfo();
             DataSet ds = DbHelper.ExecuteDataset(DbConfig.GetDbInfo(AppChatSessionInfoConnectionName), CommandType.Text,strSql.ToString(), parameters);
             if (ds.Tables[0].Rows.Count > 0)
             {
@@ -230,7 +234,7 @@ strSql.Append("SystemStatus=@SystemStatus,");
             {
 				if (row["ChatSessionID"] != null )
                 {
-					model.ChatSessionID = row["ChatSessionID"].ToString();
+						model.ChatSessionID = row["ChatSessionID"].ToString();
                 }
                 if (row["AppID"] != null)
                 {
@@ -238,11 +242,11 @@ strSql.Append("SystemStatus=@SystemStatus,");
                 }
                 if (row["MemberID"] != null )
                 {
-					model.MemberID = row["MemberID"].ToString();
+						model.MemberID = row["MemberID"].ToString();
                 }
 				if (row["TopicSummary"] != null )
                 {
-					model.TopicSummary = row["TopicSummary"].ToString();
+						model.TopicSummary = row["TopicSummary"].ToString();
                 }
 				if (row["IsCoCreate"] != null )
                 {
@@ -252,9 +256,14 @@ strSql.Append("SystemStatus=@SystemStatus,");
                 {
                     model.SystemStatus = int.Parse(row["SystemStatus"].ToString());
                 }
+				if (row["SessionStatus"].IsNotNull())
+                {
+                    int.TryParse(row["SessionStatus"].ToString(), out int sessionStatus);
+                    model.SessionStatus = sessionStatus;
+                }
 				if (row["CreateTime"] != null )
                 {
-					model.CreateTime = DateTime.Parse(row["CreateTime"].ToString());
+						model.CreateTime = DateTime.Parse(row["CreateTime"].ToString());
                 }
             }
             return model;
@@ -345,14 +354,6 @@ strSql.Append("SystemStatus=@SystemStatus,");
         /// <summary>
         /// 分页获取数据列表
         /// </summary>
-        /// <param name="pageSize">每页大小</param>
-        /// <param name="pageIndex">页标</param>
-        /// <param name="strWhere">查询条件</param>
-        /// <param name="pagetotal">总页数</param>
-        /// <param name="total">总数</param>
-        /// <param name="orderType">排序规则， 默认降序，1降序，0升序</param>
-        /// <param name="showName">显示字段，默认全部</param>
-        /// <param name="orderKey">排序key，默认主键</param>
         public DataTable AppChatSessionInfo_GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType = 1, string showName = "*", string orderKey = "ChatSessionID")
         {
             MySqlParameter[] parameters = {
@@ -389,6 +390,60 @@ strSql.Append("SystemStatus=@SystemStatus,");
                 pagetotal = 0;
                 return null;
             }
+        }
+        /// <summary>
+        /// 更新会话状态
+        /// </summary>
+        public bool AppChatSessionInfo_UpdateSessionStatus(string chatSessionID, int sessionStatus)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("update ");
+            strSql.Append(AppChatSessionInfoTableName);
+            strSql.Append(" set SessionStatus=@SessionStatus where ChatSessionID=@ChatSessionID");
+            MySqlParameter[] parameters = {
+                new MySqlParameter("@SessionStatus", MySqlDbType.Int32, 10),
+                new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar, 64)
+            };
+            parameters[0].Value = sessionStatus;
+            parameters[1].Value = chatSessionID;
+            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(AppChatSessionInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
+            return rows > 0;
+        }
+        /// <summary>
+        /// 根据会话ID列表批量查询会话状态
+        /// </summary>
+        public List<AppChatSessionInfo> AppChatSessionInfo_GetSessionStatusList(string sessionIDs)
+        {
+            var list = new List<AppChatSessionInfo>();
+            if (string.IsNullOrWhiteSpace(sessionIDs)) return list;
+
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("select ChatSessionID,SessionStatus,AppID,TopicSummary,MemberID from ");
+            strSql.Append(AppChatSessionInfoTableName);
+            strSql.Append(" where ChatSessionID in (");
+            strSql.Append(sessionIDs);
+            strSql.Append(")");
+
+            DataSet ds = DbHelper.ExecuteDataset(DbConfig.GetDbInfo(AppChatSessionInfoConnectionName), CommandType.Text, strSql.ToString());
+            if (ds != null && ds.Tables.Count > 0)
+            {
+                foreach (DataRow row in ds.Tables[0].Rows)
+                {
+                    var model = new AppChatSessionInfo();
+                    if (row["ChatSessionID"] != null)
+                        model.ChatSessionID = row["ChatSessionID"].ToString();
+                    if (row["SessionStatus"] != null)
+                        model.SessionStatus = int.Parse(row["SessionStatus"].ToString());
+                    if (row["AppID"] != null)
+                        model.AppID = row["AppID"].ToString();
+                    if (row["TopicSummary"] != null)
+                        model.TopicSummary = row["TopicSummary"].ToString();
+                    if (row["MemberID"] != null)
+                        model.MemberID = row["MemberID"].ToString();
+                    list.Add(model);
+                }
+            }
+            return list;
         }
 	}
 }

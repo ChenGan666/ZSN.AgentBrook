@@ -13,6 +13,8 @@ using ZSN.AgentBrook.API.Controllers;
 using ZSN.AgentBrook.API.Attributes;
 using System.Diagnostics;
 using ZSN.AI.API.Pages;
+using ZSN.AI.Entity.KnowledgeBase;
+using System.IO;
 
 namespace ZSN.AI.LLMServer.Controllers
 {
@@ -22,6 +24,39 @@ namespace ZSN.AI.LLMServer.Controllers
     public class KnowledgeBaseController : ApiBaseController
     {
         public KnowledgeBaseController() {
+        }
+
+        /// <summary>
+        /// 获取知识库图片
+        /// </summary>
+        [ApiExplorerSettings(GroupName = "V1-Public")]
+        [HttpGet]
+        [ApiRecoder(IsGetFile = true)]
+        [MemberCheck(MemberToken = false, Token = false, Sign = false, Timestamp = false)]
+        public async Task<IActionResult> GetImage(string imageId)
+        {
+            if (string.IsNullOrEmpty(imageId))
+                return NotFound();
+
+            var imageInfo = DocumentImageBusiness.GetByImageId(imageId);
+            if (imageInfo == null || string.IsNullOrEmpty(imageInfo.StoragePath))
+                return NotFound();
+
+            // StoragePath是相对路径，需要拼接ImageRootPath得到绝对路径
+            var rootPath = ConfigHelper.GetString("KnowledgeBase:ImageRootPath");
+            var absolutePath = Path.IsPathRooted(imageInfo.StoragePath)
+                ? imageInfo.StoragePath
+                : Path.Combine(rootPath, imageInfo.StoragePath.Replace("./", "").Replace(".\\", ""));
+
+            if (!System.IO.File.Exists(absolutePath))
+                return NotFound();
+
+            var contentType = !string.IsNullOrEmpty(imageInfo.MimeType) ? imageInfo.MimeType : "image/png";
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(absolutePath);
+
+            Response.Headers.Add("Content-Disposition", $"inline; filename=\"{imageInfo.ImageId}\"");
+            Response.Headers.Add("X-Content-Type-Options", "nosniff");
+            return File(fileBytes, contentType);
         }
 
         [HiddenApi]

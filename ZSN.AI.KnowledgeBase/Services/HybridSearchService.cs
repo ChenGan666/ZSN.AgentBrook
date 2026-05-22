@@ -17,9 +17,11 @@ namespace ZSN.AI.KnowledgeBase.Services
         private readonly IGraphRepository _graphRepository;
         private readonly IEmbeddingService _embeddingService;
         private readonly IVectorRepository _vectorRepository;
+        private readonly IImageRepository? _imageRepository;
         private readonly IConfiguration? _configuration;
         private readonly ILogger<HybridSearchService> _logger;
         private readonly string _graphName;
+        private readonly string _imageBaseUrl;
 
         /// <summary>
         /// 构造函数
@@ -30,17 +32,20 @@ namespace ZSN.AI.KnowledgeBase.Services
             IEmbeddingService embeddingService,
             IVectorRepository vectorRepository,
             IConfiguration? configuration,
-            ILogger<HybridSearchService> logger)
+            ILogger<HybridSearchService> logger,
+            IImageRepository? imageRepository = null)
         {
             _knowledgeGraphService = knowledgeGraphService;
             _graphRepository = graphRepository;
             _embeddingService = embeddingService;
             _vectorRepository = vectorRepository;
+            _imageRepository = imageRepository;
             _configuration = configuration;
             _logger = logger;
 
             // 从配置中获取图名称
             _graphName = configuration?["DbConnectionStrings:KnowledgeBaseDb:GraphName"] ?? "knowledge_graph";
+            _imageBaseUrl = configuration?["KnowledgeBase:ImageBaseUrl"] ?? "";
             _logger.LogInformation("混合检索服务初始化，图名称: {GraphName}", _graphName);
         }
 
@@ -108,6 +113,45 @@ namespace ZSN.AI.KnowledgeBase.Services
                 }
 
                 result.Metadata.TotalTime = stopwatch.Elapsed;
+
+                // 图片检索：当 EnableImageSearch=true 时，查询检索结果关联的图片
+                // 图片是否已处理取决于入库时知识库的 EnableImageProcessing 配置
+                // 此处只需查询已有图片数据，无需再查知识库配置
+                if (options.EnableImageSearch && _imageRepository != null)
+                {
+                    try
+                    {
+                        var chunkIds = result.FusedResults
+                            .Where(r => !string.IsNullOrEmpty(r.ChunkId))
+                            .Select(r => r.ChunkId)
+                            .ToList();
+
+                        if (chunkIds.Count > 0)
+                        {
+                            result.ChunkImages = await _imageRepository.GetImagesByChunkIdsAsync(chunkIds, cancellationToken);
+                            if (result.ChunkImages.Count > 0)
+                            {
+                                // 填充完整图片URL
+                                if (!string.IsNullOrEmpty(_imageBaseUrl))
+                                {
+                                    foreach (var kv in result.ChunkImages)
+                                    {
+                                        foreach (var img in kv.Value)
+                                        {
+                                            img.ImageUrl = $"{_imageBaseUrl.TrimEnd('/')}/api/KnowledgeBase/pic_{img.ImageId}";
+                                        }
+                                    }
+                                }
+                                _logger.LogInformation("图片检索完成: 关联{ChunkCount}个chunk, 找到{ImageCount}张图片",
+                                    chunkIds.Count, result.ChunkImages.Sum(kv => kv.Value.Count));
+                            }
+                        }
+                    }
+                    catch (Exception imgEx)
+                    {
+                        _logger.LogWarning(imgEx, "图片检索失败，不影响文本检索结果");
+                    }
+                }
 
                 _logger.LogInformation("混合检索完成，总结果数: {Count}, 耗时: {ElapsedMs}ms",
                     result.FusedResults.Count, result.Metadata.TotalTime.TotalMilliseconds);
@@ -1101,6 +1145,53 @@ namespace ZSN.AI.KnowledgeBase.Services
                 return modelId;
             }
             return 13; // 默认值
+        }
+
+        /// <summary>
+        /// 带图片的混合检索
+        /// </summary>
+        public async Task<HybridSearchResultWithImages> SearchWithImagesAsync(
+            string query, string knowledgeBaseId,
+            HybridSearchOptions options, CancellationToken ct = default)
+        {
+            // 执行现有的文本+图谱混合检索
+            var textResult = await SearchAsync(query, knowledgeBaseId, options, ct);
+
+            var result = new HybridSearchResultWithImages
+            {
+                VectorResults = textResult.VectorResults,
+                GraphResults = textResult.GraphResults,
+                FusedResults = textResult.FusedResults,
+                Metadata = textResult.Metadata
+            };
+
+            // 批量查询关联图片
+            if (_imageRepository != null)
+            {
+                var chunkIds = result.FusedResults
+                    .Where(r => !string.IsNullOrEmpty(r.ChunkId))
+                    .Select(r => r.ChunkId)
+                    .ToList();
+
+                if (chunkIds.Count > 0)
+                {
+                    result.ChunkImages = await _imageRepository.GetImagesByChunkIdsAsync(chunkIds, ct);
+
+                    // 填充完整图片URL
+                    if (!string.IsNullOrEmpty(_imageBaseUrl))
+                    {
+                        foreach (var kv in result.ChunkImages)
+                        {
+                            foreach (var img in kv.Value)
+                            {
+                                img.ImageUrl = $"{_imageBaseUrl.TrimEnd('/')}/api/KnowledgeBase/pic_{img.ImageId}";
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         #endregion

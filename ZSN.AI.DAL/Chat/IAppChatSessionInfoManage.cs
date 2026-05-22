@@ -22,6 +22,8 @@ namespace ZSN.AI.DAL
         int AppChatSessionInfo_GetRecordCount(string strWhere);
         DataSet AppChatSessionInfo_GetListByPage(string strWhere, string orderBy, int startIndex, int endIndex);
         DataTable AppChatSessionInfo_GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType, string showName, string orderKey);
+        bool AppChatSessionInfo_UpdateSessionStatus(string chatSessionID, int sessionStatus);
+        List<AppChatSessionInfo> AppChatSessionInfo_GetSessionStatusList(string sessionIDs);
         #endregion
     }
 }

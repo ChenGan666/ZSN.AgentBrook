@@ -5967,6 +5967,7 @@ name = "zsn-agentbrook"
 version = "0.1.0"
 dependencies = [
  "cpal",
+ "notify-rust",
  "serde",
  "serde_json",
  "tauri",

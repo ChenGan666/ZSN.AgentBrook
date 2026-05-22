@@ -37,6 +37,7 @@ namespace ZSN.AI.Node.Utils
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"加载提示词模板失败 [{configKey}]: {ex.Message}");
                 return string.Empty;
             }
         }
@@ -66,11 +67,13 @@ namespace ZSN.AI.Node.Utils
                 }
                 else
                 {
+                    System.Diagnostics.Debug.WriteLine($"提示词文件不存在: {fullPath}");
                     return string.Empty;
                 }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"读取提示词文件失败 [{filePath}]: {ex.Message}");
                 return string.Empty;
             }
         }
@@ -732,11 +735,30 @@ namespace ZSN.AI.Node.Utils
 
                     nodeConfig.data = serviceDeskData;
                     break;
+                case NodeType.Research:
+                    ResearchNodeData researchData = new ResearchNodeData();
+                    researchData.inputs.Add(new Inputs { varname = "prompt", type = "string", txt = "研究目标" });
+                    researchData.output.Add(new Output { varname = "results", type = "string", txt = "研究结果(Markdown)" });
+                    researchData.output.Add(new Output { varname = "summary", type = "string", txt = "研究摘要" });
+                    researchData.output.Add(new Output { varname = "sources", type = "string", txt = "信息来源(JSON)" });
+                    researchData.output.Add(new Output { varname = "key_findings", type = "string", txt = "关键发现(JSON)" });
+                    nodeConfig.data = researchData;
+                    break;
                 case NodeType.Voice:
-                    var voiceData = new ZSN.AI.Node.VoiceNode.VoiceNodeData();
+                    VoiceNodeData voiceData = new VoiceNodeData();
 
-                    voiceData.inputs.Add(new Inputs { varname = "audioSource", type = "string", txt = "音频来源" });
+                    // 输入参数
+                    voiceData.inputs.Add(new Inputs { varname = "prompt", type = "string", txt = "LLM后处理提示词" });
+                    voiceData.inputs.Add(new Inputs { varname = "audioSource", type = "string", txt = "音频来源(URL/路径)" });
 
+                    // 输出参数
+                    voiceData.output.Add(new Output { varname = "results", type = "string", txt = "最终结果(LLM处理后)" });
+                    voiceData.output.Add(new Output { varname = "transcription", type = "string", txt = "转写文本" });
+                    voiceData.output.Add(new Output { varname = "duration", type = "string", txt = "音频时长(秒)" });
+                    voiceData.output.Add(new Output { varname = "speakerCount", type = "string", txt = "说话人数量" });
+                    voiceData.output.Add(new Output { varname = "provider", type = "string", txt = "转写服务商" });
+
+                    // 默认提示词
                     voiceData.prompt = LoadPromptTemplate("VoiceDefaultPrompt");
                     if (string.IsNullOrEmpty(voiceData.prompt))
                     {
@@ -745,27 +767,6 @@ namespace ZSN.AI.Node.Utils
 
                     nodeConfig.data = voiceData;
                     break;
-                case NodeType.Research:
-                    ResearchNodeData researchData = new ResearchNodeData();
-
-                    // 输入参数
-                    researchData.inputs.Add(new Inputs { varname = "prompt", type = "string", txt = "研究目标" });
-
-                    // 输出参数
-                    researchData.output.Add(new Output { varname = "results", type = "string", txt = "详细研究报告" });
-                    researchData.output.Add(new Output { varname = "summary", type = "string", txt = "研究摘要" });
-                    researchData.output.Add(new Output { varname = "sources", type = "string", txt = "信息来源" });
-                    researchData.output.Add(new Output { varname = "key_findings", type = "string", txt = "关键发现" });
-
-                    // 默认配置
-                    researchData.MaxIterations = 3;
-                    researchData.MaxFetchUrls = 5;
-                    researchData.MaxContentLength = 5000;
-                    researchData.MaxLLMCalls = 6;
-                    researchData.CompletionThreshold = 0.8;
-
-                    nodeConfig.data = researchData;
-                    break;
             }
             nodeInfo.Config = nodeConfig;
 
@@ -773,6 +774,7 @@ namespace ZSN.AI.Node.Utils
         }
 
         
+
         /// <summary>
         /// 添加节点执行记录
         /// </summary>
@@ -911,6 +913,7 @@ namespace ZSN.AI.Node.Utils
                 // 容错处理:如果无法提取扩展名,跳过该附件
                 if (string.IsNullOrEmpty(extension))
                 {
+                    Console.WriteLine($"警告: 无法从附件中提取文件扩展名,跳过该附件。Name={attachment.Name}, FilePath={attachment.FilePath}");
                     continue;
                 }
 
@@ -928,6 +931,7 @@ namespace ZSN.AI.Node.Utils
                 else
                 {
                     // 扩展名不在字典中,使用默认MIME类型
+                    Console.WriteLine($"警告: 未知的文件扩展名 '{extension}',使用默认MIME类型 'application/octet-stream'");
 #pragma warning disable SKEXP0001 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
                     _ChatMessage.Add(new BinaryContent(bytes, "application/octet-stream"));
 #pragma warning restore SKEXP0001 // 类型仅用于评估，在将来的更新中可能会被更改或删除。取消此诊断以继续。
@@ -938,6 +942,7 @@ namespace ZSN.AI.Node.Utils
         }
 
         
+
         /// <summary>
         /// 预处理文本:去除markdown代码块、替换特殊引号
         /// </summary>

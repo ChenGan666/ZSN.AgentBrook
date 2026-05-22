@@ -350,6 +350,9 @@ namespace ZSN.AI.Node.ResearchNode
             return RecordID;
         }
 
+        /// <summary>
+        /// 构建模型配置，优先使用指定模型，否则回退到系统默认模型
+        /// </summary>
         private LargeModelConfig BuildModelConfig(LargeModelInfo modelSetting, int temperature, int topp)
         {
             LargeModelInfo modelInfo = null;

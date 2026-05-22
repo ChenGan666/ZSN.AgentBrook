@@ -21,6 +21,7 @@ using ZSN.AI.Core.Utils;
 using ZSN.AI.KnowledgeBase.Interface;
 using ZSN.AI.KnowledgeBase.Repositories;
 using ZSN.AI.KnowledgeBase.Services;
+using ZSN.AI.Node.ServiceDesk;
 using ZSN.AI.Service.Base;
 using ZSN.Utils.Core.Helpers;
 
@@ -81,7 +82,7 @@ namespace ZSN.AgentBrook.Web
             services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IKnowledgeRetriever, ZSN.AI.Node.ServiceDesk.Services.KnowledgeRetriever>();
             services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IResponseGenerator, ZSN.AI.Node.ServiceDesk.Services.ResponseGenerator>();
             services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.ISessionStateManager, ZSN.AI.Node.ServiceDesk.Services.SessionStateManager>();
-            services.AddScoped<ZSN.AI.Node.ExecutionServiceDesk>();
+            services.AddScoped<ExecutionServiceDesk>();
 
             services.AddScoped<ISemanticChunkerService, SemanticChunkerService>();
 
@@ -92,6 +93,13 @@ namespace ZSN.AgentBrook.Web
             services.AddScoped<IEmbeddingService, EmbeddingService>();
             services.AddScoped<IVectorRepository, VectorRepository>();
             services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
+
+            // 图片处理服务
+            services.AddScoped<IImageExtractionService, ImageExtractionService>();
+            services.AddScoped<IImageStorageService, FileImageStorageService>();
+            services.AddScoped<IImageDescriptionService, VLMImageDescriptionService>();
+            services.AddScoped<IImageRepository, ImageRepository>();
+            services.AddScoped<IImageProcessingPipeline, ImageProcessingPipeline>();
 
             services.AddSingleton(sp => new FunctionService(sp, [typeof(ZSN.AI.Plugins.BasePlugin).Assembly]));
 
@@ -205,10 +213,12 @@ namespace ZSN.AgentBrook.Web
                         if (graphRepository != null)
                         {
                             await graphRepository.InitializeAsync();
+                            Console.WriteLine("✓ Apache AGE 图数据库初始化成功");
                         }
                     }
                     catch (Exception ex)
                     {
+                        Console.WriteLine($"✗ Apache AGE 图数据库初始化失败: {ex.Message}");
                     }
 
                     try
@@ -216,10 +226,12 @@ namespace ZSN.AgentBrook.Web
                         if (vectorRepository != null)
                         {
                             await vectorRepository.InitializeAsync();
+                            Console.WriteLine("✓ 向量数据库初始化成功");
                         }
                     }
                     catch (Exception ex)
                     {
+                        Console.WriteLine($"✗ 向量数据库初始化失败: {ex.Message}");
                     }
                 }
             }).Wait();

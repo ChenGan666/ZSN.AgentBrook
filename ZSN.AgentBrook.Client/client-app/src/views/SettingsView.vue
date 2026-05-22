@@ -1,25 +1,25 @@
 <template>
   <div class="settings-page">
     <div class="settings-header">
-      <h2 class="settings-title">设置</h2>
+      <h2 class="settings-title">{{ t('settings.title') }}</h2>
       <el-button text @click="router.push('/chat')">
         <el-icon :size="20"><Close /></el-icon>
       </el-button>
     </div>
     <el-tabs v-model="activeTab" tab-position="left">
-      <el-tab-pane label="个人信息" name="profile">
+      <el-tab-pane :label="t('settings.profile')" name="profile">
         <ProfileSettings />
       </el-tab-pane>
-      <el-tab-pane label="服务端配置" name="server">
+      <el-tab-pane :label="t('settings.server')" name="server">
         <ServerSettings />
       </el-tab-pane>
-      <el-tab-pane label="应用设置" name="app">
+      <el-tab-pane :label="t('settings.app')" name="app">
         <AppSettings />
       </el-tab-pane>
-      <el-tab-pane label="缓存管理" name="cache">
+      <el-tab-pane :label="t('settings.cache')" name="cache">
         <CacheSettings />
       </el-tab-pane>
-      <el-tab-pane label="关于" name="about">
+      <el-tab-pane :label="t('settings.about')" name="about">
         <AboutSettings />
       </el-tab-pane>
     </el-tabs>
@@ -29,6 +29,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Close } from '@element-plus/icons-vue'
 import ProfileSettings from '@/components/settings/ProfileSettings.vue'
 import ServerSettings from '@/components/settings/ServerSettings.vue'
@@ -36,6 +37,7 @@ import AppSettings from '@/components/settings/AppSettings.vue'
 import CacheSettings from '@/components/settings/CacheSettings.vue'
 import AboutSettings from '@/components/settings/AboutSettings.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const activeTab = ref('profile')
 </script>

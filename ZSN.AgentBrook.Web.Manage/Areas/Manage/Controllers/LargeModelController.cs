@@ -211,11 +211,13 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
                             // 实际使用时应该提供真实的图像数据
                             testImageInput = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
                             
+                            Console.WriteLine("[测试] 使用图生图模式，提供测试图像");
                         }
                         else
                         {
                             // 文生图测试：不需要输入图像
                             imagePrompt = "一只可爱的小猫在花园里玩耍，阳光明媚，鲜花盛开";
+                            Console.WriteLine("[测试] 使用文生图模式");
                         }
                         
                         // 调用图像生成服务
@@ -269,6 +271,10 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
                     try
                     {
                         // 添加模型配置信息日志
+                        Console.WriteLine($"[测试] 模型名称: {LargeModel.ModelName}");
+                        Console.WriteLine($"[测试] 模型组织: {LargeModel.ModelOrganizationID}");
+                        Console.WriteLine($"[测试] 端点: {LargeModel.EndPoint}");
+                        Console.WriteLine($"[测试] 模型类型: {LargeModel.TypeCode}");
                         
                         string videoPrompt;
                         string? testImageInput = null;
@@ -281,11 +287,13 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
                             
                             testImageInput = "https://api.modelverse.cn/image/d2p7pge43lyniu/output/01c17556-6fe2-483e-a382-38c9b6138162-u1_c1095348-6f25-4185-9ec1-44b349d09e86.jpeg";
                             
+                            Console.WriteLine("[测试] 使用图生视频模式，提供测试图像");
                         }
                         else
                         {
                             // 文生视频测试：不需要输入图像
                             videoPrompt = "一只可爱的小猫在花园里玩耍，阳光明媚，鲜花盛开，镜头缓慢推进";
+                            Console.WriteLine("[测试] 使用文生视频模式");
                         }
                         
                         // 调用视频生成服务
@@ -343,6 +351,8 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
             }
             
             
+            
+
             return JsonMsg<List<Chats>>.OK(MessageList);
         }
     }

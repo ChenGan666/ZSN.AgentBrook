@@ -269,6 +269,7 @@ A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, suppo
 - **File Upload** — Multi-format support, large file chunked upload, image compression
 - **Human-in-the-loop** — Workflow human approval interaction
 - **Local Cache** — IndexedDB session/message storage, offline queue support
+- **i18n** — Built-in Chinese/English switching, extensible to more languages
 - **Security** — Token encrypted storage, API request signing, XSS protection
 
 **Tech Architecture:**

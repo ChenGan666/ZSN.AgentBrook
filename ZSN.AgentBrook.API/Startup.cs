@@ -63,23 +63,6 @@ namespace ZSN.AgentBrook.API
             // 注册操作日志服务
             services.AddScoped<ZSN.AI.BLL.IOperationLogService, ZSN.AI.Service.WebHelpers.OperationLogService>();
 
-            // 注册 Claw AI 服务
-            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.ITaskPlanningService, ZSN.AI.Node.Claw.Services.TaskPlanningService>();
-            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IMemoryService, ZSN.AI.Node.Claw.Services.MemoryService>();
-            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IReflectionService, ZSN.AI.Node.Claw.Services.ReflectionService>();
-            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IAgentOrchestrationService, ZSN.AI.Node.Claw.Services.AgentOrchestrationService>();
-            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IPersonalityService, ZSN.AI.Node.Claw.Services.PersonalityService>();
-            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IResultParserService, ZSN.AI.Node.Claw.Services.ResultParserService>();
-            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IKnowledgeExtractionService, ZSN.AI.Node.Claw.Services.KnowledgeExtractionService>();
-            services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IMasterControlService, ZSN.AI.Node.Claw.Services.MasterControlService>();
-
-            // ServiceDesk 服务注册
-            services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IRequestClassifier, ZSN.AI.Node.ServiceDesk.Services.RequestClassifier>();
-            services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IKnowledgeRetriever, ZSN.AI.Node.ServiceDesk.Services.KnowledgeRetriever>();
-            services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IResponseGenerator, ZSN.AI.Node.ServiceDesk.Services.ResponseGenerator>();
-            services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.ISessionStateManager, ZSN.AI.Node.ServiceDesk.Services.SessionStateManager>();
-            services.AddScoped<ZSN.AI.Node.ExecutionServiceDesk>();
-
             services.AddSingleton(sp => new FunctionService(sp, [typeof(ZSN.AI.Plugins.BasePlugin).Assembly]));
             services.AddSingleton<TaskManager>();
 
@@ -136,9 +119,10 @@ namespace ZSN.AgentBrook.API
             });
             app.UseStaticFiles();
 
-            // 添加URL重写中间件//api/File/Get?fileCode=66&w=0&h=0
+            // 添加URL重写中间件
             app.UseRewriter(new RewriteOptions()
                 .AddRewrite(@"^api/File/Get/([^/]+)/(\d+)/(\d+)$", "api/File/Get?filecode=$1&w=$2&h=$3", skipRemainingRules: true)
+                .AddRewrite(@"^api/KnowledgeBase/pic_([^/]+)$", "api/KnowledgeBase/GetImage?imageId=$1", skipRemainingRules: true)
             );
 
             // 启用请求体缓冲，允许多次读取请求体
@@ -147,6 +131,11 @@ namespace ZSN.AgentBrook.API
             {
                 context.Request.EnableBuffering();
                 await next();
+            });
+
+            app.UseWebSockets(new WebSocketOptions
+            {
+                KeepAliveInterval = TimeSpan.FromSeconds(30),
             });
 
             app.UseRouting();

@@ -58,6 +58,7 @@ namespace ZSN.AgentBrook.AutoJob
                             .WithCronSchedule(cronSchedule)
                             .Build();
                         await _scheduler.ScheduleJob(jobDetail, trigger, cancellationToken);
+                        Console.WriteLine($"已调度Job: {jobName}, Cron: {cronSchedule}");
                     }
                 }
                 else
@@ -69,17 +70,20 @@ namespace ZSN.AgentBrook.AutoJob
                         .WithSimpleSchedule(t => t.WithIntervalInSeconds(loopTimerSeconds).RepeatForever())
                         .Build();
                     await _scheduler.ScheduleJob(jobDetail, trigger, cancellationToken);
+                    Console.WriteLine($"已调度Job: {jobName}, 间隔: {loopTimerSeconds}秒");
                 }
             }
 
             // 所有任务添加完成后，启动调度器
             await _scheduler.Start(cancellationToken);
+            Console.WriteLine("Quartz Scheduler 已启动");
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             // 停止调度器
             await _scheduler.Shutdown(cancellationToken);
+            Console.WriteLine("Quartz Scheduler stopped.");
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿@{
     var member = ViewBag.Member as MemberInfo;
+    var DefaultPassword = ViewBag.DefaultPassword as string;
 
     var DepartmentList = ViewBag.DepartmentList as List<DepartmentInfo>;
     var StaffInfo = ViewBag.StaffInfo as StaffInfo;
@@ -180,7 +181,7 @@
                         {
                             <button class="layui-btn resetPwd" lay-filter="resetPwd">重置密码</button>
                         }
-                        
+                        (默认密码:@DefaultPassword)
                     </div>
                 </div>
             </form>

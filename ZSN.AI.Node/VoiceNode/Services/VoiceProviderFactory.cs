@@ -44,6 +44,8 @@ namespace ZSN.AI.Node.VoiceNode.Services
 
             if (state.IsOpen)
             {
+                _logger.LogInformation("[VoiceProviderFactory] Provider {Name} 熔断中，恢复时间: {Until}",
+                    preferredProvider, state.OpenUntil);
                 throw new InvalidOperationException($"转写 Provider {preferredProvider} 熔断中，请稍后重试");
             }
 
@@ -60,12 +62,13 @@ namespace ZSN.AI.Node.VoiceNode.Services
                 if (state.ConsecutiveFailures >= _options.Value.CircuitBreakerThreshold)
                 {
                     state.OpenUntil = DateTime.UtcNow.AddSeconds(_options.Value.CircuitBreakerRecoverySeconds);
-                    _logger.LogWarning("Provider {Name} 已熔断", preferredProvider);
+                    _logger.LogWarning("[VoiceProviderFactory] Provider {Name} 已熔断，恢复时间: {Until}",
+                        preferredProvider, state.OpenUntil);
                 }
             }
             catch (Exception ex) when (ex is not InvalidOperationException)
             {
-                _logger.LogWarning(ex, "Provider {Name} 异常", preferredProvider);
+                _logger.LogWarning(ex, "[VoiceProviderFactory] Provider {Name} 异常", preferredProvider);
                 state.ConsecutiveFailures++;
             }
 

@@ -431,6 +431,7 @@ namespace ZSN.AI.DAL.Postgres
             catch (Exception ex)
             {
                 // 如果向量搜索失败（如没有embedding数据），回退到文本搜索
+                System.Diagnostics.Debug.WriteLine($"[VectorSearch] 向量搜索失败，回退到文本搜索: {ex.Message}");
             }
 
             // 回退方案：使用文本相似度搜索

@@ -66,8 +66,8 @@ export class TauriAdapter implements PlatformAdapter {
 
   notification = {
     show(title: string, body: string): void {
-      import('@tauri-apps/plugin-notification').then(({ sendNotification }) => {
-        sendNotification({ title, body })
+      import('@tauri-apps/api/core').then(({ invoke }) => {
+        invoke('send_system_notification', { title, body })
       })
     },
   }

@@ -65,9 +65,11 @@ namespace ZSN.AI.Node.Claw.Utils
                             try
                             {
                                 Directory.Delete(dir, true);
+                                Console.WriteLine($"[ClawAI日志清理] 已删除过期日志目录: {dirName}");
                             }
                             catch (Exception ex)
                             {
+                                Console.WriteLine($"[ClawAI日志清理] 删除目录失败 {dirName}: {ex.Message}");
                             }
                         }
                     }
@@ -76,6 +78,7 @@ namespace ZSN.AI.Node.Claw.Utils
             catch (Exception ex)
             {
                 // 清理失败不影响主流程，只记录错误
+                Console.WriteLine($"[ClawAI日志清理] 清理过程出错: {ex.Message}");
             }
         }
 

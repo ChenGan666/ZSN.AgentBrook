@@ -88,6 +88,7 @@ namespace ZSN.AI.Node.ServiceDesk.Services
 
             // 2. 遍历所有知识库，按文件级别检索（与 KnowledgeBaseNodeAsync 逻辑一致）
             var allSearchResults = new List<(SearchResult result, string kbName, string fileName)>();
+            var allChunkImages = new Dictionary<string, List<ZSN.AI.Entity.KnowledgeBase.ImageSearchResult>>();
             int totalChunks = 0;
 
             foreach (var knowledgeBase in knowledgeBases)
@@ -116,6 +117,13 @@ namespace ZSN.AI.Node.ServiceDesk.Services
                             totalChunks += searchResult.FusedResults.Count;
                             _logger.LogInformation($"[KnowledgeRetriever] 文件 {knowledgeBaseFileInfo.FileName} 检索到 {searchResult.FusedResults.Count} 个相关文档块");
 
+                            // 收集图片信息
+                            if (searchResult.ChunkImages != null && searchResult.ChunkImages.Count > 0)
+                            {
+                                foreach (var kv in searchResult.ChunkImages)
+                                    allChunkImages[kv.Key] = kv.Value;
+                            }
+
                             for (int i = 0; i < Math.Min(3, searchResult.FusedResults.Count); i++)
                             {
                                 var result = searchResult.FusedResults[i];
@@ -139,19 +147,40 @@ namespace ZSN.AI.Node.ServiceDesk.Services
             _logger.LogInformation($"[KnowledgeRetriever] 混合检索完成，共检索到 {totalChunks} 个文档块，取Top {topResults.Count} 个结果");
 
             // 4. 构建检索结果
-            var items = topResults.Select(t => new RetrievalItem
+            var items = topResults.Select(t =>
             {
-                Content = t.result.Content ?? "",
-                Score = t.result.Score,
-                FinalScore = t.result.FusedScore,
-                Source = new KnowledgeSource
+                // 拼接图片信息到内容中
+                var content = t.result.Content ?? "";
+                if (allChunkImages.TryGetValue(t.result.ChunkId, out var images) && images.Count > 0)
                 {
-                    KnowledgeBaseName = t.kbName,
-                    DocumentId = t.result.DocumentId,
-                    DocumentTitle = t.fileName,
-                    ChunkId = t.result.ChunkId,
-                },
-                Metadata = t.result.Metadata?.ToDictionary(k => k.Key, v => v.Value?.ToString() ?? "")
+                    var imgBuilder = new StringBuilder();
+                    imgBuilder.AppendLine();
+                    imgBuilder.AppendLine($"\n[关联图片 {images.Count} 张]");
+                    foreach (var img in images)
+                    {
+                        imgBuilder.AppendLine($"[图片] ID:{img.ImageId}");
+                        if (!string.IsNullOrEmpty(img.Description))
+                            imgBuilder.AppendLine($"  描述: {img.Description}");
+                        if (!string.IsNullOrEmpty(img.OcrText))
+                            imgBuilder.AppendLine($"  OCR: {img.OcrText}");
+                    }
+                    content += imgBuilder.ToString();
+                }
+
+                return new RetrievalItem
+                {
+                    Content = content,
+                    Score = t.result.Score,
+                    FinalScore = t.result.FusedScore,
+                    Source = new KnowledgeSource
+                    {
+                        KnowledgeBaseName = t.kbName,
+                        DocumentId = t.result.DocumentId,
+                        DocumentTitle = t.fileName,
+                        ChunkId = t.result.ChunkId,
+                    },
+                    Metadata = t.result.Metadata?.ToDictionary(k => k.Key, v => v.Value?.ToString() ?? "")
+                };
             }).ToList();
 
             // 5. 计算整体置信度

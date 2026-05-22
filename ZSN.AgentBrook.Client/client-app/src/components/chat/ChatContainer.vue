@@ -41,6 +41,16 @@ function onScroll() {
 }
 
 watch(
+  () => chatStore.currentSessionId,
+  async () => {
+    isAtBottom.value = true
+    showNewMessageHint.value = false
+    await nextTick()
+    scrollToBottom()
+  },
+)
+
+watch(
   () => chatStore.messages.length,
   async () => {
     if (isAtBottom.value) {
@@ -74,7 +84,7 @@ watch(
 }
 
 .messages-wrapper {
-  padding: 16px 0;
+  padding: 16px 0 100px;
 }
 
 .empty-state {

@@ -24,6 +24,7 @@ namespace ZSN.AI.Entity
         var validation = McpConfigurationValidator.ValidateConfiguration(config);
         if (!validation.IsValid)
         {
+            Console.WriteLine($"配置错误: {string.Join(", ", validation.Errors)}");
         }
          */
 

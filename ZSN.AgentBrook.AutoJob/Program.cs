@@ -27,14 +27,15 @@ using ZSN.AI.KnowledgeBase.Services;
 using ZSN.AI.Node.Claw;
 using ZSN.AI.Node.Claw.Configuration;
 using ZSN.AI.Node;
+using ZSN.AI.Service.Base;
+using ZSN.Utils.Core.Helpers;
+using ZSN.AI.Node.ServiceDesk;
 using ZSN.AI.Node.ResearchNode;
 using ZSN.AI.Node.ResearchNode.Services;
 using ZSN.AI.Node.VoiceNode;
 using ZSN.AI.Node.VoiceNode.Interfaces;
 using ZSN.AI.Node.VoiceNode.Providers.FunASR;
 using ZSN.AI.Node.VoiceNode.Services;
-using ZSN.AI.Service.Base;
-using ZSN.Utils.Core.Helpers;
 
 namespace ZSN.AgentBrook.AutoJob
 {
@@ -145,13 +146,30 @@ namespace ZSN.AgentBrook.AutoJob
                 services.AddSingleton<ZSN.AI.Node.Claw.Services.IBackgroundPostProcessingQueue, ZSN.AI.Node.Claw.Services.BackgroundPostProcessingQueue>();
                 services.AddHostedService(sp => (ZSN.AI.Node.Claw.Services.BackgroundPostProcessingQueue)sp.GetRequiredService<ZSN.AI.Node.Claw.Services.IBackgroundPostProcessingQueue>());
                 
-                services.AddScoped<ZSN.AI.Node.ExecutionClaw>();
+                services.AddScoped<ExecutionClaw>();
 
                 // ServiceDesk 服务注册
                 services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IRequestClassifier, ZSN.AI.Node.ServiceDesk.Services.RequestClassifier>();
                 services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IResponseGenerator, ZSN.AI.Node.ServiceDesk.Services.ResponseGenerator>();
                 services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.ISessionStateManager, ZSN.AI.Node.ServiceDesk.Services.SessionStateManager>();
-                services.AddScoped<ZSN.AI.Node.ExecutionServiceDesk>();
+                services.AddScoped<ExecutionServiceDesk>();
+
+                // ResearchNode 服务注册
+                services.Configure<ResearchNodeOptions>(context.Configuration.GetSection("ResearchNode"));
+                services.AddHttpClient<IWebSearchService, WebSearchService>();
+                services.AddSingleton<PlaywrightBrowserPool>();
+                services.AddScoped<IContentCache, RedisContentCache>();
+                services.AddScoped<IContentFetcherService, ContentFetcherService>();
+                services.AddScoped<IResearchEngineService, ResearchEngineService>();
+                services.AddScoped<ExecutionResearch>();
+
+                // VoiceNode 服务注册
+                services.Configure<VoiceNodeOptions>(context.Configuration.GetSection("VoiceNodeOptions"));
+                services.Configure<FunASROptions>(context.Configuration.GetSection("FunASROptions"));
+                services.AddSingleton<IVoiceProviderFactory, VoiceProviderFactory>();
+                services.AddSingleton<IAudioPreprocessor, AudioPreprocessor>();
+                services.AddSingleton<IVoiceTranscriptionProvider, FunASRProvider>();
+                services.AddTransient<ExecutionVoice>();
 
                 // 注册记忆整理服务
                 services.AddScoped<ZSN.AI.Node.Claw.Interfaces.IMemoryConsolidationService, ZSN.AI.Node.Claw.Services.MemoryConsolidationService>();
@@ -166,28 +184,12 @@ namespace ZSN.AgentBrook.AutoJob
                 services.AddScoped<IVectorRepository, VectorRepository>();
                 services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
 
-                // Research 节点服务注册
-                services.Configure<ResearchNodeOptions>(context.Configuration.GetSection("ResearchNode"));
-                services.AddSingleton<PlaywrightBrowserPool>();
-                services.AddHttpClient<IWebSearchService, WebSearchService>();
-                services.AddScoped<IContentFetcherService, ContentFetcherService>();
-                services.AddScoped<IResearchEngineService, ResearchEngineService>();
-                services.AddScoped<IContentCache, RedisContentCache>();
-
-                // Voice 节点服务注册
-                services.Configure<VoiceNodeOptions>(context.Configuration.GetSection("VoiceNodeOptions"));
-                services.Configure<FunASROptions>(context.Configuration.GetSection("FunASROptions"));
-                services.AddSingleton<IVoiceProviderFactory, VoiceProviderFactory>();
-                services.AddSingleton<IAudioPreprocessor, AudioPreprocessor>();
-                services.AddSingleton<IVoiceTranscriptionProvider, FunASRProvider>();
-                services.AddTransient<ExecutionVoice>();
-
-                // 知识库图片处理服务注册
+                // 图片处理服务
                 services.AddScoped<IImageExtractionService, ImageExtractionService>();
-                services.AddScoped<IImageDescriptionService, VLMImageDescriptionService>();
                 services.AddScoped<IImageStorageService, FileImageStorageService>();
-                services.AddScoped<IImageProcessingPipeline, ImageProcessingPipeline>();
+                services.AddScoped<IImageDescriptionService, VLMImageDescriptionService>();
                 services.AddScoped<IImageRepository, ImageRepository>();
+                services.AddScoped<IImageProcessingPipeline, ImageProcessingPipeline>();
 
                 services.AddSingleton(sp => new FunctionService(sp, [typeof(ZSN.AI.Plugins.BasePlugin).Assembly]));
                 services.AddSingleton(sp => new FunctionService(sp, [typeof(ZSN.AI.Plugins.Functions.HttpPlugin).Assembly]));
@@ -217,6 +219,7 @@ namespace ZSN.AgentBrook.AutoJob
                 return await executionClaw.ContinueFromStepAsync(asyncTaskID, mergedResult, allStepResults);
             });
 
+            Console.WriteLine($"[Startup] ClawAI 异步恢复回调已注册 - IsRegistered: {ClawAIResumeCallback.IsRegistered}");
 
             // ✅ 回调注册完成后再启动 Quartz 定时任务
             host.RunAsync();
@@ -235,11 +238,13 @@ namespace ZSN.AgentBrook.AutoJob
                     if (graphRepository != null)
                     {
                         await graphRepository.InitializeAsync();
+                        Console.WriteLine("✓ Apache AGE 图数据库初始化成功");
                         NLogHelper.WriteInfo("Apache AGE 图数据库初始化成功");
                     }
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine($"✗ Apache AGE 图数据库初始化失败: {ex.Message}");
                     NLogHelper.WriteError($"Apache AGE 图数据库初始化失败: {ex.Message}");
                 }
 
@@ -248,11 +253,13 @@ namespace ZSN.AgentBrook.AutoJob
                     if (vectorRepository != null)
                     {
                         await vectorRepository.InitializeAsync();
+                        Console.WriteLine("✓ 向量数据库初始化成功");
                         NLogHelper.WriteInfo("向量数据库初始化成功");
                     }
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine($"✗ 向量数据库初始化失败: {ex.Message}");
                     NLogHelper.WriteError($"向量数据库初始化失败: {ex.Message}");
                 }
             }).Wait();

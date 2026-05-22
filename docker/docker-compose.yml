@@ -94,22 +94,6 @@ services:
       - autojob
       - api
 
-  client:
-    container_name: Client
-    build:
-      context: ./Client
-      dockerfile: Dockerfile
-    ports:
-      - "5006:5006"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - TZ=Asia/Shanghai
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: always
-    depends_on:
-      - api
-
   mysql:
     build:
       context: ./mysql

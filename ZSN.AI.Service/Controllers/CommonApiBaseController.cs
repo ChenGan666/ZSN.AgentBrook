@@ -32,6 +32,7 @@ namespace ZSN.AI.Service.Controllers
         private string _memberToken { get; set; } = null;
 
         
+
         public static DateTime UnixTimeStampStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public static long DateTimeToTimeStamp(DateTime dateTime)
         {
@@ -42,14 +43,24 @@ namespace ZSN.AI.Service.Controllers
 
             if (HttpContextHelper.Current != null)
             {
-                // 已启用 EnableBuffering，现在可以安全地多次读取请求体
-                // 在构造函数中读取 BodyParams 并设置到 Session，供 SettingsService 使用
-                var _x = this.BodyParams;
+                // WebSocket 请求没有请求体，跳过 BodyParams 读取
+                if (!HttpContextHelper.Current.WebSockets.IsWebSocketRequest)
+                {
+                    // 已启用 EnableBuffering，现在可以安全地多次读取请求体
+                    // 在构造函数中读取 BodyParams 并设置到 Session，供 SettingsService 使用
+                    var _x = this.BodyParams;
+                }
 
                 try
                 {
                     _token = HttpContextHelper.Current.Request.Headers["bearer"];
                     _memberToken = HttpContextHelper.Current.Request.Headers["memberbearer"];
+
+                    // WebSocket 等场景不支持自定义 Header 时，从 query 参数回退读取
+                    if (string.IsNullOrEmpty(_token))
+                        _token = HttpContextHelper.Current.Request.Query["bearer"];
+                    if (string.IsNullOrEmpty(_memberToken))
+                        _memberToken = HttpContextHelper.Current.Request.Query["memberbearer"];
                 }
                 catch
                 {
@@ -158,6 +169,9 @@ namespace ZSN.AI.Service.Controllers
                     try
                     {
                         _token = HttpContextHelper.Current.Request.Headers["bearer"];
+                        // WebSocket 等场景不支持自定义 Header 时，从 query 参数回退读取
+                        if (string.IsNullOrEmpty(_token))
+                            _token = HttpContextHelper.Current.Request.Query["bearer"];
                     }
                     catch
                     {
@@ -180,6 +194,9 @@ namespace ZSN.AI.Service.Controllers
                     try
                     {
                         _memberToken = HttpContextHelper.Current.Request.Headers["memberbearer"];
+                        // WebSocket 等场景不支持自定义 Header 时，从 query 参数回退读取
+                        if (string.IsNullOrEmpty(_memberToken))
+                            _memberToken = HttpContextHelper.Current.Request.Query["memberbearer"];
                     }
                     catch
                     {

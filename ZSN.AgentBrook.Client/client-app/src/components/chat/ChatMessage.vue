@@ -1,14 +1,15 @@
 <template>
   <div :class="['chat-message', `role-${message.role}`]">
-    <div class="message-avatar">
-      <div class="avatar-icon">
-        {{ message.role === 'user' ? '👤' : '🤖' }}
-      </div>
+    <div v-if="message.role === 'assistant'" class="message-avatar">
+      <img v-if="appInfo?.AICON" :src="appInfo.AICON" class="avatar-img" :alt="appInfo.Name" />
+      <div v-else class="avatar-icon avatar-icon-app">{{ appInfo?.Name?.charAt(0) || 'A' }}</div>
     </div>
 
     <div class="message-content">
       <div class="message-header">
-        <span class="message-role">{{ roleLabel }}</span>
+        <template v-if="message.role === 'assistant'">
+          <span class="message-role">{{ roleLabel }}</span>
+        </template>
         <span class="message-time">{{ formattedTime }}</span>
       </div>
 
@@ -84,6 +85,7 @@
 import { computed, ref, watch, nextTick } from 'vue'
 import { renderMarkdown } from '@/utils/markdown'
 import { execHumanInTheLoop, execHumanInTheLoopByForm } from '@/services/hitl'
+import { useChatStore } from '@/stores/chat'
 import ProcessStatus from './ProcessStatus.vue'
 import HitlInputPanel from './HitlInputPanel.vue'
 import type { ChatMessage, NormalizedRecord } from '@/types/chat'
@@ -92,7 +94,16 @@ const props = defineProps<{
   message: ChatMessage
 }>()
 
+const chatStore = useChatStore()
 const streamScrollRef = ref<HTMLElement | null>(null)
+
+const appInfo = computed(() => {
+  if (props.message.role !== 'assistant') return null
+  const session = chatStore.sessions.find(s => s.ChatSessionID === props.message.sessionId)
+  const appId = session?.AppID || chatStore.selectedAppId
+  if (!appId) return null
+  return chatStore.apps.find(a => a.AppID === appId) || null
+})
 
 // Stream text from process.streamsByNode
 const streamText = computed(() => {
@@ -113,7 +124,8 @@ watch(streamText, () => {
 })
 
 const roleLabel = computed(() => {
-  const labels: Record<string, string> = { user: '用户', assistant: 'AI 助手', system: '系统' }
+  if (props.message.role === 'assistant') return appInfo.value?.Name || 'AI 助手'
+  const labels: Record<string, string> = { user: '', system: '系统' }
   return labels[props.message.role] || props.message.role
 })
 
@@ -271,7 +283,6 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
 <style lang="scss" scoped>
 .chat-message {
   display: flex;
-  gap: 12px;
   padding: 16px;
   animation: slideIn 0.3s ease-out;
 }
@@ -282,6 +293,7 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
 }
 
 .role-user {
+  justify-content: flex-end;
   background-color: #f7f7f8;
 }
 
@@ -293,24 +305,35 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
   flex-shrink: 0;
 }
 
-.avatar-icon {
+.avatar-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-icon-app {
   width: 36px;
   height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.role-user .avatar-icon {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+.message-content {
+  min-width: 0;
 }
 
-.message-content {
-  flex: 1;
-  min-width: 0;
+.role-user .message-content {
+  max-width: 80%;
+}
+
+.role-assistant .message-content {
 }
 
 .message-header {
@@ -318,6 +341,10 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.role-user .message-header {
+  justify-content: flex-end;
 }
 
 .message-role {

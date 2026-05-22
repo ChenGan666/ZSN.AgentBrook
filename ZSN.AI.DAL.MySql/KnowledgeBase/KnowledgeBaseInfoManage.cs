@@ -14,11 +14,11 @@ namespace ZSN.AI.DAL.MySql
         ///表名称
         private string KnowledgeBaseInfoTableName = "tb_knowledge_base_info";
         ///表字段
-        private const string KnowledgeBaseInfoTableField = "KnowledgeBaseID,Name,DicIDList,DicNameList,Description,PreprocessModelID,PreprocessModelName,VectorModelID,VectorModelName,ParagraphSlice,LineSliceCount,OverlapSection,SystemStatus,MemberID,ChargeType,CreateTime,LastUpdateTime";
+        private const string KnowledgeBaseInfoTableField = "KnowledgeBaseID,Name,DicIDList,DicNameList,Description,PreprocessModelID,PreprocessModelName,VectorModelID,VectorModelName,ParagraphSlice,LineSliceCount,OverlapSection,SystemStatus,MemberID,ChargeType,CreateTime,LastUpdateTime,EnableImageProcessing,VisionModelID,VisionModelName";
         ///添加用表字段
-        private const string KnowledgeBaseInfoTableFieldForAdd = "KnowledgeBaseID,Name,DicIDList,DicNameList,Description,PreprocessModelID,PreprocessModelName,VectorModelID,VectorModelName,ParagraphSlice,LineSliceCount,OverlapSection,SystemStatus,MemberID,ChargeType,CreateTime,LastUpdateTime";
+        private const string KnowledgeBaseInfoTableFieldForAdd = "KnowledgeBaseID,Name,DicIDList,DicNameList,Description,PreprocessModelID,PreprocessModelName,VectorModelID,VectorModelName,ParagraphSlice,LineSliceCount,OverlapSection,SystemStatus,MemberID,ChargeType,CreateTime,LastUpdateTime,EnableImageProcessing,VisionModelID,VisionModelName";
         ///添加用表字段value
-        private const string KnowledgeBaseInfoTableFieldAltForAdd = "@KnowledgeBaseID,@Name,@DicIDList,@DicNameList,@Description,@PreprocessModelID,@PreprocessModelName,@VectorModelID,@VectorModelName,@ParagraphSlice,@LineSliceCount,@OverlapSection,@SystemStatus,@MemberID,@ChargeType,@CreateTime,@LastUpdateTime";
+        private const string KnowledgeBaseInfoTableFieldAltForAdd = "@KnowledgeBaseID,@Name,@DicIDList,@DicNameList,@Description,@PreprocessModelID,@PreprocessModelName,@VectorModelID,@VectorModelName,@ParagraphSlice,@LineSliceCount,@OverlapSection,@SystemStatus,@MemberID,@ChargeType,@CreateTime,@LastUpdateTime,@EnableImageProcessing,@VisionModelID,@VisionModelName";
         public string SetConnectionName(string connName)
         {
             return KnowledgeBaseInfoConnectionName = connName;
@@ -55,6 +55,9 @@ namespace ZSN.AI.DAL.MySql
  new MySqlParameter("@LastUpdateTime", MySqlDbType.DateTime,16),
  new MySqlParameter("@PreprocessModelName", MySqlDbType.VarChar,128),
  new MySqlParameter("@VectorModelName", MySqlDbType.VarChar,128),
+		  new MySqlParameter("@EnableImageProcessing", MySqlDbType.Int16,1),
+		  new MySqlParameter("@VisionModelID", MySqlDbType.Int32,10),
+		  new MySqlParameter("@VisionModelName", MySqlDbType.VarChar,128),
 
                     };
 			 parameters[0].Value = model.KnowledgeBaseID;
@@ -74,6 +77,9 @@ namespace ZSN.AI.DAL.MySql
  parameters[14].Value = model.LastUpdateTime;
             parameters[15].Value = model.PreprocessModelName;
             parameters[16].Value = model.VectorModelName;
+            parameters[17].Value = model.EnableImageProcessing ? 1 : 0;
+            parameters[18].Value = model.VisionModelID;
+            parameters[19].Value = model.VisionModelName;
 
             object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(KnowledgeBaseInfoConnectionName), CommandType.Text,strSql.ToString(), parameters);
             if (obj == null)
@@ -109,7 +115,10 @@ strSql.Append("SystemStatus=@SystemStatus,");
 strSql.Append("MemberID=@MemberID,");
 strSql.Append("ChargeType=@ChargeType,");
 strSql.Append("CreateTime=@CreateTime,");
-strSql.Append("LastUpdateTime=@LastUpdateTime");
+strSql.Append("LastUpdateTime=@LastUpdateTime,");
+            strSql.Append("EnableImageProcessing=@EnableImageProcessing,");
+            strSql.Append("VisionModelID=@VisionModelID,");
+            strSql.Append("VisionModelName=@VisionModelName");
 
             strSql.Append(" where KnowledgeBaseID=@KnowledgeBaseID");
             MySqlParameter[] parameters = {
@@ -149,6 +158,9 @@ strSql.Append("LastUpdateTime=@LastUpdateTime");
  parameters[14].Value = model.LastUpdateTime;
             parameters[15].Value = model.PreprocessModelName;
             parameters[16].Value = model.VectorModelName;
+            parameters[17].Value = model.EnableImageProcessing ? 1 : 0;
+            parameters[18].Value = model.VisionModelID;
+            parameters[19].Value = model.VisionModelName;
 
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(KnowledgeBaseInfoConnectionName),CommandType.Text,strSql.ToString(), parameters);
             if (rows > 0)
@@ -304,6 +316,18 @@ strSql.Append("LastUpdateTime=@LastUpdateTime");
 				if (row["LastUpdateTime"] != null )
                 {
 					model.LastUpdateTime = DateTime.Parse(row["LastUpdateTime"].ToString());
+                }
+                if (row["EnableImageProcessing"] != null && row["EnableImageProcessing"].ToString() != "")
+                {
+                    model.EnableImageProcessing = Convert.ToInt32(row["EnableImageProcessing"]) == 1;
+                }
+                if (row["VisionModelID"] != null && row["VisionModelID"].ToString() != "")
+                {
+                    model.VisionModelID = int.Parse(row["VisionModelID"].ToString());
+                }
+                if (row["VisionModelName"] != null)
+                {
+                    model.VisionModelName = row["VisionModelName"].ToString();
                 }
             }
             return model;

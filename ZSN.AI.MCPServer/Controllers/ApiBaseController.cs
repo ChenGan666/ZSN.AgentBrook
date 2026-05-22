@@ -61,6 +61,7 @@ namespace ZSN.AI.MCPServer.Controllers
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[LogApiCall] 记录日志失败: {ex.Message}");
             }
         }
     }

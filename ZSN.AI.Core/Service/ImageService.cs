@@ -35,17 +35,25 @@ namespace ZSN.AI.Core.Service
             var sw = Stopwatch.StartNew();
             try
             {
+                Console.WriteLine($"[图片生成] 开始生成图片");
+                Console.WriteLine($"[图片生成] 模型: {modelInfo.ModelName}");
+                Console.WriteLine($"[图片生成] 生成类型: {request.GenerationType}");
+                Console.WriteLine($"[图片生成] 提示词: {request.Prompt}");
 
                 var provider = GetProvider(modelInfo);
                 var imageUrl = await provider.GenerateImageAsync(modelInfo, request);
 
                 LogImageCall(modelInfo, request, imageUrl, sw.ElapsedMilliseconds, "success");
+                Console.WriteLine($"[图片生成] 图片生成成功");
+                Console.WriteLine($"[图片生成] 图片URL: {imageUrl}");
 
                 return imageUrl;
             }
             catch (Exception ex)
             {
                 LogImageCall(modelInfo, request, null, sw.ElapsedMilliseconds, "error", ex.Message);
+                Console.WriteLine($"[图片生成] 生成图片失败: {ex.Message}");
+                Console.WriteLine($"[图片生成] 异常堆栈: {ex.StackTrace}");
                 throw new Exception($"图片生成失败: {ex.Message}", ex);
             }
         }
@@ -79,6 +87,7 @@ namespace ZSN.AI.Core.Service
         /// </summary>
         private IImageProvider GetProvider(LargeModelInfo modelInfo)
         {
+            Console.WriteLine($"[图片生成] 使用 OpenAI 兼容提供商");
             return new OpenAICompatibleImageProvider();
         }
 

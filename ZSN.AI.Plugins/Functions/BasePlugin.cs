@@ -58,6 +58,7 @@ namespace ZSN.AI.Plugins
             [Description("提出的问题的内容,不能为空")] string Inputs
         )
         {
+            Console.WriteLine($"{FromMainTaskID}_{Inputs}");
             string NewTaskID = "";
             if (!Inputs.IsNullOrEmpty() && !AppID.IsNullOrEmpty() && !TaskID.IsNullOrEmpty() && !SessionID.IsNullOrEmpty() && !ProcessesID.IsNullOrEmpty() && !AgentNodeID.IsNullOrEmpty())
             {

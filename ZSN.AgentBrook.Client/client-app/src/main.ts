@@ -7,6 +7,7 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 import App from './App.vue'
 import router from './router'
+import i18n from './locales'
 import { lazyImage } from './directives/lazyImage'
 import './styles/global.scss'
 
@@ -17,6 +18,7 @@ pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
 app.use(router)
+app.use(i18n)
 app.use(ElementPlus, { locale: zhCn })
 app.directive('lazy-image', lazyImage)
 

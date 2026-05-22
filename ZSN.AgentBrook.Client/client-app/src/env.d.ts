@@ -40,6 +40,10 @@ declare module '@tauri-apps/plugin-notification' {
   export function sendNotification(options: { title: string; body: string }): void
 }
 
+declare module '@tauri-apps/api/core' {
+  export function invoke<T = void>(cmd: string, args?: Record<string, unknown>): Promise<T>
+}
+
 declare module '@tauri-apps/api/window' {
   export function getCurrentWindow(): {
     minimize(): Promise<void>
