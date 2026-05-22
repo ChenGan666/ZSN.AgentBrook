@@ -23,5 +23,5 @@ jobs:
         with:
           publish_dir: ./traffic
           publish_branch: traffic
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.TRAFFIC_TOKEN }}
           commit_message: "Update traffic badges"
