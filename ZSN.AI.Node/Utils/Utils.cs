@@ -767,6 +767,34 @@ namespace ZSN.AI.Node.Utils
 
                     nodeConfig.data = voiceData;
                     break;
+                case NodeType.Message:
+                    MessageNodeData messageData = new MessageNodeData();
+
+                    // 输入参数
+                    messageData.inputs.Add(new Inputs { varname = "input", type = "string", txt = "输入内容（可选，用于占位符替换）" });
+
+                    // 输出参数
+                    messageData.output.Add(new Output { varname = "sendSuccess", type = "string", txt = "发送状态(AllSuccess/PartialSuccess/AllFailed/Queued/Timeout)" });
+                    messageData.output.Add(new Output { varname = "sendCount", type = "int", txt = "发送目标数" });
+                    messageData.output.Add(new Output { varname = "successCount", type = "int", txt = "成功数" });
+                    messageData.output.Add(new Output { varname = "failedCount", type = "int", txt = "失败数" });
+                    messageData.output.Add(new Output { varname = "targetUsers", type = "string", txt = "目标用户ID列表(JSON)" });
+                    messageData.output.Add(new Output { varname = "platformMessageIds", type = "string", txt = "平台消息ID映射(JSON)" });
+                    messageData.output.Add(new Output { varname = "errorMessage", type = "string", txt = "错误信息" });
+                    messageData.output.Add(new Output { varname = "results", type = "string", txt = "综合结果描述" });
+
+                    // 默认配置
+                    messageData.MessageType = "text";
+                    messageData.MessageTemplate = "{{input}}";
+                    messageData.TargetUserConfig = new TargetUserConfig
+                    {
+                        SourceMode = "Static",
+                        SendIndividually = true
+                    };
+                    messageData.WaitForConfirmation = false;
+
+                    nodeConfig.data = messageData;
+                    break;
             }
             nodeInfo.Config = nodeConfig;
 

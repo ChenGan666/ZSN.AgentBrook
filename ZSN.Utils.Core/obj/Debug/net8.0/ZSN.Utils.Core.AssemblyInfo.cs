@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZSN.Utils.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c9bb716de70bc5b56c5c17ac95e8dbaeb470930f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dfcd044a4350db75a2f15a5c2250aca0ff91bdd2")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZSN.Utils.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZSN.Utils.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

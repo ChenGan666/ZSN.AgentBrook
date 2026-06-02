@@ -85,6 +85,7 @@ namespace ZSN.AI.Entity
         ServiceDesk = 25,
         Research = 26,
         Voice = 27,
+        Message = 28,
 
         NotNode_FileChunk = 90,
         NotNode_Markdown = 91,

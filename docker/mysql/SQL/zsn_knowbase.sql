@@ -1370,6 +1370,101 @@ INSERT INTO `tb_workflow_node_info` (`NodeID`, `WorkflowID`, `NodeType`, `NodeNa
 COMMIT;
 
 -- ----------------------------
+-- Table structure for tb_msg_channel_config
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_msg_channel_config`;
+CREATE TABLE `tb_msg_channel_config` (
+  `ChannelID` varchar(36) NOT NULL COMMENT '渠道唯一ID',
+  `ChannelName` varchar(128) DEFAULT NULL COMMENT '渠道显示名称',
+  `ProviderType` int NOT NULL DEFAULT '1' COMMENT 'Provider类型: 1=WeChatWork 2=WhatsApp 3=DingTalk 4=Feishu 99=Test',
+  `ConfigJson` text COMMENT 'Provider特定配置JSON（加密存储）',
+  `FlowDirection` int NOT NULL DEFAULT '3' COMMENT '消息流向: 1=SendOnly 2=ReceiveOnly 3=Bidirectional',
+  `TargetAppID` varchar(36) DEFAULT NULL COMMENT '接收流向: 目标应用ID',
+  `SessionTimeoutMinutes` int DEFAULT '30' COMMENT '接收流向: 会话超时分钟数',
+  `Enabled` int DEFAULT '1' COMMENT '是否启用: 1=启用 0=禁用',
+  `CreateTime` datetime DEFAULT NULL COMMENT '创建时间',
+  `UpdateTime` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`ChannelID`),
+  KEY `idx_provider_type` (`ProviderType`),
+  KEY `idx_enabled` (`Enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ----------------------------
+-- Table structure for tb_msg_send_record
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_msg_send_record`;
+CREATE TABLE `tb_msg_send_record` (
+  `RecordID` varchar(36) NOT NULL COMMENT '记录唯一ID',
+  `ChannelID` varchar(36) DEFAULT NULL COMMENT '关联渠道ID',
+  `SessionID` varchar(36) DEFAULT NULL COMMENT '关联会话ID',
+  `TaskID` varchar(36) DEFAULT NULL COMMENT '关联任务ID',
+  `NodeID` varchar(36) DEFAULT NULL COMMENT '关联节点ID',
+  `MessageType` varchar(64) DEFAULT 'text' COMMENT '消息类型: text/markdown/image/file',
+  `Content` text COMMENT '发送内容',
+  `TargetUser` varchar(128) DEFAULT NULL COMMENT '目标用户/群组',
+  `SendStatus` int DEFAULT '0' COMMENT '发送状态: 0=待发送 1=成功 -1=失败',
+  `PlatformMessageId` varchar(128) DEFAULT NULL COMMENT 'IM平台消息ID',
+  `RetryCount` int DEFAULT '0' COMMENT '实际重试次数',
+  `ErrorMessage` text COMMENT '错误信息',
+  `SendTime` datetime DEFAULT NULL COMMENT '发送时间',
+  `CreateTime` datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`RecordID`),
+  KEY `idx_channel_id` (`ChannelID`),
+  KEY `idx_session_id` (`SessionID`),
+  KEY `idx_task_id` (`TaskID`),
+  KEY `idx_send_status` (`SendStatus`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ----------------------------
+-- Table structure for tb_msg_receive_record
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_msg_receive_record`;
+CREATE TABLE `tb_msg_receive_record` (
+  `RecordID` varchar(36) NOT NULL COMMENT '记录唯一ID',
+  `ChannelID` varchar(36) DEFAULT NULL COMMENT '关联渠道ID',
+  `EventId` varchar(128) NOT NULL COMMENT '平台事件唯一ID（幂等去重）',
+  `ProviderType` varchar(64) DEFAULT NULL COMMENT '来源Provider类型',
+  `FromUser` varchar(128) DEFAULT NULL COMMENT '发送者ID',
+  `FromUserName` varchar(128) DEFAULT NULL COMMENT '发送者显示名称',
+  `MessageType` varchar(64) DEFAULT 'text' COMMENT '消息类型',
+  `Content` text COMMENT '消息文本内容',
+  `RawPayload` text COMMENT '原始IM平台消息JSON',
+  `RoutedWorkflowID` varchar(36) DEFAULT NULL COMMENT '路由到的工作流ID',
+  `RoutedTaskID` varchar(36) DEFAULT NULL COMMENT '创建的任务ID',
+  `RouteStatus` int DEFAULT '0' COMMENT '路由状态: 0=待路由 1=已路由 -1=未匹配',
+  `ReceiveTime` datetime DEFAULT NULL COMMENT '消息接收时间',
+  `CreateTime` datetime DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`RecordID`),
+  UNIQUE KEY `uk_event_id` (`EventId`),
+  KEY `idx_channel_id` (`ChannelID`),
+  KEY `idx_route_status` (`RouteStatus`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ----------------------------
+-- Table structure for tb_msg_route_rule
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_msg_route_rule`;
+CREATE TABLE `tb_msg_route_rule` (
+  `RuleID` varchar(36) NOT NULL COMMENT '规则唯一ID',
+  `ChannelID` varchar(36) DEFAULT NULL COMMENT '关联渠道ID（空=所有渠道）',
+  `RuleName` varchar(128) DEFAULT NULL COMMENT '规则名称',
+  `MatchType` varchar(64) DEFAULT 'All' COMMENT '匹配类型: All/Keyword/Regex/Intent',
+  `MatchCondition` text COMMENT '匹配条件JSON',
+  `TargetAppID` varchar(36) DEFAULT NULL COMMENT '目标应用ID',
+  `InputMapping` text COMMENT '自定义inputs映射JSON',
+  `SessionTimeoutMinutes` int DEFAULT '30' COMMENT '会话超时分钟数（0=每次新建）',
+  `EnableAutoReply` int DEFAULT '0' COMMENT '未匹配时是否自动回复: 1=启用 0=禁用',
+  `AutoReplyContent` text COMMENT '自动回复内容模板',
+  `Priority` int DEFAULT '0' COMMENT '优先级（越大越高）',
+  `Enabled` int DEFAULT '1' COMMENT '是否启用: 1=启用 0=禁用',
+  `CreateTime` datetime DEFAULT NULL COMMENT '创建时间',
+  `UpdateTime` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`RuleID`),
+  KEY `idx_channel_id` (`ChannelID`),
+  KEY `idx_enabled_priority` (`Enabled`, `Priority` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ----------------------------
 -- Procedure structure for CommonPagenation
 -- ----------------------------
 DROP PROCEDURE IF EXISTS `CommonPagenation`;

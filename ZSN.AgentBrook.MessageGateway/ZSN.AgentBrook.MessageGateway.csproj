@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.14.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZSN.AI.BLL\ZSN.AI.BLL.csproj" />
+    <ProjectReference Include="..\ZSN.AI.DAL.MySql\ZSN.AI.DAL.MySql.csproj" />
+    <ProjectReference Include="..\ZSN.AI.DAL.Postgres\ZSN.AI.DAL.Postgres.csproj" />
+    <ProjectReference Include="..\ZSN.Cache\ZSN.Cache.csproj" />
+  </ItemGroup>
+
+</Project>

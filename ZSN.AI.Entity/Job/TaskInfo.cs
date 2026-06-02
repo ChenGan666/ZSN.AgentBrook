@@ -116,6 +116,21 @@ namespace ZSN.AI.Entity
         public dynamic AdditionalOptions { get; set; } = null;
 
         public string FromMainTaskID { get; set; } = string.Empty;
+
+        /// <summary>
+        /// IM回传: 来源渠道ID（End节点据此发回对应渠道）
+        /// </summary>
+        public string MsgChannelID { get; set; } = string.Empty;
+
+        /// <summary>
+        /// IM回传: 原IM用户ID（End节点据此回复给正确的用户）
+        /// </summary>
+        public string MsgFromUser { get; set; } = string.Empty;
+
+        /// <summary>
+        /// IM回传: "end" 表示此任务需要在End节点自动回传
+        /// </summary>
+        public string MsgReplyMode { get; set; } = string.Empty;
     }
     public partial class TaskConfig
     {

@@ -12,8 +12,10 @@ using ZSN.AI.Entity;
 using ZSN.AI.Node;
 using ZSN.AI.Node.Claw;
 using ZSN.AI.Node.ServiceDesk;
+using ZSN.AI.Node.MessageNode;
 using ZSN.AI.Node.VoiceNode;
 using ZSN.AI.Node.VoiceNode.Interfaces;
+using StackExchange.Redis;
 using Microsoft.Extensions.Options;
 using ZSN.AI.Node.VoiceNode.Extensions;
 using ZSN.AI.Service.WebHelpers;
@@ -341,6 +343,16 @@ namespace ZSN.AgentBrook.AutoJob
                                 chatService, scopeProvider, voiceLogger,
                                 voiceProviderFactory, voicePreprocessor, voiceNodeOptions);
                             re = await executionVoice.VoiceNodeAsync(taskConfig.NodeConfig, taskData);
+                            break;
+                        case NodeType.Message:
+                            var messageLogger = scopeProvider.GetRequiredService<ILogger<ExecutionMessage>>();
+                            var redis = scopeProvider.GetRequiredService<IConnectionMultiplexer>();
+                            var messageNodeOptions = scopeProvider.GetRequiredService<IOptions<ZSN.AI.Node.MessageNode.MessageNodeOptions>>();
+
+                            var executionMessage = new ExecutionMessage(
+                                chatService, scopeProvider, messageLogger,
+                                redis, messageNodeOptions);
+                            re = await executionMessage.MessageNodeAsync(taskConfig.NodeConfig, taskData);
                             break;
                     }
 

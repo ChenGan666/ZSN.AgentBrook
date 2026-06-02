@@ -166,6 +166,10 @@ namespace ZSN.AgentBrook.AutoJob
                 // VoiceNode 服务注册
                 services.Configure<VoiceNodeOptions>(context.Configuration.GetSection("VoiceNodeOptions"));
                 services.Configure<FunASROptions>(context.Configuration.GetSection("FunASROptions"));
+
+                // MessageNode 服务注册
+                services.Configure<ZSN.AI.Node.MessageNode.MessageNodeOptions>(context.Configuration.GetSection("MessageNode"));
+                services.AddTransient<ZSN.AI.Node.MessageNode.ExecutionMessage>();
                 services.AddSingleton<IVoiceProviderFactory, VoiceProviderFactory>();
                 services.AddSingleton<IAudioPreprocessor, AudioPreprocessor>();
                 services.AddSingleton<IVoiceTranscriptionProvider, FunASRProvider>();

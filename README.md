@@ -30,6 +30,8 @@
 ## 平台亮点
 
 - **可视化 DAG 工作流引擎** — 拖拽式设计器，20+ 节点类型，支持条件分支、并行执行、人工审批、子工作流嵌套
+- **Message 消息节点** — 工作流驱动的 IM 消息发送节点，支持企业微信/钉钉/飞书/WhatsApp，Redis 队列异步解耦，批量发送与回执确认
+- **MessageGateway 消息网关** — 统一 IM 消息收发网关，Webhook 接收 → 路由规则匹配 → 工作流触发，支持多渠道多规则编排
 - **Voice 语音转写节点** — 语音识别 + LLM 后处理一体化，支持 FunASR 本地部署，说话人分离、多格式输出（SRT/VTT/JSON）、长音频自动分段、热词增强
 - **ClawAI 智能体** — Plan-Execute-Reflect 循环架构，多层记忆系统（短期/长期/情景/人格/用户画像），支持任务分解与动态重规划
 - **ServiceDesk 客服节点** — FunctionCall 驱动的知识库检索 + 生成一体化，支持多轮对话、意图识别、信息收集
@@ -72,6 +74,8 @@ AI.Entity ───────────────────────�
    │
    ├── AgentBrook.API ────────────────────────── (API 网关，串联所有模块)
    │
+   ├── AgentBrook.MessageGateway ───────────── (IM 消息网关)
+   │
    ├── AgentBrook.AutoJob ────────────────────── (后台任务调度)
    │
    ├── AgentBrook.Client ──────────────────────── (跨平台客户端)
@@ -100,6 +104,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AI.Plugins** | Semantic Kernel 函数插件集合 | |
 | **ZSN.AI.Functions** | 内置函数库 | |
 | **ZSN.AgentBrook.API** | REST API 网关，Swagger 文档 | ASP.NET Core, SignalR |
+| **ZSN.AgentBrook.MessageGateway** | 统一 IM 消息网关，多渠道 Webhook 接收与路由 | ASP.NET Core, Redis Queue |
 | **ZSN.AgentBrook.Client** | 跨平台客户端（Vue3 + Tauri / Web SPA） | Vue3, TypeScript, Element Plus, Tauri |
 | **ZSN.AgentBrook.Web** | 前端界面（React + Ant Design Pro） | React, Ant Design Pro |
 | **ZSN.AgentBrook.Web.Manage** | 管理后台（LayUI） | LayUI, jQuery |
@@ -126,7 +131,7 @@ AI.Entity ───────────────────────�
 | 类别 | 节点 |
 |---|---|
 | 流程控制 | Start, End, AgentStart, AgentEnd |
-| AI 推理 | MainAI, LargeModel, ClawAI, ServiceDesk, Research, Voice |
+| AI 推理 | MainAI, LargeModel, ClawAI, ServiceDesk, Research, Voice, Message |
 | 知识检索 | KnowledgeBase, FileToMarkdown |
 | 逻辑路由 | Selector（条件分支）, Merge（汇聚）, IntentionRecognition（意图识别） |
 | 工具集成 | MCP, Plugins, Agent（子工作流） |
@@ -248,6 +253,61 @@ Voice 节点是集语音识别与 LLM 后处理于一体的智能语音处理节
   }
 }
 ```
+
+### 4.3 Message — 消息发送节点
+
+Message 节点使工作流能够主动发送 IM 消息，支持多渠道集成和灵活的发送策略：
+
+**核心特性：**
+- **多渠道支持**：企业微信、钉钉、飞书、WhatsApp，通过 MessageGateway 统一适配
+- **多用户模式**：Static（手动指定）/ Dynamic（上游变量）/ Query（查询，预留），支持批量独立发送
+- **占位符替换**：消息模板支持 `{{input}}`、`{{变量名}}` 等占位符，自动替换为工作流上下文变量
+- **发送确认**：支持 WaitForConfirmation 模式，轮询等待网关确认发送结果后再触发下游
+- **Redis 解耦**：通过 Redis 队列与 MessageGateway 异步通信，节点不直接调用 IM API
+- **个人化消息**：支持为每个目标用户覆盖消息内容，实现个性化推送
+
+**处理流程：**
+
+```
+工作流 → MessageNode → Redis 入队 (msg_send_queue)
+    → MessageGateway 消费者出队
+    → 查找渠道配置 → Provider 实例化
+    → Token 刷新 / 签名计算 → IM API 发送
+    → 结果写回 tb_msg_send_record
+    → (WaitForConfirmation 模式) Node 轮询确认
+```
+
+**配置示例（appsettings.json）：**
+
+```json
+{
+  "MessageNode": {
+    "SendQueueName": "msg_send_queue",
+    "WaitTimeoutSeconds": 30,
+    "PollIntervalMs": 500
+  }
+}
+```
+
+### 4.4 MessageGateway — 消息网关
+
+MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消息：
+
+**接收流向（IM → 工作流）：**
+- Webhook 接收 IM 平台回调 → 渠道签名验证 → 消息解析 → 幂等去重 → 路由规则匹配 → 创建工作流任务
+
+**发送流向（工作流 → IM）：**
+- Redis 队列消费 (msg_send_queue) → 渠道配置查找 → Provider 获取/熔断保护 → 重试机制 → 结果回写
+
+**路由规则：**
+- 支持 All / Keyword / Regex 多种匹配类型
+- 优先级排序，第一条命中的规则生效
+- 自动创建会话、临时会员（确定性 MemberID）
+- 支持自定义 inputs 映射到工作流变量
+
+**熔断保护：**
+- 可配置连续失败阈值，自动熔断 Provider
+- 熔断后自动恢复（可配置恢复时间）
 
 ### 5. MCP 工具集成
 
@@ -392,6 +452,9 @@ dotnet run --project ZSN.AgentBrook.API
 
 # 启动后台任务调度（工作流执行）
 dotnet run --project ZSN.AgentBrook.AutoJob
+
+# 启动消息网关（IM 消息收发，可选）
+dotnet run --project ZSN.AgentBrook.MessageGateway
 
 # 启动管理后台（可选）
 dotnet run --project ZSN.AgentBrook.Web.Manage

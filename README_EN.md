@@ -30,6 +30,8 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 ## Platform Highlights
 
 - **Visual DAG Workflow Engine** — Drag-and-drop designer, 20+ node types, supporting conditional branching, parallel execution, human approval, and sub-workflow nesting
+- **Message Node** — Workflow-driven IM messaging node, supporting WeChat Work/DingTalk/Feishu/WhatsApp, Redis queue async decoupling, batch sending with delivery confirmation
+- **MessageGateway** — Unified IM messaging gateway, Webhook receive → routing rule matching → workflow trigger, multi-channel multi-rule orchestration
 - **Voice Transcription Node** — Integrated speech recognition + LLM post-processing, FunASR local deployment, speaker diarization, multi-format output (SRT/VTT/JSON), automatic long-audio segmentation, hotword boosting
 - **ClawAI Agent** — Plan-Execute-Reflect loop architecture, multi-layer memory system (short-term/long-term/episodic/personality/user profile), task decomposition and dynamic replanning
 - **ServiceDesk Customer Service Node** — FunctionCall-driven integrated knowledge base retrieval + generation, supporting multi-turn dialogue, intent recognition, and information collection
@@ -72,6 +74,8 @@ AI.Entity ───────────────────────�
    │
    ├── AgentBrook.API ────────────────────────── (API gateway, connecting all modules)
    │
+   ├── AgentBrook.MessageGateway ───────────── (IM messaging gateway)
+   │
    ├── AgentBrook.AutoJob ────────────────────── (Background task scheduling)
    │
    ├── AgentBrook.Client ──────────────────────── (Cross-platform client)
@@ -100,6 +104,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AI.Plugins** | Semantic Kernel function plugin collection | |
 | **ZSN.AI.Functions** | Built-in function library | |
 | **ZSN.AgentBrook.API** | REST API gateway, Swagger documentation | ASP.NET Core, SignalR |
+| **ZSN.AgentBrook.MessageGateway** | Unified IM messaging gateway, multi-channel Webhook receive & route | ASP.NET Core, Redis Queue |
 | **ZSN.AgentBrook.Client** | Cross-platform client (Vue3 + Tauri / Web SPA) | Vue3, TypeScript, Element Plus, Tauri |
 | **ZSN.AgentBrook.Web** | Frontend interface (React + Ant Design Pro) | React, Ant Design Pro |
 | **ZSN.AgentBrook.Web.Manage** | Admin dashboard (LayUI) | LayUI, jQuery |
@@ -126,7 +131,7 @@ DAG (Directed Acyclic Graph) based visual workflow editor with drag-and-drop des
 | Category | Nodes |
 |---|---|
 | Flow Control | Start, End, AgentStart, AgentEnd |
-| AI Reasoning | MainAI, LargeModel, ClawAI, ServiceDesk, Research, Voice |
+| AI Reasoning | MainAI, LargeModel, ClawAI, ServiceDesk, Research, Voice, Message |
 | Knowledge Retrieval | KnowledgeBase, FileToMarkdown |
 | Logic Routing | Selector (conditional branching), Merge (convergence), IntentionRecognition (intent recognition) |
 | Tool Integration | MCP, Plugins, Agent (sub-workflow) |

@@ -64,6 +64,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZSN.AI.KnowledgeBase", "ZSN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZSN.AgentBrook.Client", "ZSN.AgentBrook.Client\ZSN.AgentBrook.Client.csproj", "{C659897B-EEC2-49B2-86F2-F1D0EBC8D8F0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZSN.AgentBrook.MessageGateway", "ZSN.AgentBrook.MessageGateway\ZSN.AgentBrook.MessageGateway.csproj", "{EC4FC668-E7F0-4856-B398-FD29CE7378F0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -338,6 +340,18 @@ Global
 		{C659897B-EEC2-49B2-86F2-F1D0EBC8D8F0}.Release|x64.Build.0 = Release|Any CPU
 		{C659897B-EEC2-49B2-86F2-F1D0EBC8D8F0}.Release|x86.ActiveCfg = Release|Any CPU
 		{C659897B-EEC2-49B2-86F2-F1D0EBC8D8F0}.Release|x86.Build.0 = Release|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Debug|x64.Build.0 = Debug|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Debug|x86.Build.0 = Debug|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Release|x64.ActiveCfg = Release|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Release|x64.Build.0 = Release|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Release|x86.ActiveCfg = Release|Any CPU
+		{EC4FC668-E7F0-4856-B398-FD29CE7378F0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
