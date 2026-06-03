@@ -84,6 +84,9 @@ namespace ZSN.AgentBrook.Web
             services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.ISessionStateManager, ZSN.AI.Node.ServiceDesk.Services.SessionStateManager>();
             services.AddScoped<ExecutionServiceDesk>();
 
+            // 注册工作流自动生成器
+            services.AddScoped<ZSN.AI.Node.Utils.WorkflowAutoGenerator>();
+
             services.AddScoped<ISemanticChunkerService, SemanticChunkerService>();
 
             // 知识库服务改为 Scoped，因为依赖 IChatService（Scoped）

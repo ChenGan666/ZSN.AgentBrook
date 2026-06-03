@@ -29,7 +29,7 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 
 ## Platform Highlights
 
-- **Visual DAG Workflow Engine** — Drag-and-drop designer, 20+ node types, supporting conditional branching, parallel execution, human approval, and sub-workflow nesting
+- **Visual DAG Workflow Engine** — Drag-and-drop designer, 20+ node types, supporting conditional branching, parallel execution, human approval, sub-workflow nesting, and **AI auto-generation of downstream node chains**
 - **Message Node** — Workflow-driven IM messaging node, supporting WeChat Work/DingTalk/Feishu/WhatsApp, Redis queue async decoupling, batch sending with delivery confirmation
 - **MessageGateway** — Unified IM messaging gateway, Webhook receive → routing rule matching → workflow trigger, multi-channel multi-rule orchestration
 - **Voice Transcription Node** — Integrated speech recognition + LLM post-processing, FunASR local deployment, speaker diarization, multi-format output (SRT/VTT/JSON), automatic long-audio segmentation, hotword boosting
@@ -137,6 +137,15 @@ DAG (Directed Acyclic Graph) based visual workflow editor with drag-and-drop des
 | Tool Integration | MCP, Plugins, Agent (sub-workflow) |
 | Human-Machine Collaboration | HumanInTheLoop (human approval), Reporter (report generation) |
 | Triggers | TimeTrigger (scheduled trigger) |
+
+**AI Auto-Generation of Downstream Node Chains:**
+
+Select any node in the workflow editor, describe your needs in natural language, and the AI will automatically plan, generate, and assemble a complete downstream node chain:
+
+- **Three-Phase Pipeline**: Plan workflow structure → Parallel node detail generation → Engineering assembly, with real-time progress via SSE
+- **Intelligent Variable Mapping**: Automatically resolves available variables from upstream context, precisely matching sourceId references for downstream nodes
+- **Existing Workflow Compatible**: Preserves upstream nodes unchanged, only generates new downstream nodes and edges, with auto-layout and DAG cycle detection
+- **Customizable Prompt Templates**: Built-in AutoGeneratePlan and ModifyNodeDetail prompt templates, customizable via md files
 
 ### 2. ClawAI — Advanced Agent
 

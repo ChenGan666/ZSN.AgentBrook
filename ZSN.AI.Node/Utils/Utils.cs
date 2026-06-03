@@ -974,7 +974,7 @@ namespace ZSN.AI.Node.Utils
         /// <summary>
         /// 预处理文本:去除markdown代码块、替换特殊引号
         /// </summary>
-        private static string PreprocessText(string raw)
+        public static string PreprocessText(string raw)
         {
             string text = raw.Trim();
 
@@ -1007,7 +1007,7 @@ namespace ZSN.AI.Node.Utils
         /// <summary>
         /// 提取JSON候选文本(通过平衡括号)
         /// </summary>
-        private static string ExtractJsonCandidate(string text)
+        public static string ExtractJsonCandidate(string text)
         {
             // 优先查找对象 {}
             int objStart = text.IndexOf('{');
@@ -1029,7 +1029,7 @@ namespace ZSN.AI.Node.Utils
         /// <summary>
         /// 规范化JSON格式,修复常见问题
         /// </summary>
-        private static string NormalizeJsonFormat(string text)
+        public static string NormalizeJsonFormat(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return string.Empty;
 
