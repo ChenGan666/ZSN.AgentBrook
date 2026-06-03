@@ -21,10 +21,14 @@ jobs:
           my_token: ${{ secrets.TRAFFIC_TOKEN }}
           static_list: ZSN.AgentBrook
 
+      - name: Ensure traffic directory exists
+        run: mkdir -p ./traffic
+
       - name: Deploy to traffic branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           publish_dir: ./traffic
           publish_branch: traffic
+          allow_empty_commit: true
           personal_token: ${{ secrets.TRAFFIC_TOKEN }}
           commit_message: "Update traffic badges"
