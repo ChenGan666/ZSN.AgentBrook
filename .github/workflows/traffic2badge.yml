@@ -12,6 +12,9 @@ jobs:
   update-badges:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Generate Traffic Badges
         uses: yi-Xu-0100/traffic-to-badge@v1.4.0
         with:

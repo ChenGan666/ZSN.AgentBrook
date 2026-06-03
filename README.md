@@ -22,6 +22,8 @@
 [![SearXNG](https://img.shields.io/badge/SearXNG-Latest-1D4ED8)](https://github.com/searxng/searxng)
 [![Quartz.NET](https://img.shields.io/badge/Quartz.NET-3.x-512BD4)](https://www.quartz-scheduler.net/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Clones](https://raw.githubusercontent.com/ChenGan666/ZSN.AgentBrook/traffic/traffic-ZSN.AgentBrook/clones.svg)](https://github.com/ChenGan666/ZSN.AgentBrook)
+[![Views](https://raw.githubusercontent.com/ChenGan666/ZSN.AgentBrook/traffic/traffic-ZSN.AgentBrook/views.svg)](https://github.com/ChenGan666/ZSN.AgentBrook)
 
 </div>
 
