@@ -72,13 +72,21 @@ export function useConnection() {
             const summary = item.Summary
               ? stripMarkdown(item.Summary).slice(0, 120)
               : (isFailed ? t('chat.notifyViewDetail') : t('chat.notifyViewReply'))
-            platform.notification.show(title, `${topic}: ${summary}`)
+            platform.notification.show(title, `${topic}: ${summary}`, { sessionId: item.ChatSessionID })
           }
         }
 
         // 有会话完成，刷新会话列表
         if (completedList.length > 0) {
           chatStore.fetchSessions(1).catch(() => {})
+
+          // 如果当前查看的会话完成了，刷新消息（替换虚拟 pending 消息为真实记录）
+          const currentCompleted = completedList.find(
+            (c) => c.ChatSessionID === chatStore.currentSessionId,
+          )
+          if (currentCompleted) {
+            chatStore.refreshCurrentSessionMessages().catch(() => {})
+          }
         }
       }
 
@@ -113,10 +121,11 @@ export function useConnection() {
     if (reconnectTimer) clearTimeout(reconnectTimer)
   }
 
-  // 有新会话加入运行列表时，立即触发心跳获取服务端状态
+  // 有新会话加入运行列表时，重置心跳定时器。
+  // 不立即触发 checkConnection()，避免异步响应在 SSE 结束后到达、
+  // loading 已为 false 的情况下错误触发 refreshCurrentSessionMessages。
   watch(() => chatStore.runningSessionIds.length, (newLen, oldLen) => {
     if (newLen > oldLen) {
-      checkConnection()
       restartHeartbeatTimer()
     }
   })

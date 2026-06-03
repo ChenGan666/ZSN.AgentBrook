@@ -64,10 +64,31 @@ export class TauriAdapter implements PlatformAdapter {
     },
   }
 
+  private _pendingSessionId: string | null = null
+  private _notificationClickCallback: ((sessionId: string) => void) | null = null
+
   notification = {
-    show(title: string, body: string): void {
+    show: (title: string, body: string, options?: { sessionId?: string }): void => {
+      if (options?.sessionId) {
+        this._pendingSessionId = options.sessionId
+      }
       import('@tauri-apps/api/core').then(({ invoke }) => {
-        invoke('send_system_notification', { title, body })
+        invoke('send_system_notification', {
+          title,
+          body,
+          sessionId: options?.sessionId || null,
+        })
+      })
+    },
+    onNotificationClick: (callback: (sessionId: string) => void): void => {
+      this._notificationClickCallback = callback
+      // macOS/Windows: 点击通知会激活应用窗口，触发 focus 事件
+      window.addEventListener('focus', () => {
+        if (this._pendingSessionId && this._notificationClickCallback) {
+          const sid = this._pendingSessionId
+          this._pendingSessionId = null
+          this._notificationClickCallback(sid)
+        }
       })
     },
   }

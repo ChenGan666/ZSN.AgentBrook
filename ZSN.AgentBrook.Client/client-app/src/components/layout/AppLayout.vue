@@ -3,9 +3,18 @@
     <TitleBar v-if="isTauri()" />
 
     <div class="app-body">
-      <aside class="sidebar" :style="{ width: appStore.sidebarCollapsed ? '0px' : '280px' }">
+      <aside
+        class="sidebar"
+        :style="{ width: appStore.sidebarCollapsed ? '0px' : `${appStore.sidebarWidth}px` }"
+      >
         <SideBar @new-chat="handleNewChat" />
       </aside>
+
+      <div
+        v-show="!appStore.sidebarCollapsed"
+        class="resize-handle"
+        @mousedown="onResizeStart"
+      />
 
       <main class="main-content">
         <StatusBar @toggle-sidebar="appStore.sidebarCollapsed = !appStore.sidebarCollapsed" />
@@ -36,7 +45,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { isTauri } from '@/platform'
+import { isTauri, platform } from '@/platform'
 import { useAppStore } from '@/stores/app'
 import { useChatStore } from '@/stores/chat'
 import TitleBar from './TitleBar.vue'
@@ -53,6 +62,32 @@ const appStore = useAppStore()
 const chatStore = useChatStore()
 const showAppPicker = ref(false)
 
+let resizing = false
+
+function onResizeStart(e: MouseEvent) {
+  e.preventDefault()
+  resizing = true
+  const startX = e.clientX
+  const startWidth = appStore.sidebarWidth
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+
+  const onMove = (ev: MouseEvent) => {
+    if (!resizing) return
+    const delta = ev.clientX - startX
+    appStore.setSidebarWidth(startWidth + delta)
+  }
+  const onUp = () => {
+    resizing = false
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
 useConnection()
 useWindowState()
 useGlobalShortcut()
@@ -60,6 +95,13 @@ useGlobalShortcut()
 onMounted(() => {
   chatStore.fetchSessions()
   chatStore.fetchApps()
+
+  // 注册通知点击回调，点击通知时切换到对应会话
+  platform.notification.onNotificationClick?.((sessionId: string) => {
+    if (sessionId) {
+      chatStore.selectSession(sessionId)
+    }
+  })
 })
 
 async function handleNewChat() {
@@ -94,9 +136,26 @@ function selectApp(app: AppInfo) {
 .sidebar {
   flex-shrink: 0;
   overflow: hidden;
-  transition: width 0.3s ease;
   border-right: 1px solid var(--border-color, #e4e7ed);
   background: var(--bg-sidebar, #f8f9fa);
+
+  &:not([style*="width: 0px"]) {
+    transition: none;
+  }
+}
+
+.resize-handle {
+  width: 4px;
+  cursor: col-resize;
+  flex-shrink: 0;
+  background: transparent;
+  transition: background 0.2s;
+  position: relative;
+  z-index: 10;
+
+  &:hover {
+    background: var(--el-color-primary-light-7);
+  }
 }
 
 .main-content {

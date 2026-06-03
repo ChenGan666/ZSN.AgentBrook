@@ -57,6 +57,9 @@ declare module '@tauri-apps/api/window' {
     outerSize(): Promise<{ width: number; height: number }>
     setPosition(pos: any): Promise<void>
     setSize(size: any): Promise<void>
+    startDragging(): Promise<void>
+    setResizable(resizable: boolean): Promise<void>
+    setAlwaysOnTop(alwaysOnTop: boolean): Promise<void>
   }
 }
 

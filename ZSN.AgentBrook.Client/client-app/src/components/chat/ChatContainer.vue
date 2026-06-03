@@ -1,13 +1,22 @@
 <template>
-  <div class="chat-container" ref="containerRef" @scroll="onScroll">
+  <div
+    class="chat-container"
+    ref="containerRef"
+    v-loading="chatStore.loadingMessages"
+    :element-loading-text="t('chat.loadingMessages')"
+    @scroll="onScroll"
+  >
     <div class="messages-wrapper">
+      <SessionStatusBanner />
       <ChatMessage
         v-for="msg in chatStore.messages"
         :key="msg.id"
         :message="msg"
+        @retry-process="(payload) => emit('retryProcess', payload)"
+        @retry-node="(payload) => emit('retryNode', payload)"
       />
-      <div v-if="chatStore.messages.length === 0" class="empty-state">
-        <p>开始新的对话</p>
+      <div v-if="!chatStore.loadingMessages && chatStore.messages.length === 0" class="empty-state">
+        <p>{{ t('chat.startNewConversation') }}</p>
       </div>
     </div>
     <transition name="fade">
@@ -20,8 +29,17 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import ChatMessage from './ChatMessage.vue'
+import SessionStatusBanner from './SessionStatusBanner.vue'
+
+const { t } = useI18n()
+
+const emit = defineEmits<{
+  retryProcess: [payload: { sessionId: string; processesId: string; messageId: string | null }]
+  retryNode: [payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }]
+}>()
 
 const chatStore = useChatStore()
 const containerRef = ref<HTMLElement | null>(null)

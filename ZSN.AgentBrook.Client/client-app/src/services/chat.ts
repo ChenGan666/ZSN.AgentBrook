@@ -13,3 +13,24 @@ export function getSummaryList(sessionId: string) {
 export function getChatCompletionsUrl() {
   return `${getBaseUrl()}/Chat/completions`
 }
+
+export function getNodeExecutionRecordUrl() {
+  return `${getBaseUrl()}/Chat/GetNodeExecutionRecord`
+}
+
+export interface RetryNodeParams {
+  NodeID: string
+  SessionID: string
+  ProcessesID: string
+  TaskID?: string
+  AppID?: string
+}
+
+export function retryNode(params: RetryNodeParams) {
+  return http.post<ApiResponse<any>>('/Chat/ReExecuteNode', params)
+}
+
+/** Fetch all workflow execution records for a session, grouped by ProcessesID */
+export function getSessionExecutionRecords(sessionId: string) {
+  return http.post<ApiResponse<any[]>>('/Chat/GetSessionExecutionRecords', { sessionID: sessionId })
+}

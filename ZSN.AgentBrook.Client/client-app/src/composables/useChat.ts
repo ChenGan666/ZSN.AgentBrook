@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { useSettingsStore } from '@/stores/settings'
 import { secureStorage } from '@/utils/storage'
-import { getChatCompletionsUrl } from '@/services/chat'
+import { getChatCompletionsUrl, getNodeExecutionRecordUrl, retryNode as retryNodeApi } from '@/services/chat'
 import { createApiRequest, APP_SECRET } from '@/utils/crypto'
 import { getAccessToken, refreshMemberToken } from '@/services/auth'
 import router from '@/router'
@@ -18,6 +18,8 @@ import type {
   AttachmentItem,
 } from '@/types/chat'
 import { useFileUpload } from '@/composables/useFileUpload'
+import { normalizeRecord, mergeRecords } from '@/utils/process'
+import { messageCache } from '@/utils/cache'
 import { platform } from '@/platform'
 
 const TOKEN_CHECK_ERROR = 80001
@@ -84,47 +86,6 @@ export function useChat() {
       next[nodeId] = updated
     }
     return next
-  }
-
-  function normalizeRecord(r: ExecutionRecordInfo): NormalizedRecord {
-    const outputs = Array.isArray(r.Outputs)
-      ? r.Outputs.map((o) => {
-          let parsedValue: any = o && typeof o.value === 'string' ? o.value : o?.value || ''
-          if (typeof parsedValue === 'string' && parsedValue) {
-            try {
-              parsedValue = JSON.parse(parsedValue)
-            } catch { /* keep as string */ }
-          }
-          return { varname: o?.varname, type: o?.type, value: parsedValue }
-        })
-      : []
-    return {
-      recordId: r.RecordID,
-      sessionId: r.SessionID,
-      processesId: r.ProcessesID,
-      workflowId: r.WorkflowID,
-      taskId: r.TaskID,
-      fromMainTaskId: r.FromMainTaskID,
-      nodeId: r.NodeID,
-      nodeName: r.NodeName,
-      nextNodeId: r.NextNodeID,
-      startTime: r.StartTime,
-      endTime: r.EndTime,
-      status: r.Status,
-      inputs: r.Inputs,
-      outputs,
-      logs: Array.isArray(r.Logs) ? r.Logs : [],
-    }
-  }
-
-  function mergeRecords(
-    prev: NormalizedRecord[],
-    incoming: NormalizedRecord[],
-  ): NormalizedRecord[] {
-    const map = new Map<string, NormalizedRecord>()
-    for (const r of prev) map.set(r.recordId, r)
-    for (const r of incoming) map.set(r.recordId, r)
-    return Array.from(map.values())
   }
 
   function normalizeValue(v: any): string {
@@ -229,23 +190,22 @@ export function useChat() {
 
     await doSSERequest(content, sessionId, appId, aiMsgId, false, attachments)
 
-    // SSE完成后从运行列表移除，避免心跳重复通知
-    if (chatStore.currentSessionId) {
-      chatStore.removeRunningSession(chatStore.currentSessionId)
-    }
-    if (sessionId) {
-      chatStore.removeRunningSession(sessionId)
+    // SSE完成后从运行列表移除。
+    // 使用消息中实际解析到的 sessionId（在 SSE 中可能被更新为新的 SessionID），
+    // 避免因用户切换会话导致 chatStore.currentSessionId 指向错误的会话。
+    const resolvedSid = aiMsg.sessionId || sessionId
+    if (resolvedSid) {
+      chatStore.removeRunningSession(resolvedSid)
     }
 
     chatStore.fetchSessions(1).catch(() => {})
 
     if (!document.hasFocus() && settingsStore.notificationEnabled) {
-      const aiMsg = chatStore.messages.find(m => m.id === aiMsgId)
-      const raw = aiMsg?.content || ''
-      const isFailed = aiMsg?.process?.status === 'failed' || aiMsg?.process?.status === 'error'
+      const raw = aiMsg.content || ''
+      const isFailed = aiMsg.process?.status === 'failed' || aiMsg.process?.status === 'error'
       const title = isFailed ? t('chat.notifyFailed') : t('chat.notifyCompleted')
       const summary = stripMarkdown(raw).slice(0, 120) || (isFailed ? t('chat.notifyViewDetail') : t('chat.notifyViewReply'))
-      platform.notification.show(title, summary)
+      platform.notification.show(title, summary, { sessionId: resolvedSid || '' })
     }
   }
 
@@ -270,11 +230,51 @@ export function useChat() {
     let pendingTimestamp: number | null = null
     let processFlushTimer: ReturnType<typeof setTimeout> | null = null
 
-    const assistantMessage = () => chatStore.messages.find((m) => m.id === aiMsgId)
+    // Persistent reference to the AI message that survives session switches.
+    // When the user switches sessions, chatStore.messages is replaced and the
+    // original message is no longer findable via find(). This reference keeps
+    // accumulating SSE data on the correct message object regardless of which
+    // session is currently displayed.
+    let aiMessage: ChatMessage | null = chatStore.messages.find((m) => m.id === aiMsgId) || null
+
+    const getAssistantMsg = (): ChatMessage | null => {
+      // If the message is currently in the store, use the reactive version
+      const storeMsg = chatStore.messages.find((m) => m.id === aiMsgId)
+      if (storeMsg) {
+        // Merge any SSE-accumulated data (from the persistent ref) into the
+        // store version. Use mergeRecords to avoid duplicating records that
+        // already exist in both.
+        if (aiMessage && aiMessage !== storeMsg && aiMessage.process) {
+          if (!storeMsg.process) {
+            storeMsg.process = aiMessage.process
+          } else {
+            // Merge records: SSE records + store records, deduped by recordId
+            storeMsg.process.records = mergeRecords(
+              storeMsg.process.records || [],
+              aiMessage.process.records || [],
+            )
+            // Merge streamsByNode
+            storeMsg.process.streamsByNode = {
+              ...(storeMsg.process.streamsByNode || {}),
+              ...(aiMessage.process.streamsByNode || {}),
+            }
+            // Use the more-terminal status
+            const sseS = aiMessage.process.status
+            if (sseS && sseS !== 'running') storeMsg.process.status = sseS
+          }
+          if (aiMessage.content) storeMsg.content = aiMessage.content
+          if (aiMessage.sessionId) storeMsg.sessionId = aiMessage.sessionId
+        }
+        aiMessage = storeMsg
+        return storeMsg
+      }
+      // User switched sessions — use the persistent reference to keep accumulating
+      return aiMessage
+    }
 
     const flushProcessUI = () => {
       processFlushTimer = null
-      const msg = assistantMessage()
+      const msg = getAssistantMsg()
       if (!msg) return
       if (
         !pendingProcess &&
@@ -340,7 +340,7 @@ export function useChat() {
 
     // --- SSE message handler ---
     function onMessage(messageData: SSEMessage) {
-      const msg = assistantMessage()
+      const msg = getAssistantMsg()
       if (!msg) return
 
       // Error frame
@@ -357,19 +357,21 @@ export function useChat() {
         return
       }
 
-      // Extract SessionID
-      if (messageData.SessionID) {
-        chatStore.currentSessionId = messageData.SessionID
-        msg.sessionId = messageData.SessionID
-        chatStore.addRunningSession(messageData.SessionID)
-        if (!sessionListFetched) {
-          sessionListFetched = true
-          chatStore.fetchSessions(1).catch(() => {})
+      // Extract SessionID from the SSE message.
+      // Only auto-switch currentSessionId if the user hasn't manually
+      // navigated to a different session. Otherwise the SSE from a
+      // background session would forcibly pull focus back to it.
+      const sseSid = messageData.SessionID || messageData.ProcessInfo?.SessionID
+      if (sseSid) {
+        const isCurrentSession =
+          !chatStore.currentSessionId ||
+          chatStore.currentSessionId === sessionId ||
+          chatStore.currentSessionId === sseSid
+        if (isCurrentSession) {
+          chatStore.currentSessionId = sseSid
         }
-      } else if (messageData.ProcessInfo?.SessionID) {
-        chatStore.currentSessionId = messageData.ProcessInfo.SessionID
-        msg.sessionId = messageData.ProcessInfo.SessionID
-        chatStore.addRunningSession(messageData.ProcessInfo.SessionID)
+        msg.sessionId = sseSid
+        chatStore.addRunningSession(sseSid)
         if (!sessionListFetched) {
           sessionListFetched = true
           chatStore.fetchSessions(1).catch(() => {})
@@ -454,14 +456,17 @@ export function useChat() {
           }
         }
 
-        // Terminal status
+        // Terminal status — flush UI immediately so the process tree is final,
+        // but keep msg.loading=true until the SSE reader loop exits.
+        // This prevents the heartbeat from triggering refreshCurrentSessionMessages()
+        // (which guards on `messages.some(m => m.loading)`) during the window between
+        // terminal status and stream end, avoiding duplicate synthetic workflow blocks.
         if (
           status &&
           (String(status).toLowerCase() === 'success' ||
             String(status).toLowerCase() === 'failed' ||
             String(status).toLowerCase() === 'error')
         ) {
-          msg.loading = false
           flushProcessUI()
           // 更新当前会话的 SessionStatus
           const terminalStatus = String(status).toLowerCase() === 'success' ? 0 : -1
@@ -606,14 +611,37 @@ export function useChat() {
 
       // Flush any remaining pending data
       flushProcessUI()
-      const msg = assistantMessage()
+      const msg = getAssistantMsg()
       if (msg) {
         msg.loading = false
         chatStore.updateMessage(aiMsgId, msg)
+
+        // Persist to cache so process tree survives session switches.
+        // Be careful: if the user switched sessions, chatStore.messages now
+        // belongs to a different session — we must not cache it under the
+        // wrong sessionId. Instead, update only the target session's cache.
+        const targetSid = msg.sessionId || sessionId || ''
+        if (targetSid) {
+          if (chatStore.currentSessionId === targetSid) {
+            // User is still viewing this session — cache the full array
+            messageCache.set(targetSid, [...chatStore.messages]).catch(() => {})
+          } else {
+            // User switched away — read existing cache, update the ai message, write back
+            messageCache.getBySession(targetSid).then((cached) => {
+              const idx = cached.findIndex((m: ChatMessage) => m.id === aiMsgId)
+              if (idx !== -1) {
+                cached[idx] = msg
+              } else {
+                cached.push(msg)
+              }
+              return messageCache.set(targetSid, cached)
+            }).catch(() => {})
+          }
+        }
       }
     } catch (error: any) {
       if (error.name === 'AbortError') return
-      const msg = assistantMessage()
+      const msg = getAssistantMsg()
       if (msg) {
         msg.loading = false
         msg.content = msg.content || `发送失败: ${error.message}`
@@ -645,6 +673,183 @@ export function useChat() {
     isStreaming.value = false
   }
 
+  // --- Retry failed node ---
+
+  interface RetryNodePayload {
+    nodeId: string
+    sessionId: string
+    processesId: string
+    taskId: string
+    messageId: string | null
+  }
+
+  async function retryNode(payload: RetryNodePayload) {
+    const { nodeId, sessionId, processesId, taskId, messageId } = payload
+    if (!nodeId) {
+      console.warn('retryNode: 缺少 nodeId', payload)
+      return
+    }
+    if (!sessionId || !processesId) {
+      console.warn('retryNode: 缺少 sessionId 或 processesId', payload)
+      return
+    }
+
+    // Strip sub-process suffix: "parent_child" → "parent"
+    const topProcessesId = processesId.includes('_') ? processesId.split('_')[0] : processesId
+
+    try {
+      // Optimistically update node status to 'running'
+      if (messageId) {
+        const msg = chatStore.messages.find(m => m.id === messageId)
+        if (msg?.process?.records) {
+          const updatedRecords = msg.process.records.map((r: NormalizedRecord) =>
+            r.nodeId === nodeId ? { ...r, status: 'running' as const } : r
+          )
+          msg.process = { ...msg.process, records: updatedRecords, status: 'running' }
+          chatStore.updateMessage(messageId, msg)
+        }
+      }
+
+      const session = chatStore.sessions.find(s => s.ChatSessionID === sessionId)
+      const appID = session?.AppID || chatStore.selectedAppId || ''
+
+      const result = await retryNodeApi({
+        NodeID: nodeId,
+        SessionID: sessionId,
+        ProcessesID: topProcessesId,
+        TaskID: taskId || '',
+        AppID: appID,
+      })
+      console.log('retryNode 结果:', result)
+
+      // Refresh execution records after retry
+      await reloadNodeExecution(sessionId, topProcessesId, messageId)
+    } catch (e) {
+      console.error('retryNode 失败:', e)
+    }
+  }
+
+  async function reloadNodeExecution(
+    sessionId: string,
+    processesId: string,
+    messageId: string | null,
+  ) {
+    if (!sessionId || !processesId) return
+
+    const targetMsgId = messageId || chatStore.messages.filter(m => m.role === 'assistant').pop()?.id
+    if (!targetMsgId) return
+
+    const abortCtrl = new AbortController()
+
+    let pendingIncomingRecords: NormalizedRecord[] = []
+    let pendingProcess: any = null
+    let pendingStatus = ''
+    let flushTimer: ReturnType<typeof setTimeout> | null = null
+
+    const flush = () => {
+      flushTimer = null
+      const msg = chatStore.messages.find(m => m.id === targetMsgId)
+      if (!msg || !pendingIncomingRecords.length) return
+
+      const prev: NormalizedRecord[] = Array.isArray(msg.process?.records) ? msg.process.records : []
+      msg.process = {
+        status: pendingStatus || msg.process?.status || 'running',
+        results: '',
+        timestamp: Date.now(),
+        records: mergeRecords(prev, pendingIncomingRecords),
+        streamsByNode: msg.process?.streamsByNode || {},
+      }
+      chatStore.updateMessage(targetMsgId, msg)
+      pendingIncomingRecords = []
+      pendingStatus = ''
+    }
+
+    const scheduleFlush = () => {
+      if (flushTimer) return
+      flushTimer = setTimeout(flush, 200)
+    }
+
+    try {
+      const memberToken = await secureStorage.get('member_token')
+      const accessToken = await secureStorage.get('access_token')
+
+      const businessData = {
+        status: 0,
+        stream: true,
+        sessionID: sessionId,
+        processesID: processesId,
+        workflowID: '',
+        isAgentNode: false,
+        SSE_TimeOut: 5,
+      }
+
+      let encryptKey = APP_SECRET
+      let signKey = APP_SECRET
+      if (memberToken) {
+        encryptKey = memberToken.substring(0, 16)
+        signKey = memberToken
+      } else if (accessToken) {
+        encryptKey = accessToken
+        signKey = accessToken
+      }
+      const apiRequest = createApiRequest(businessData, encryptKey, signKey)
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (accessToken) headers['bearer'] = accessToken
+      if (memberToken) headers['memberbearer'] = memberToken
+
+      const response = await fetch(getNodeExecutionRecordUrl(), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(apiRequest),
+        signal: abortCtrl.signal,
+      })
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      const contentType = response.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        const err = await response.json().catch(() => ({}))
+        console.error('reloadNodeExecution error:', err)
+        return
+      }
+
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6)
+          if (data === '[DONE]') continue
+          try {
+            const parsed: SSEMessage = JSON.parse(data)
+            if (parsed.ProcessInfo) {
+              const proc = parsed.ProcessInfo
+              const incoming: NormalizedRecord[] = Array.isArray(proc.ExecutionRecordInfos)
+                ? proc.ExecutionRecordInfos.map(normalizeRecord)
+                : []
+              if (incoming.length) pendingIncomingRecords.push(...incoming)
+              pendingStatus = proc.Status || pendingStatus
+              scheduleFlush()
+            }
+          } catch { /* ignore */ }
+        }
+      }
+      flush()
+    } catch (e: any) {
+      if (e.name !== 'AbortError') console.error('reloadNodeExecution 失败:', e)
+    } finally {
+      if (flushTimer) clearTimeout(flushTimer)
+    }
+  }
+
   async function handleTokenExpired() {
     await secureStorage.remove('member_token')
     await secureStorage.remove('access_token')
@@ -662,6 +867,8 @@ export function useChat() {
   return {
     sendMessage,
     cancelStream,
+    retryNode,
+    reloadNodeExecution,
     isStreaming,
     streamError,
   }

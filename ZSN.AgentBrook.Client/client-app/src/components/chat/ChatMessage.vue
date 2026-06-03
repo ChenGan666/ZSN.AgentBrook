@@ -13,12 +13,24 @@
         <span class="message-time">{{ formattedTime }}</span>
       </div>
 
-      <!-- Process status -->
+      <!-- Process status: shown when data is available -->
       <ProcessStatus
         v-if="message.process"
         :process-data="message.process"
         :auto-collapse="hasActiveHitl"
+        @retry="handleRetryClick"
+        @retry-node="handleRetryNode"
       />
+
+      <!-- Lazy-load trigger: shown for assistant messages without process data yet -->
+      <div
+        v-else-if="message.role === 'assistant'"
+        class="workflow-load-trigger"
+        @click="handleWorkflowLoad"
+      >
+        <el-icon v-if="workflowLoading" class="is-loading" :size="12"><Loading /></el-icon>
+        <span v-else>{{ t('chat.workflowLoadHint') }}</span>
+      </div>
 
       <!-- Markdown content -->
       <div v-if="message.content" class="message-text" v-html="renderedContent" />
@@ -83,6 +95,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Loading } from '@element-plus/icons-vue'
 import { renderMarkdown } from '@/utils/markdown'
 import { execHumanInTheLoop, execHumanInTheLoopByForm } from '@/services/hitl'
 import { useChatStore } from '@/stores/chat'
@@ -90,12 +104,37 @@ import ProcessStatus from './ProcessStatus.vue'
 import HitlInputPanel from './HitlInputPanel.vue'
 import type { ChatMessage, NormalizedRecord } from '@/types/chat'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   message: ChatMessage
 }>()
 
+const emit = defineEmits<{
+  retryProcess: [payload: { sessionId: string; processesId: string; messageId: string | null }]
+  retryNode: [payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }]
+}>()
+
 const chatStore = useChatStore()
 const streamScrollRef = ref<HTMLElement | null>(null)
+
+// --- Workflow lazy-load ---
+const workflowLoading = ref(false)
+const workflowLoadStarted = ref(false)
+
+async function handleWorkflowLoad() {
+  if (workflowLoadStarted.value) return
+  workflowLoadStarted.value = true
+  workflowLoading.value = true
+  try {
+    const sid = props.message.sessionId || chatStore.currentSessionId
+    if (sid) {
+      await chatStore.loadSessionExecutionRecords(sid)
+    }
+  } finally {
+    workflowLoading.value = false
+  }
+}
 
 const appInfo = computed(() => {
   if (props.message.role !== 'assistant') return null
@@ -248,6 +287,34 @@ function parseReCallUrl(url: string) {
   } catch {
     return { sessionID: '', taskID: '', recordID: '' }
   }
+}
+
+function resolveProcessIdsForMessage() {
+  const proc = props.message?.process
+  if (!proc || !Array.isArray(proc.records) || !proc.records.length) {
+    return { sessionId: '', processesId: '', messageId: props.message?.id || null }
+  }
+  const recWithIds = proc.records.find((r: any) => r && (r.sessionId || r.processesId)) || proc.records[0]
+  return {
+    sessionId: recWithIds.sessionId || '',
+    processesId: recWithIds.processesId || '',
+    messageId: props.message?.id || null,
+  }
+}
+
+function handleRetryClick() {
+  const ids = resolveProcessIdsForMessage()
+  emit('retryProcess', ids)
+}
+
+function handleRetryNode(node: NormalizedRecord) {
+  emit('retryNode', {
+    nodeId: node.nodeId,
+    sessionId: node.sessionId,
+    processesId: node.processesId,
+    taskId: node.taskId,
+    messageId: props.message?.id || null,
+  })
 }
 
 async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; inputOptions: any[] }) {
@@ -412,6 +479,21 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
   :deep(em) { font-style: italic; }
 }
 
+// Inline images inside markdown content
+.message-text {
+  :deep(img) {
+    max-width: 100%;
+    height: auto;
+  }
+  :deep(.img_show) {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 8px 0;
+    cursor: pointer;
+  }
+}
+
 // Images
 .message-images {
   display: flex;
@@ -548,5 +630,34 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
 @keyframes blink {
   0%, 80%, 100% { opacity: 0; }
   40% { opacity: 1; }
+}
+
+// --- Workflow lazy-load trigger ---
+.workflow-load-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  user-select: none;
+
+  &:hover {
+    color: #6b7280;
+    background: #f3f4f6;
+  }
+
+  .is-loading {
+    animation: rotating 2s linear infinite;
+  }
+}
+
+@keyframes rotating {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

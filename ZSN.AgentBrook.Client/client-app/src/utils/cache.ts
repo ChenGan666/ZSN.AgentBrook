@@ -10,7 +10,7 @@ export const sessionCache = {
     for (const session of sessions) {
       await tx.store.put({
         id: session.ChatSessionID,
-        data: session,
+        data: JSON.parse(JSON.stringify(session)),
         updatedAt: Date.now(),
       })
     }
@@ -36,11 +36,23 @@ export const messageCache = {
   async set(sessionId: string, messages: ChatMessage[]) {
     const db = await getDB()
     const tx = db.transaction('messages', 'readwrite')
+
+    // Clear ALL existing messages for this session before writing.
+    // Without this, old cached entries with stale IDs (e.g. ai_xxx from
+    // a previous SSE stream) accumulate indefinitely and cause duplicate
+    // messages on every selectSession call.
+    const index = tx.store.index('by-session')
+    let cursor = await index.openCursor(sessionId)
+    while (cursor) {
+      await cursor.delete()
+      cursor = await cursor.continue()
+    }
+
     for (const msg of messages) {
       await tx.store.put({
         id: msg.id,
         sessionId,
-        data: msg,
+        data: JSON.parse(JSON.stringify(msg)),
         createdAt: Date.now(),
       })
     }

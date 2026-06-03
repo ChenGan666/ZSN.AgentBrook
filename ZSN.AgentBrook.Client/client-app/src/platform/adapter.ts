@@ -29,8 +29,13 @@ export interface PlatformSystem {
   getAppVersion(): string
 }
 
+export interface NotificationOptions {
+  sessionId?: string
+}
+
 export interface PlatformNotification {
-  show(title: string, body: string): void
+  show(title: string, body: string, options?: NotificationOptions): void
+  onNotificationClick?(callback: (sessionId: string) => void): void
 }
 
 export interface PlatformAdapter {

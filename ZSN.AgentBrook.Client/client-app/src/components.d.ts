@@ -54,6 +54,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     ServerSettings: typeof import('./components/settings/ServerSettings.vue')['default']
     SessionList: typeof import('./components/chat/SessionList.vue')['default']
+    SessionStatusBanner: typeof import('./components/chat/SessionStatusBanner.vue')['default']
     SideBar: typeof import('./components/layout/SideBar.vue')['default']
     StatusBar: typeof import('./components/layout/StatusBar.vue')['default']
     TitleBar: typeof import('./components/layout/TitleBar.vue')['default']

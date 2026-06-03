@@ -55,12 +55,20 @@ export class WebAdapter implements PlatformAdapter {
     },
   }
 
+  private _notificationClickCallback: ((sessionId: string) => void) | null = null
+
   notification = {
-    show(title: string, body: string): void {
+    show: (title: string, body: string, options?: { sessionId?: string }): void => {
       if (!('Notification' in window)) return
       const showNotify = () => {
         const n = new Notification(title, { body })
-        n.onclick = () => { window.focus(); n.close() }
+        n.onclick = () => {
+          window.focus()
+          n.close()
+          if (options?.sessionId && this._notificationClickCallback) {
+            this._notificationClickCallback(options.sessionId)
+          }
+        }
       }
       if (Notification.permission === 'granted') {
         showNotify()
@@ -69,6 +77,9 @@ export class WebAdapter implements PlatformAdapter {
           if (perm === 'granted') showNotify()
         })
       }
+    },
+    onNotificationClick: (callback: (sessionId: string) => void): void => {
+      this._notificationClickCallback = callback
     },
   }
 }
