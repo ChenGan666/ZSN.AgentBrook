@@ -16,20 +16,22 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate Traffic Badges
+        id: traffic
         uses: yi-Xu-0100/traffic-to-badge@v1.4.0
         with:
           my_token: ${{ secrets.TRAFFIC_TOKEN }}
-          static_list: ZSN.AgentBrook
+          static_list: ChenGan666/ZSN.AgentBrook
 
-      - name: Move badges to publish directory
+      - name: Debug output
         run: |
-          mkdir -p ./traffic
-          mv traffic-ZSN.AgentBrook ./traffic/
+          echo "traffic_path=${{ steps.traffic.outputs.traffic_path }}"
+          echo "--- file listing ---"
+          find . -maxdepth 2 -name "*.svg" -o -name "*.json" | head -50
 
       - name: Deploy to traffic branch
         uses: peaceiris/actions-gh-pages@v4
         with:
-          publish_dir: ./traffic
+          publish_dir: ${{ steps.traffic.outputs.traffic_path }}
           publish_branch: traffic
           allow_empty_commit: true
           personal_token: ${{ secrets.TRAFFIC_TOKEN }}
