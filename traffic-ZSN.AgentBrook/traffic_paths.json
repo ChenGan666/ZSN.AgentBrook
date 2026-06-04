@@ -1,0 +1,62 @@
+[
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook",
+    "title": "Overview",
+    "count": 48,
+    "uniques": 22
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
+    "title": "/pulse",
+    "count": 12,
+    "uniques": 2
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
+    "title": "/graphs/traffic",
+    "count": 11,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions/new",
+    "title": "/actions/new",
+    "count": 6,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions/workflows/traffic2badge.yml",
+    "title": "/actions/workflows/traffic2badge.yml",
+    "count": 6,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/stargazers",
+    "title": "/stargazers",
+    "count": 5,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/issues",
+    "title": "/issues",
+    "count": 4,
+    "uniques": 3
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/blob/main/.github/workflows/traffic2badge.yml",
+    "title": "/blob/main/.github/workflows/traffic2badge.yml",
+    "count": 4,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/new/main",
+    "title": "/new/main",
+    "count": 4,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/.github/workflows",
+    "title": "/tree/main/.github/workflows",
+    "count": 4,
+    "uniques": 1
+  }
+]
