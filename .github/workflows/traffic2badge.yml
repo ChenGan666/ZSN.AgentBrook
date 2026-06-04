@@ -21,8 +21,10 @@ jobs:
           my_token: ${{ secrets.TRAFFIC_TOKEN }}
           static_list: ZSN.AgentBrook
 
-      - name: Ensure traffic directory exists
-        run: mkdir -p ./traffic
+      - name: Move badges to publish directory
+        run: |
+          mkdir -p ./traffic
+          mv traffic-ZSN.AgentBrook ./traffic/
 
       - name: Deploy to traffic branch
         uses: peaceiris/actions-gh-pages@v4
