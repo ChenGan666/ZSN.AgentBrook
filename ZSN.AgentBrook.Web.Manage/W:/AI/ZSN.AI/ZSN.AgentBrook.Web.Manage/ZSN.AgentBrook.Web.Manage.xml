@@ -114,6 +114,36 @@
             方法参数信息
             </summary>
         </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.SessionController.index(System.Int32,System.Int32,System.String,System.Nullable{System.Int32})">
+            <summary>
+            会话列表页（分页 + 搜索）
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.SessionController.Detail(System.String)">
+            <summary>
+            会话详情/对话查看页
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.SessionController.Del(System.String)">
+            <summary>
+            删除会话（支持批量删除，逗号分隔ID）
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.SessionController.GetSessionList(System.Int32,System.Int32,System.String)">
+            <summary>
+            获取会话列表（JSON 接口，供 Detail 页面左侧列表使用）
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.SessionController.GetChatMessages(System.String)">
+            <summary>
+            获取会话的对话消息列表（JSON 接口，供前端 ChatBox 加载历史消息）
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.SessionController.GetSessionApiConfig(System.String,System.String)">
+            <summary>
+            获取会话对应 App 的 API 配置（供 ChatBox 初始化）
+            </summary>
+        </member>
         <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.WordTemplateController.GetTemplateLabelData(System.String)">
             <summary>
             读取模板文件的标签

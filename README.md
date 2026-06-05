@@ -109,7 +109,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AgentBrook.MessageGateway** | 统一 IM 消息网关，多渠道 Webhook 接收与路由 | ASP.NET Core, Redis Queue |
 | **ZSN.AgentBrook.Client** | 跨平台客户端（Vue3 + Tauri / Web SPA） | Vue3, TypeScript, Element Plus, Tauri |
 | **ZSN.AgentBrook.Web** | 前端界面（React + Ant Design Pro） | React, Ant Design Pro |
-| **ZSN.AgentBrook.Web.Manage** | 管理后台（LayUI） | LayUI, jQuery |
+| **ZSN.AgentBrook.Web.Manage** | 管理后台（LayUI）：应用/模型/知识库/会话管理/菜单配置等 | LayUI, jQuery |
 | **ZSN.AgentBrook.AutoJob** | 后台任务调度器，轮询执行工作流任务 | Quartz.NET |
 | **ZSN.AgentBrook.Plugins** | 应用级插件 | |
 | **ZSN.AgentBrowser** | AI 浏览器自动化 | Playwright |

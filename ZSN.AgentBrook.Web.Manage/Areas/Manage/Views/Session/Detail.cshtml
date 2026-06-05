@@ -1,0 +1,529 @@
+@{
+    Layout = "~/Views/Shared/_LayoutWithoutLayui.cshtml";
+
+    var sessionInfo = ViewBag.SessionInfo as AppChatSessionInfo;
+    var appName = ViewBag.AppName as string ?? "";
+    var userName = ViewBag.UserName as string ?? "";
+    var apiBaseURL = ViewBag.APIBaseURL as string ?? "";
+
+    string currentSessionID = sessionInfo?.ChatSessionID ?? "";
+    string currentAppID = sessionInfo?.AppID ?? "";
+    string currentMemberID = sessionInfo?.MemberID ?? "";
+
+    string _sid = currentSessionID;
+    string _sidDisplay = _sid.Length > 12 ? _sid.Substring(0, 12) + "..." : _sid;
+    string _summary = sessionInfo?.TopicSummary ?? "";
+    string _summaryDisplay = _summary.Length > 30 ? _summary.Substring(0, 30) + "..." : _summary;
+}
+
+@section Css
+{
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; font-family: "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+
+        /* 页面头部 */
+        .session-header {
+            height: 52px;
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 16px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .session-header .back-btn {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .session-header .back-btn:hover { color: #1890ff; }
+        .session-header .divider { width: 1px; height: 24px; background: #e8e8e8; }
+        .session-header .info-item { font-size: 13px; color: #666; }
+        .session-header .info-item strong { color: #333; }
+        .session-header .status-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-running { color: #1890ff; background: #e6f7ff; border: 1px solid #91d5ff; }
+        .status-done { color: #52c41a; background: #f6ffed; border: 1px solid #b7eb8f; }
+        .status-failed { color: #ff4d4f; background: #fff2f0; border: 1px solid #ffccc7; }
+
+        /* 主体两栏布局 */
+        .session-body {
+            display: flex;
+            height: calc(100vh - 52px);
+            overflow: hidden;
+        }
+
+        /* 左侧会话列表 */
+        .session-list-panel {
+            width: 380px;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e8e8e8;
+            background: #fafafa;
+            flex-shrink: 0;
+        }
+        .session-list-panel .search-box {
+            padding: 12px;
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            gap: 8px;
+        }
+        .session-list-panel .search-box input {
+            flex: 1;
+            height: 34px;
+            padding: 0 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+        }
+        .session-list-panel .search-box input:focus { border-color: #1890ff; }
+        .session-list-panel .search-box button {
+            height: 34px;
+            padding: 0 16px;
+            background: #1890ff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .session-list-panel .search-box button:hover { background: #40a9ff; }
+        .session-list-panel .list-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        .session-list-panel .list-scroll::-webkit-scrollbar { width: 6px; }
+        .session-list-panel .list-scroll::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+        /* 会话卡片 */
+        .session-card {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .session-card:hover { border-color: #1890ff; box-shadow: 0 2px 8px rgba(24,144,255,0.1); }
+        .session-card.active { border-color: #1890ff; background: #e6f7ff; }
+        .session-card .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .session-card .card-app {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .session-card .card-time {
+            font-size: 11px;
+            color: #999;
+        }
+        .session-card .card-user {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .session-card .card-summary {
+            font-size: 12px;
+            color: #888;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .session-card .card-status {
+            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 2px;
+        }
+        .session-card .no-summary { color: #ccc; font-style: italic; }
+
+        /* 右侧 ChatBox 容器 */
+        .chatbox-panel {
+            flex: 1;
+            position: relative;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .chatbox-placeholder {
+            text-align: center;
+            color: #bbb;
+        }
+        .chatbox-placeholder .icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* 加载指示器 */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+        .loading-spinner {
+            width: 32px; height: 32px;
+            border: 3px solid #e8e8e8;
+            border-top: 3px solid #1890ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @@keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 空消息提示 */
+        .empty-chat {
+            text-align: center;
+            color: #bbb;
+            padding: 40px;
+        }
+    </style>
+    <link rel="stylesheet" crossorigin href="/chatbox/assets/index.css">
+}
+
+<!-- 页面头部 -->
+<div class="session-header">
+    <a href="@Url.Action("index")" class="back-btn">&#x2190; 返回列表</a>
+    <span class="divider"></span>
+    <span class="info-item">应用：<strong>@appName</strong></span>
+    <span class="info-item">用户：<strong>@userName</strong></span>
+    <span class="info-item">会话：<strong id="headerSessionID">@_sidDisplay</strong></span>
+    @{
+        string statusClass = sessionInfo?.SessionStatus switch
+        {
+            1 => "status-running",
+            -1 => "status-failed",
+            _ => "status-done"
+        };
+        string statusLabel = sessionInfo?.SessionStatus switch
+        {
+            1 => "对话中",
+            -1 => "失败",
+            _ => "已完成"
+        };
+    }
+    <span class="status-tag @statusClass">@statusLabel</span>
+    <span class="info-item" style="margin-left:auto;" title="@_summary">
+        摘要：@_summaryDisplay
+    </span>
+</div>
+
+<!-- 主体：左侧会话列表 + 右侧 ChatBox -->
+<div class="session-body">
+    <!-- 左侧会话列表 -->
+    <div class="session-list-panel" id="sessionListPanel">
+        <div class="search-box">
+            <input type="text" id="sessionSearchInput" placeholder="搜索会话..." value="@ViewBag.Keyword"
+                   onkeydown="if(event.key==='Enter')searchSessions()">
+            <button onclick="searchSessions()">搜索</button>
+        </div>
+        <div class="list-scroll" id="sessionCardList">
+            <div style="text-align:center;color:#999;padding:20px;">加载中...</div>
+        </div>
+    </div>
+
+    <!-- 右侧 ChatBox 占位区 -->
+    <div class="chatbox-panel" id="chatboxPanel">
+        <div class="chatbox-placeholder" id="chatboxPlaceholder">
+            <div class="icon">💬</div>
+            <div>请从左侧选择一个会话查看对话</div>
+        </div>
+    </div>
+</div>
+
+<!-- ChatBox 挂载点：必须在 body 直接子级，与 Workflow Edit 一致 -->
+<div id="chatbox-app"></div>
+
+<!-- 加载遮罩 -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none;">
+    <div class="loading-spinner"></div>
+</div>
+
+@section Js
+{
+    <script src="/lib/jquery/jquery-1.8.2.min.js"></script>
+
+    <script>
+        // ============ ChatBox 配置 ============
+        window.ChatBoxConfig = {
+            api: {
+                baseURL: '@apiBaseURL',
+                apiAppID: '',
+                apiSecretKey: '',
+                appID: '@currentAppID',
+                memberPhone: '',
+                memberPwd: '',
+                memberId: '@currentMemberID',
+                accessToken: '',
+                memberToken: '',
+                refreshToken: '',
+                expirationDate: '',
+                sessionID: '@currentSessionID',
+                processesID: '',
+                workflowID: ''
+            },
+            window: {
+                defaultWidth: 460,
+                defaultMinimized: false,
+                displayMode: 'side',
+                sidePosition: 'right',
+                sideModeBehavior: 'push'
+            },
+            floatingButton: {
+                enabled: false
+            },
+            info: {
+                title: '会话对话',
+                subtitle: '@appName - @userName'
+            }
+        };
+
+        window.ChatBoxHost = {
+            onSideLayoutChange: function (info) {
+                // 当 ChatBox 侧边栏变化时，调整左侧面板宽度
+                if (!info) return;
+                var panel = document.getElementById('sessionListPanel');
+                if (!panel) return;
+                if (info.minimized) {
+                    panel.style.width = '380px';
+                } else {
+                    // ChatBox 展开时，左侧面板保持固定宽度
+                    // body margin-right 已被 ChatBox 自动设置为 info.width
+                    panel.style.width = '380px';
+                }
+            },
+            onChatBoxRun: function (sessionID, processesID) {
+                console.log('[ChatBoxHost] onChatBoxRun:', sessionID, processesID);
+            }
+        };
+
+        // ============ 全局状态 ============
+        var currentSessionID = '@currentSessionID';
+        var currentPage = 1;
+        var pageSize = 20;
+
+        // ============ 加载会话列表 ============
+        function searchSessions() {
+            currentPage = 1;
+            loadSessionList();
+        }
+
+        function loadSessionList() {
+            var keyword = $('#sessionSearchInput').val() || '';
+            $.ajax({
+                url: '@Url.Action("GetSessionList", "Session")',
+                type: 'POST',
+                data: { index: currentPage, size: pageSize, keyword: keyword },
+                success: function (res) {
+                    if (res.Status && res.Data) {
+                        renderSessionCards(res.Data.list || [], res.Data.total || 0);
+                    }
+                },
+                error: function () {
+                    $('#sessionCardList').html('<div style="text-align:center;color:#ff4d4f;padding:20px;">加载失败</div>');
+                }
+            });
+        }
+
+        function renderSessionCards(sessions, total) {
+            var $container = $('#sessionCardList');
+            if (!sessions || sessions.length === 0) {
+                $container.html('<div style="text-align:center;color:#999;padding:30px;">暂无数据</div>');
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < sessions.length; i++) {
+                var s = sessions[i];
+                var activeClass = s.ChatSessionID === currentSessionID ? ' active' : '';
+                var statusClass = s.SessionStatus === 1 ? 'status-running' : (s.SessionStatus === -1 ? 'status-failed' : 'status-done');
+                var statusLabel = s.SessionStatus === 1 ? '对话中' : (s.SessionStatus === -1 ? '失败' : '完成');
+                var summary = (s.TopicSummary || '').substring(0, 50);
+                var appName = s.AppName || s.AppID || '-';
+                var userName = s.UserName || s.MemberID || '-';
+                var timeStr = formatTime(s.CreateTime);
+
+                html += '<div class="session-card' + activeClass + '" data-sessionid="' + (s.ChatSessionID || '') + '" onclick="selectSession(\'' + (s.ChatSessionID || '') + '\',\'' + (s.AppID || '') + '\',\'' + (s.MemberID || '') + '\')">';
+                html += '  <div class="card-top">';
+                html += '    <span class="card-app" title="' + appName + '">' + appName + '</span>';
+                html += '    <span class="card-time">' + timeStr + '</span>';
+                html += '  </div>';
+                html += '  <div class="card-user">' + userName + '</div>';
+                html += '  <div class="card-summary">';
+                html += summary ? ('<span title="' + (s.TopicSummary || '') + '">' + summary + '</span>') : '<span class="no-summary">暂无摘要</span>';
+                html += '  </div>';
+                html += '  <div style="margin-top:4px;"><span class="card-status ' + statusClass + '">' + statusLabel + '</span></div>';
+                html += '</div>';
+            }
+
+            // 加载更多按钮（如果还有更多页）
+            if (sessions.length >= pageSize) {
+                html += '<div style="text-align:center;padding:10px;"><button onclick="loadMore()" style="border:1px solid #d9d9d9;background:#fff;padding:4px 16px;border-radius:4px;cursor:pointer;font-size:12px;color:#666;">加载更多</button></div>';
+            }
+
+            if (currentPage === 1) {
+                $container.html(html);
+            } else {
+                // 移除旧的"加载更多"按钮，追加新数据
+                $container.find('div:last').remove();
+                $container.append(html);
+            }
+        }
+
+        function loadMore() {
+            currentPage++;
+            loadSessionList();
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '-';
+            // 处理各种时间格式
+            var d = new Date(timeStr);
+            if (isNaN(d.getTime())) {
+                // 尝试解析 "yyyy-MM-dd HH:mm:ss" 格式
+                var match = timeStr.match(/(\d{4}-\d{2}-\d{2})/);
+                if (match) return match[1];
+                return timeStr;
+            }
+            var now = new Date();
+            var diff = now - d;
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            return d.getFullYear() + '-' +
+                   String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                   String(d.getDate()).padStart(2, '0') + ' ' +
+                   String(d.getHours()).padStart(2, '0') + ':' +
+                   String(d.getMinutes()).padStart(2, '0');
+        }
+
+        // ============ 选择会话，加载对话 ============
+        function selectSession(sessionID, appID, memberID) {
+            if (!sessionID || sessionID === currentSessionID) return;
+
+            currentSessionID = sessionID;
+            showLoading(true);
+
+            // 更新左侧高亮
+            $('.session-card').removeClass('active');
+            $('.session-card[data-sessionid="' + sessionID + '"]').addClass('active');
+
+            // 更新头部信息
+            updateHeaderInfo(sessionID, appID, memberID);
+
+            // 加载对话消息
+            $.ajax({
+                url: '@Url.Action("GetChatMessages", "Session")',
+                type: 'POST',
+                data: { sessionID: sessionID },
+                success: function (res) {
+                    showLoading(false);
+                    if (res.Status && res.Data) {
+                        // 更新 ChatBox 配置
+                        if (window.ChatBoxConfig) {
+                            window.ChatBoxConfig.api.sessionID = sessionID;
+                            window.ChatBoxConfig.api.appID = appID || '';
+                            window.ChatBoxConfig.api.memberId = memberID || '';
+                        }
+                        // 通知 ChatBox 配置变更
+                        window.dispatchEvent(new CustomEvent('chatbox-config-updated'));
+
+                        // 注入历史消息到 ChatBox
+                        if (res.Data.length > 0) {
+                            $('#chatboxPlaceholder').hide();
+                            waitForChatBoxReady(function () {
+                                window.ChatBoxDebugger.loadChatHistory(res.Data);
+                            });
+                        } else {
+                            $('#chatboxPlaceholder').show().find('div:last').text('该会话暂无对话记录');
+                        }
+                    } else {
+                        $('#chatboxPlaceholder').show().find('div:last').text('加载对话失败');
+                    }
+                },
+                error: function () {
+                    showLoading(false);
+                    $('#chatboxPlaceholder').show().find('div:last').text('加载对话失败，请重试');
+                }
+            });
+        }
+
+        function updateHeaderInfo(sessionID, appID, memberID) {
+            $('#headerSessionID').text(sessionID.length > 12 ? sessionID.substring(0, 12) + '...' : sessionID);
+        }
+
+        function showLoading(show) {
+            $('#loadingOverlay').toggle(show);
+        }
+
+        // ============ 等待 ChatBox 就绪 ============
+        function waitForChatBoxReady(callback) {
+            if (window.ChatBoxDebugger && window.ChatBoxDebugger.loadChatHistory) {
+                callback();
+            } else {
+                setTimeout(function () { waitForChatBoxReady(callback); }, 200);
+            }
+        }
+
+        // ============ 页面初始化 ============
+        $(function () {
+            // 加载左侧会话列表
+            loadSessionList();
+
+            // 如果有初始会话 ID，等 ChatBox 就绪后加载对话
+            @if (!string.IsNullOrEmpty(currentSessionID))
+            {
+                <text>
+                $('#chatboxPlaceholder').hide();
+                showLoading(true);
+                $.ajax({
+                    url: '@Url.Action("GetChatMessages", "Session")',
+                    type: 'POST',
+                    data: { sessionID: '@currentSessionID' },
+                    success: function (res) {
+                        showLoading(false);
+                        if (res.Status && res.Data && res.Data.length > 0) {
+                            waitForChatBoxReady(function () {
+                                window.ChatBoxDebugger.loadChatHistory(res.Data);
+                            });
+                        } else {
+                            $('#chatboxPlaceholder').show().find('div:last').text('该会话暂无对话记录');
+                        }
+                    },
+                    error: function () {
+                        showLoading(false);
+                    }
+                });
+                </text>
+            }
+        });
+    </script>
+
+    <script type="module" crossorigin src="/chatbox/assets/index.js"></script>
+}

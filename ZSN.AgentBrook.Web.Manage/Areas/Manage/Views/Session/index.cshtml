@@ -1,0 +1,219 @@
+@{
+    var lst = ViewBag.SessionList as List<AppChatSessionInfo>;
+    var appNameDict = ViewBag.AppNameDict as Dictionary<string, string>;
+    var memberNameDict = ViewBag.MemberNameDict as Dictionary<string, string>;
+    var apiBaseURL = ViewBag.APIBaseURL as string ?? "";
+    int total = ViewBag.Total != null ? (int)ViewBag.Total : 0;
+}
+@section Css{
+    <link rel="stylesheet" crossorigin href="/chatbox/assets/index.css">
+    <style>
+        .table-row-active { background: #e6f7ff !important; }
+        .table-row-clickable { cursor: pointer; }
+        .table-row-clickable:hover { background: #fafafa; }
+    </style>
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <form class="layui-form" id="searchForm">
+                        <div class="layui-form-item" style="margin-bottom:0;">
+                            <div class="layui-input-inline">
+                                <input type="text" name="keyword" value="@ViewBag.Keyword" placeholder="应用名/用户名/摘要" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-input-inline" style="width:120px;">
+                                <select name="sessionStatus">
+                                    <option value="">全部状态</option>
+                                    @{ int? currentStatus = ViewBag.SessionStatus as int?; }
+                                    <option value="1" selected="@(currentStatus == 1)">对话中</option>
+                                    <option value="0" selected="@(currentStatus == 0)">已完成</option>
+                                    <option value="-1" selected="@(currentStatus == -1)">失败</option>
+                                </select>
+                            </div>
+                            <div class="layui-input-inline">
+                                <button class="layui-btn layui-btn-sm" lay-submit lay-filter="search">查询</button>
+                                <button type="reset" class="layui-btn layui-btn-sm layui-btn-primary" id="resetBtn">重置</button>
+                            </div>
+                            <div class="layui-input-inline" style="float:right;">
+                                <button type="button" class="layui-btn layui-btn-danger layui-btn-sm" id="batchDelBtn">
+                                    <i class="layui-icon layui-icon-delete"></i> 删除选中
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <hr>
+                </div>
+                <div class="layui-card-body" style="padding:0;">
+                    <table class="layui-table" lay-skin="line">
+                        <colgroup>
+                            <col width="36"><col width="140"><col width="100">
+                            <col><col width="155"><col width="80"><col width="55">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" lay-skin="primary" lay-filter="checkAll"></th>
+                                <th>应用名称</th><th>用户名</th><th>话题摘要</th>
+                                <th>创建时间</th><th>状态</th><th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (lst != null && lst.Count > 0)
+                            {
+                                foreach (var item in lst)
+                                {
+                                    string appName = item.AppID ?? "";
+                                    if (appNameDict != null && appNameDict.ContainsKey(item.AppID ?? ""))
+                                    { appName = appNameDict[item.AppID]; }
+                                    string userName = item.MemberID ?? "";
+                                    if (memberNameDict != null && memberNameDict.ContainsKey(item.MemberID ?? ""))
+                                    { userName = memberNameDict[item.MemberID]; }
+                                    string statusText = item.SessionStatus switch { 0 => "已完成", 1 => "对话中", -1 => "失败", _ => "未知" };
+                                    string statusColor = item.SessionStatus switch { 1 => "color:#1890ff", -1 => "color:#ff4d4f", _ => "color:#52c41a" };
+                                    string summary = item.TopicSummary ?? "";
+                                    string summaryDisplay = summary.Length > 45 ? summary.Substring(0, 45) + "..." : summary;
+                                    <tr class="table-row-clickable" data-sid="@item.ChatSessionID" data-appid="@item.AppID" data-memberid="@item.MemberID">
+                                        <td onclick="event.stopPropagation()">
+                                            <input type="checkbox" lay-skin="primary" class="check-item" value="@item.ChatSessionID">
+                                        </td>
+                                        <td title="@appName">@appName</td>
+                                        <td title="@userName">@userName</td>
+                                        <td>@(string.IsNullOrEmpty(summary) ? Html.Raw("<span style='color:#999;'>-</span>") : Html.Raw($"<span title='{summary}'>{summaryDisplay}</span>"))</td>
+                                        <td>@item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td><span style="@statusColor;font-weight:bold;">@statusText</span></td>
+                                        <td onclick="event.stopPropagation()">
+                                            <button class="layui-btn layui-btn-xs layui-btn-danger del-btn" data-id="@item.ChatSessionID">
+                                                <i class="layui-icon layui-icon-delete"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="7" style="text-align:center;color:#999;padding:30px;">暂无数据</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="layui-card-body">
+                    <div id="pageId"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        // ============ ChatBox 配置 ============
+        window.ChatBoxConfig = {
+            api: { baseURL: '@apiBaseURL', apiAppID: '', apiSecretKey: '', appID: '', memberPhone: '', memberPwd: '', memberId: '', accessToken: '', memberToken: '', refreshToken: '', expirationDate: '', sessionID: '', processesID: '', workflowID: '' },
+            window: { defaultWidth: 520, defaultHeight: 700, defaultMinimized: true, displayMode: 'float' },
+            floatingButton: { enabled: true, position: { right: 20, bottom: 50 }, size: 48 },
+            info: { title: '会话对话', subtitle: '点击列表行查看对话内容' }
+        };
+
+        window.ChatBoxHost = {};
+
+        function waitForChatBoxReady(cb) {
+            if (window.ChatBoxDebugger && window.ChatBoxDebugger.loadChatHistory) { cb(); }
+            else { setTimeout(function () { waitForChatBoxReady(cb); }, 200); }
+        }
+
+        // ============ LayUI 业务逻辑 ============
+        layui.use(function () {
+            var form = layui.form, laypage = layui.laypage, layer = layui.layer, $ = layui.$;
+            form.render();
+
+            // 分页
+            @if (total > 0)
+            {
+                <text>
+                laypage.render({
+                    elem: 'pageId', count: @total, limit: @ViewBag.Size, curr: @ViewBag.Index,
+                    layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip'],
+                    jump: function (obj, f) {
+                        if (f) return;
+                        var p = 'index=' + obj.curr + '&size=' + obj.limit;
+                        var kw = $('[name="keyword"]').val(), ss = $('[name="sessionStatus"]').val();
+                        if (kw) p += '&keyword=' + encodeURIComponent(kw);
+                        if (ss !== '' && ss !== null) p += '&sessionStatus=' + encodeURIComponent(ss);
+                        location.href = "@Url.Action("index")?" + p;
+                    }
+                });
+                </text>
+            }
+
+            form.on('submit(search)', function (obj) {
+                var f = obj.field;
+                var p = 'index=1&size=' + @ViewBag.Size;
+                if (f.keyword) p += '&keyword=' + encodeURIComponent(f.keyword);
+                if (f.sessionStatus !== '' && f.sessionStatus !== null) p += '&sessionStatus=' + encodeURIComponent(f.sessionStatus);
+                location.href = "@Url.Action("index")?" + p;
+                return false;
+            });
+            $('#resetBtn').click(function () { location.href = "@Url.Action("index")"; });
+
+            form.on('checkbox(checkAll)', function (data) {
+                $('.check-item').each(function () { this.checked = data.elem.checked; });
+                form.render('checkbox');
+            });
+
+            // 点击行 → 查看对话
+            var curSid = '';
+            $('.table-row-clickable').click(function () {
+                var row = this, sid = $(row).data('sid');
+                if (!sid || sid === curSid) return;
+                curSid = sid;
+                $('.table-row-active').removeClass('table-row-active');
+                $(row).addClass('table-row-active');
+
+                window.ChatBoxConfig.api.sessionID = sid;
+                window.ChatBoxConfig.api.appID = $(row).data('appid') || '';
+                window.ChatBoxConfig.api.memberId = $(row).data('memberid') || '';
+                window.dispatchEvent(new CustomEvent('chatbox-config-updated'));
+
+                $.post('@Url.Action("GetChatMessages", "Session")', { sessionID: sid }, function (res) {
+                    if (res.Status && res.Data && res.Data.length > 0) {
+                        waitForChatBoxReady(function () {
+                            window.ChatBoxDebugger.loadChatHistory(res.Data);
+                        });
+                    }
+                }, 'json');
+            });
+
+            // 删除
+            $('.del-btn').click(function (e) {
+                e.stopPropagation();
+                var id = $(this).data('id');
+                layer.confirm('确定要删除该会话吗？', { title: '确认删除', btn: ['确定', '取消'] }, function (idx) {
+                    $.post('@Url.Action("Del")', { mid: id }, function (res) {
+                        layer.msg(res.Status ? '删除成功' : '删除失败', { icon: res.Status ? 1 : 2 });
+                        if (res.Status) setTimeout(function () { location.reload(); }, 800);
+                        layer.close(idx);
+                    }, 'json');
+                });
+            });
+
+            $('#batchDelBtn').click(function () {
+                var ids = [];
+                $('.check-item:checked').each(function () { ids.push($(this).val()); });
+                if (!ids.length) { layer.msg('请至少选择一个会话', { icon: 0 }); return; }
+                layer.confirm('确定要删除选中的 ' + ids.length + ' 个会话吗？', { title: '批量删除', btn: ['确定', '取消'] }, function (idx) {
+                    $.post('@Url.Action("Del")', { mid: ids.join(',') }, function (res) {
+                        layer.msg(res.Status ? '成功删除 ' + ids.length + ' 个会话' : '删除失败', { icon: res.Status ? 1 : 2 });
+                        if (res.Status) setTimeout(function () { location.reload(); }, 800);
+                        layer.close(idx);
+                    }, 'json');
+                });
+            });
+        });
+    </script>
+
+    <script type="module" crossorigin src="/chatbox/assets/index.js"></script>
+}
+
+<!-- ChatBox 挂载点 -->
+<div id="chatbox-app"></div>

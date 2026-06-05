@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZSN.AI.DAL.Postgres")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ef55de697e19882bae679027565289671cc922fc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+69c47bc5578f04ba4d04c23b26cea0483f3fd53d")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZSN.AI.DAL.Postgres")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZSN.AI.DAL.Postgres")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

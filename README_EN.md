@@ -109,7 +109,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AgentBrook.MessageGateway** | Unified IM messaging gateway, multi-channel Webhook receive & route | ASP.NET Core, Redis Queue |
 | **ZSN.AgentBrook.Client** | Cross-platform client (Vue3 + Tauri / Web SPA) | Vue3, TypeScript, Element Plus, Tauri |
 | **ZSN.AgentBrook.Web** | Frontend interface (React + Ant Design Pro) | React, Ant Design Pro |
-| **ZSN.AgentBrook.Web.Manage** | Admin dashboard (LayUI) | LayUI, jQuery |
+| **ZSN.AgentBrook.Web.Manage** | Admin dashboard (LayUI): App/Model/Knowledge Base/Session Management/Menu Config | LayUI, jQuery |
 | **ZSN.AgentBrook.AutoJob** | Background task scheduler, polling and executing workflow tasks | Quartz.NET |
 | **ZSN.AgentBrook.Plugins** | Application-level plugins | |
 | **ZSN.AgentBrowser** | AI browser automation | Playwright |

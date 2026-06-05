@@ -331,6 +331,7 @@ CREATE TABLE `tb_app_chat_session_info` (
   `TopicSummary` varchar(255) DEFAULT NULL COMMENT '话题摘要',
   `IsCoCreate` int DEFAULT NULL COMMENT '是否参与共创',
   `SystemStatus` int DEFAULT NULL COMMENT '系统状态',
+  `SessionStatus` int DEFAULT NULL COMMENT '会话状态 完成=0 运行中=1 失败=-1',
   `CreateTime` datetime DEFAULT NULL COMMENT '创建时间',
   PRIMARY KEY (`ChatSessionID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -822,6 +823,7 @@ INSERT INTO `tb_menu_info` (`ID`, `ParentID`, `Url`, `Title`, `Params`, `Ico`, `
 INSERT INTO `tb_menu_info` (`ID`, `ParentID`, `Url`, `Title`, `Params`, `Ico`, `Sort`, `IcoColor`, `MState`) VALUES ('eccec41e-972a-447b-bdc7-17050082c978', '28a4627c-1fcc-4526-8f2b-ea33fdf437ff', '/Manage/Menu/index', '菜单管理', 'menu', '', 14, '', 0);
 INSERT INTO `tb_menu_info` (`ID`, `ParentID`, `Url`, `Title`, `Params`, `Ico`, `Sort`, `IcoColor`, `MState`) VALUES ('ed84453e-9f62-4edf-9083-43554715d3dc', '0fe9d070-9a80-400c-a150-9c7bd427fd10', '/Manage/SystemLog/LogMarkClassList', '日志分类', 'menu', '', 11, '', 0);
 INSERT INTO `tb_menu_info` (`ID`, `ParentID`, `Url`, `Title`, `Params`, `Ico`, `Sort`, `IcoColor`, `MState`) VALUES ('fa627a20-4a68-4192-b099-31eed3ce608b', '28a4627c-1fcc-4526-8f2b-ea33fdf437ff', '/Manage/KnowledgeGraph/Index', '知识图谱', 'menu', '', 6, '', 0);
+INSERT INTO `tb_menu_info` (`ID`, `ParentID`, `Url`, `Title`, `Params`, `Ico`, `Sort`, `IcoColor`, `MState`) VALUES ('f8a3d2e1-5c7b-4a9e-b6d1-8f2e4c7a9b3d', '28a4627c-1fcc-4526-8f2b-ea33fdf437ff', '/Manage/Session/index', '会话管理', 'menu', '', 18, '', 0);
 COMMIT;
 
 -- ----------------------------
