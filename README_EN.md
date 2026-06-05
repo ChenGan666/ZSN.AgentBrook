@@ -204,7 +204,7 @@ Document Upload → Image Extraction (PDF/Word/PPT)
     → Automatic Image-Chunk Association
 ```
 
-### 4.1 Research — Autonomous Research Node
+### 5. Research — Autonomous Research Node
 
 The Research node is an autonomous web research engine that performs multi-round search, web scraping, analysis, and reflection based on research goals:
 
@@ -220,7 +220,7 @@ The Research node is an autonomous web research engine that performs multi-round
 - **Timeout Protection**: Global timeout protection, returns collected content on timeout
 - **Streaming Output**: Real-time streaming of research progress
 
-### 4.2 Voice — Speech Transcription Node
+### 6. Voice — Speech Transcription Node
 
 The Voice node is an intelligent speech processing node that integrates speech recognition with LLM post-processing, supporting automatic structured text generation from audio files:
 
@@ -265,7 +265,62 @@ Audio Input → Format Conversion (FFmpeg)
 }
 ```
 
-### 5. MCP Tool Integration
+### 7. Message — Messaging Node
+
+The Message node enables workflows to proactively send IM messages, supporting multi-channel integration and flexible sending strategies:
+
+**Core Features:**
+- **Multi-Channel Support**: WeChat Work, DingTalk, Feishu, WhatsApp, unified adaptation through MessageGateway
+- **Multi-User Modes**: Static (manual) / Dynamic (upstream variables) / Query (reserved), supporting batch independent sending
+- **Placeholder Substitution**: Message templates support `{{input}}`, `{{variable_name}}` and other placeholders, automatically replaced with workflow context variables
+- **Delivery Confirmation**: Supports WaitForConfirmation mode, polling the gateway to confirm send results before triggering downstream
+- **Redis Decoupling**: Asynchronous communication with MessageGateway via Redis queues, nodes never directly call IM APIs
+- **Personalized Messages**: Supports overriding message content per target user for personalized push
+
+**Processing Pipeline:**
+
+```
+Workflow → MessageNode → Redis Enqueue (msg_send_queue)
+    → MessageGateway Consumer Dequeue
+    → Channel Config Lookup → Provider Instantiation
+    → Token Refresh / Signature Calculation → IM API Send
+    → Result Written to tb_msg_send_record
+    → (WaitForConfirmation mode) Node Polls for Confirmation
+```
+
+**Configuration Example (appsettings.json):**
+
+```json
+{
+  "MessageNode": {
+    "SendQueueName": "msg_send_queue",
+    "WaitTimeoutSeconds": 30,
+    "PollIntervalMs": 500
+  }
+}
+```
+
+### 8. MessageGateway — Messaging Gateway
+
+MessageGateway is an independent IM messaging gateway service responsible for receiving and sending IM messages:
+
+**Inbound Flow (IM → Workflow):**
+- Webhook receives IM platform callback → Channel signature verification → Message parsing → Idempotent deduplication → Routing rule matching → Create workflow task
+
+**Outbound Flow (Workflow → IM):**
+- Redis queue consumption (msg_send_queue) → Channel config lookup → Provider retrieval / circuit breaker protection → Retry mechanism → Result writeback
+
+**Routing Rules:**
+- Supports All / Keyword / Regex match types
+- Priority-ordered, first matching rule takes effect
+- Automatic session creation, temporary member (deterministic MemberID)
+- Custom inputs mapping to workflow variables
+
+**Circuit Breaker Protection:**
+- Configurable consecutive failure threshold, automatically trips Provider
+- Auto-recovery after trip (configurable recovery time)
+
+### 9. MCP Tool Integration
 
 [![MCP Architecture Overview](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/MCP.png)](https://agentbrook.com/)
 
@@ -274,7 +329,7 @@ Built-in MCP Server and Client, supporting:
 - Connecting to external MCP services to extend LLM tool capabilities
 - Supporting bidirectional client/server invocation mode
 
-### 5.1 Cross-Platform Client (ZSN.AgentBrook.Client)
+### 10. Cross-Platform Client (ZSN.AgentBrook.Client)
 
 A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, supporting both Web SPA and desktop application deployment modes:
 
@@ -287,6 +342,10 @@ A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, suppo
 - **Local Cache** — IndexedDB session/message storage, offline queue support
 - **i18n** — Built-in Chinese/English switching, extensible to more languages
 - **Security** — Token encrypted storage, API request signing, XSS protection
+
+[![Client-Login](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Client_login.png)](https://agentbrook.com/)
+[![Client-Main](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Client_main.png)](https://agentbrook.com/)
+
 
 **Tech Architecture:**
 
@@ -324,7 +383,7 @@ cd ZSN.AgentBrook.Client/client-app
 npm run tauri:dev
 ```
 
-### 6. Multi-Model Support
+### 11. Multi-Model Support
 
 Connecting to multiple AI providers through a unified `IChatService` interface:
 
@@ -408,6 +467,9 @@ dotnet run --project ZSN.AgentBrook.API
 
 # Start the background task scheduler (workflow execution)
 dotnet run --project ZSN.AgentBrook.AutoJob
+
+# Start the messaging gateway (IM message send/receive, optional)
+dotnet run --project ZSN.AgentBrook.MessageGateway
 
 # Start the admin dashboard (optional)
 dotnet run --project ZSN.AgentBrook.Web.Manage

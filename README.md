@@ -204,7 +204,7 @@ ClawAI 是平台的核心智能体节点，实现了完整的 **Plan-Execute-Ref
     → 图片-分块自动关联
 ```
 
-### 4.1 Research — 自主研究节点
+### 5. Research — 自主研究节点
 
 Research 节点是一个自主网络研究引擎，能够根据研究目标自动进行多轮搜索、网页抓取、分析和反思：
 
@@ -220,7 +220,7 @@ Research 节点是一个自主网络研究引擎，能够根据研究目标自�
 - **超时保护**：全局超时保护，超时返回已获取内容
 - **流式输出**：实时流式推送研究进度
 
-### 4.2 Voice — 语音转写节点
+### 6. Voice — 语音转写节点
 
 Voice 节点是集语音识别与 LLM 后处理于一体的智能语音处理节点，支持从音频文件自动生成结构化文本：
 
@@ -265,7 +265,7 @@ Voice 节点是集语音识别与 LLM 后处理于一体的智能语音处理节
 }
 ```
 
-### 4.3 Message — 消息发送节点
+### 7. Message — 消息发送节点
 
 Message 节点使工作流能够主动发送 IM 消息，支持多渠道集成和灵活的发送策略：
 
@@ -300,7 +300,7 @@ Message 节点使工作流能够主动发送 IM 消息，支持多渠道集成�
 }
 ```
 
-### 4.4 MessageGateway — 消息网关
+### 8. MessageGateway — 消息网关
 
 MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消息：
 
@@ -320,7 +320,7 @@ MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消
 - 可配置连续失败阈值，自动熔断 Provider
 - 熔断后自动恢复（可配置恢复时间）
 
-### 5. MCP 工具集成
+### 9. MCP 工具集成
 
 [![MCP架构总览](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/MCP.png)](https://agentbrook.com/)
 
@@ -329,7 +329,7 @@ MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消
 - 连接外部 MCP 服务，扩展 LLM 工具能力
 - 支持客户端/服务端双向调用模式
 
-### 5.1 跨平台客户端 (ZSN.AgentBrook.Client)
+### 10. 跨平台客户端 (ZSN.AgentBrook.Client)
 
 基于 Vue3 + TypeScript + Element Plus + Tauri 的跨平台客户端，支持 Web SPA 和桌面应用两种部署模式：
 
@@ -342,6 +342,10 @@ MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消
 - **国际化** — 内置中英文切换，可扩展更多语言
 - **本地缓存** — IndexedDB 存储会话消息，离线队列支持
 - **安全机制** — Token 加密存储，API 请求签名，XSS 防护
+
+[![客户端-登录](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Client_login.png)](https://agentbrook.com/)
+[![客户端-主界面](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Client_main.png)](https://agentbrook.com/)
+
 
 **技术架构：**
 
@@ -379,7 +383,7 @@ cd ZSN.AgentBrook.Client/client-app
 npm run tauri:dev
 ```
 
-### 6. 多模型支持
+### 11. 多模型支持
 
 通过统一的 `IChatService` 接口对接多种 AI 提供商：
 
