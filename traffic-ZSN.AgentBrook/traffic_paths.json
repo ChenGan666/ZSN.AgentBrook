@@ -2,31 +2,37 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 47,
-    "uniques": 20
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
-    "title": "/pulse",
-    "count": 11,
-    "uniques": 2
+    "count": 55,
+    "uniques": 18
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
-    "count": 11,
+    "count": 15,
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/actions/new",
-    "title": "/actions/new",
-    "count": 6,
+    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
+    "title": "/pulse",
+    "count": 14,
+    "uniques": 2
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions/runs/26868982405",
+    "title": "/actions/runs/26868982405",
+    "count": 8,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions",
+    "title": "/actions",
+    "count": 7,
     "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/actions/workflows/traffic2badge.yml",
     "title": "/actions/workflows/traffic2badge.yml",
-    "count": 6,
+    "count": 7,
     "uniques": 1
   },
   {
@@ -36,27 +42,21 @@
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/actions/runs/26868982405",
-    "title": "/actions/runs/26868982405",
-    "count": 5,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/blob/main/.github/workflows/traffic2badge.yml",
-    "title": "/blob/main/.github/workflows/traffic2badge.yml",
-    "count": 5,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/.github/workflows",
-    "title": "/tree/main/.github/workflows",
-    "count": 5,
-    "uniques": 1
-  },
-  {
     "path": "/ChenGan666/ZSN.AgentBrook/issues",
     "title": "/issues",
     "count": 4,
     "uniques": 3
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
+    "title": "/pulls",
+    "count": 2,
+    "uniques": 2
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions/new",
+    "title": "/actions/new",
+    "count": 2,
+    "uniques": 1
   }
 ]
