@@ -2,8 +2,8 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 55,
-    "uniques": 18
+    "count": 51,
+    "uniques": 17
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
@@ -24,6 +24,12 @@
     "uniques": 1
   },
   {
+    "path": "/ChenGan666/ZSN.AgentBrook/stargazers",
+    "title": "/stargazers",
+    "count": 7,
+    "uniques": 2
+  },
+  {
     "path": "/ChenGan666/ZSN.AgentBrook/actions",
     "title": "/actions",
     "count": 7,
@@ -36,26 +42,20 @@
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/stargazers",
-    "title": "/stargazers",
-    "count": 6,
-    "uniques": 1
-  },
-  {
     "path": "/ChenGan666/ZSN.AgentBrook/issues",
     "title": "/issues",
-    "count": 4,
+    "count": 3,
     "uniques": 3
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
-    "title": "/pulls",
-    "count": 2,
-    "uniques": 2
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/actions/new",
     "title": "/actions/new",
+    "count": 2,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions/runs/26868982405/job/79437305831",
+    "title": "/actions/runs/26868982405/job/79437305831",
     "count": 2,
     "uniques": 1
   }
