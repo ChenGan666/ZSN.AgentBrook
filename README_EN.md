@@ -49,11 +49,11 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 
 ## Architecture Overview
 
-[![Architecture Overview](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Platform.png)](https://agentbrook.com/)
+[![Architecture Overview](./README/Platform.png)](https://agentbrook.com/)
 
 ### Data Flow
 
-[![Data Flow](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/DataFlow.png)](https://agentbrook.com/)
+[![Data Flow](./README/DataFlow.png)](https://agentbrook.com/)
 
 ### Core Module Dependencies
 
@@ -125,7 +125,7 @@ AI.Entity ───────────────────────�
 
 DAG (Directed Acyclic Graph) based visual workflow editor with drag-and-drop design:
 
-[![Visual Workflow Engine](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/WorkFlow.png)](https://agentbrook.com/)
+[![Visual Workflow Engine](./README/WorkFlow.png)](https://agentbrook.com/)
 
 
 **Supports 20+ node types:**
@@ -153,7 +153,7 @@ Select any node in the workflow editor, describe your needs in natural language,
 
 ClawAI is the platform's core agent node, implementing a complete **Plan-Execute-Reflect** loop:
 
-[![ClawAI Architecture Overview](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/ClawAI.png)](https://agentbrook.com/)
+[![ClawAI Architecture Overview](./README/ClawAI.png)](https://agentbrook.com/)
 
 
 **Multi-layer Memory System:**
@@ -172,7 +172,7 @@ ClawAI is the platform's core agent node, implementing a complete **Plan-Execute
 
 A quick-response node for customer service scenarios, using FunctionCall to let the LLM autonomously call knowledge base retrieval:
 
-[![ServiceDesk](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/ServiceDesk.png)](https://agentbrook.com/)
+[![ServiceDesk](./README/ServiceDesk.png)](https://agentbrook.com/)
 
 
 **Core Features:**
@@ -184,7 +184,7 @@ A quick-response node for customer service scenarios, using FunctionCall to let 
 
 ### 4. RAG Knowledge Base
 
-[![Knowledge Base Architecture Overview](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/KnowledgeBase.png)](https://agentbrook.com/)
+[![Knowledge Base Architecture Overview](./README/KnowledgeBase.png)](https://agentbrook.com/)
 
 
 - **Hybrid Retrieval**: Vector semantic search + full-text keyword search, fused ranking
@@ -208,7 +208,7 @@ Document Upload → Image Extraction (PDF/Word/PPT)
 
 The Research node is an autonomous web research engine that performs multi-round search, web scraping, analysis, and reflection based on research goals:
 
-[![Research Architecture Overview](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Research.png)](https://agentbrook.com/)
+[![Research Architecture Overview](./README/Research.png)](https://agentbrook.com/)
 
 
 **Key Features:**
@@ -322,7 +322,7 @@ MessageGateway is an independent IM messaging gateway service responsible for re
 
 ### 9. MCP Tool Integration
 
-[![MCP Architecture Overview](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/MCP.png)](https://agentbrook.com/)
+[![MCP Architecture Overview](./README/MCP.png)](https://agentbrook.com/)
 
 Built-in MCP Server and Client, supporting:
 - Exposing platform capabilities (knowledge base retrieval, workflow triggering, etc.) as MCP tools
@@ -343,8 +343,8 @@ A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, suppo
 - **i18n** — Built-in Chinese/English switching, extensible to more languages
 - **Security** — Token encrypted storage, API request signing, XSS protection
 
-[![Client-Login](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Client_login.png)](https://agentbrook.com/)
-[![Client-Main](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Client_main.png)](https://agentbrook.com/)
+[![Client-Login](./README/Client_login.png)](https://agentbrook.com/)
+[![Client-Main](./README/Client_main.png)](https://agentbrook.com/)
 
 
 **Tech Architecture:**
@@ -484,38 +484,38 @@ dotnet run --project ZSN.AgentBrook.Client
 
 ### Multi-Image Tweet Generation
 
-[![Multi-Image Tweet Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
+[![Multi-Image Tweet Generation](./README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
 
-[![Multi-Image Tweet Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
+[![Multi-Image Tweet Generation](./README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
 
-[![Multi-Image Tweet Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE3.png)](https://agentbrook.com/)
+[![Multi-Image Tweet Generation](./README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE3.png)](https://agentbrook.com/)
 
-[![Multi-Image Tweet Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![Multi-Image Tweet Generation](./README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
 
 ### Picture Book Generation
 
-[![Picture Book Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
+[![Picture Book Generation](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
 
-[![Picture Book Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
+[![Picture Book Generation](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
 
-[![Picture Book Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE3.png)](https://agentbrook.com/)
+[![Picture Book Generation](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE3.png)](https://agentbrook.com/)
 
-[![Picture Book Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B7%A5%E4%BD%9C%E6%B5%81%E9%9B%86.png)](https://agentbrook.com/)
+[![Picture Book Generation](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B7%A5%E4%BD%9C%E6%B5%81%E9%9B%86.png)](https://agentbrook.com/)
 
-[![Picture Book Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E7%BB%98%E6%9C%AC%E6%96%87%E6%A1%88%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![Picture Book Generation](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E7%BB%98%E6%9C%AC%E6%96%87%E6%A1%88%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
-[![Picture Book Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E8%8B%B1%E8%AF%ADAI%E6%8F%90%E7%A4%BA%E8%AF%8D%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![Picture Book Generation](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E8%8B%B1%E8%AF%ADAI%E6%8F%90%E7%A4%BA%E8%AF%8D%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
-[![Picture Book Generation](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%9B%BE%E7%89%87%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![Picture Book Generation](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%9B%BE%E7%89%87%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
 ### AI Customer Service - Knowledge Base
 
-[![AI Customer Service](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
+[![AI Customer Service](./README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
 
-[![AI Customer Service](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
+[![AI Customer Service](./README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
 
-[![AI Customer Service](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![AI Customer Service](./README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
 ---
 

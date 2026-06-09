@@ -49,11 +49,11 @@
 
 ## 架构总览
 
-[![架构总览](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Platform.png)](https://agentbrook.com/)
+[![架构总览](./README/Platform.png)](https://agentbrook.com/)
 
 ### 数据流
 
-[![数据流](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/DataFlow.png)](https://agentbrook.com/)
+[![数据流](./README/DataFlow.png)](https://agentbrook.com/)
 
 ### 核心模块依赖关系
 
@@ -125,7 +125,7 @@ AI.Entity ───────────────────────�
 
 基于 DAG（有向无环图）的可视化工作流编辑器，支持拖拽设计：
 
-[![可视化工作流引擎](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/WorkFlow.png)](https://agentbrook.com/)
+[![可视化工作流引擎](./README/WorkFlow.png)](https://agentbrook.com/)
 
 
 **支持 20+ 节点类型：**
@@ -153,7 +153,7 @@ AI.Entity ───────────────────────�
 
 ClawAI 是平台的核心智能体节点，实现了完整的 **Plan-Execute-Reflect** 循环：
 
-[![ClawAI架构总览](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/ClawAI.png)](https://agentbrook.com/)
+[![ClawAI架构总览](./README/ClawAI.png)](https://agentbrook.com/)
 
 
 **多层记忆系统：**
@@ -172,7 +172,7 @@ ClawAI 是平台的核心智能体节点，实现了完整的 **Plan-Execute-Ref
 
 面向客服场景的快速响应节点，通过 FunctionCall 让 LLM 自主调用知识库检索：
 
-[![ServiceDesk](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/ServiceDesk.png)](https://agentbrook.com/)
+[![ServiceDesk](./README/ServiceDesk.png)](https://agentbrook.com/)
 
 
 **核心特性：**
@@ -184,7 +184,7 @@ ClawAI 是平台的核心智能体节点，实现了完整的 **Plan-Execute-Ref
 
 ### 4. RAG 知识库
 
-[![知识库架构总览](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/KnowledgeBase.png)](https://agentbrook.com/)
+[![知识库架构总览](./README/KnowledgeBase.png)](https://agentbrook.com/)
 
 
 - **混合检索**：向量语义搜索 + 全文关键词搜索，融合排序
@@ -208,7 +208,7 @@ ClawAI 是平台的核心智能体节点，实现了完整的 **Plan-Execute-Ref
 
 Research 节点是一个自主网络研究引擎，能够根据研究目标自动进行多轮搜索、网页抓取、分析和反思：
 
-[![Research架构总览](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Research.png)](https://agentbrook.com/)
+[![Research架构总览](./README/Research.png)](https://agentbrook.com/)
 
 
 **关键特性：**
@@ -322,7 +322,7 @@ MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消
 
 ### 9. MCP 工具集成
 
-[![MCP架构总览](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/MCP.png)](https://agentbrook.com/)
+[![MCP架构总览](./README/MCP.png)](https://agentbrook.com/)
 
 内置 MCP Server 和 Client，支持：
 - 将平台能力（知识库检索、工作流触发等）暴露为 MCP 工具
@@ -343,8 +343,8 @@ MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消
 - **本地缓存** — IndexedDB 存储会话消息，离线队列支持
 - **安全机制** — Token 加密存储，API 请求签名，XSS 防护
 
-[![客户端-登录](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Client_login.png)](https://agentbrook.com/)
-[![客户端-主界面](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/Client_main.png)](https://agentbrook.com/)
+[![客户端-登录](./README/Client_login.png)](https://agentbrook.com/)
+[![客户端-主界面](./README/Client_main.png)](https://agentbrook.com/)
 
 
 **技术架构：**
@@ -484,38 +484,38 @@ dotnet run --project ZSN.AgentBrook.Client
 
 ### 多图推文生成
 
-[![多图推文生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
+[![多图推文生成](./README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
 
-[![多图推文生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
+[![多图推文生成](./README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
 
-[![多图推文生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE3.png)](https://agentbrook.com/)
+[![多图推文生成](./README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE3.png)](https://agentbrook.com/)
 
-[![多图推文生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![多图推文生成](./README/demo/%E5%A4%9A%E5%9B%BE%E6%8E%A8%E6%96%87%E7%94%9F%E6%88%90/%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
 
 ### 绘本生成
 
-[![绘本生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
+[![绘本生成](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
 
-[![绘本生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
+[![绘本生成](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
 
-[![绘本生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE3.png)](https://agentbrook.com/)
+[![绘本生成](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B1%95%E7%A4%BA%E5%9B%BE3.png)](https://agentbrook.com/)
 
-[![绘本生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B7%A5%E4%BD%9C%E6%B5%81%E9%9B%86.png)](https://agentbrook.com/)
+[![绘本生成](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%B7%A5%E4%BD%9C%E6%B5%81%E9%9B%86.png)](https://agentbrook.com/)
 
-[![绘本生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E7%BB%98%E6%9C%AC%E6%96%87%E6%A1%88%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![绘本生成](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E7%BB%98%E6%9C%AC%E6%96%87%E6%A1%88%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
-[![绘本生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E8%8B%B1%E8%AF%ADAI%E6%8F%90%E7%A4%BA%E8%AF%8D%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![绘本生成](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E8%8B%B1%E8%AF%ADAI%E6%8F%90%E7%A4%BA%E8%AF%8D%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
-[![绘本生成](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%9B%BE%E7%89%87%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![绘本生成](./README/demo/%E7%BB%98%E6%9C%AC%E7%94%9F%E6%88%90/%E5%9B%BE%E7%89%87%E7%94%9F%E6%88%90%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
 ### AI客服-知识库
 
-[![AI客服](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
+[![AI客服](./README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B1%95%E7%A4%BA%E5%9B%BE1.png)](https://agentbrook.com/)
 
-[![AI客服](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
+[![AI客服](./README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B1%95%E7%A4%BA%E5%9B%BE2.png)](https://agentbrook.com/)
 
-[![AI客服](https://github.com/ChenGan666/ZSN.AgentBrook/blob/main/README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
+[![AI客服](./README/demo/AI%E5%AE%A2%E6%9C%8D-%E7%9F%A5%E8%AF%86%E5%BA%93/%E5%B7%A5%E4%BD%9C%E6%B5%81.png)](https://agentbrook.com/)
 
 ---
 
