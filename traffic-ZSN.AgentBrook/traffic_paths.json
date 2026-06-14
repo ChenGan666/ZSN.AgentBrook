@@ -2,20 +2,20 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 49,
-    "uniques": 16
+    "count": 45,
+    "uniques": 15
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
-    "count": 15,
+    "count": 13,
     "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulse",
     "title": "/pulse",
-    "count": 14,
-    "uniques": 2
+    "count": 12,
+    "uniques": 3
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/actions/runs/26868982405",
@@ -42,12 +42,6 @@
     "uniques": 2
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues",
-    "title": "/issues",
-    "count": 2,
-    "uniques": 2
-  },
-  {
     "path": "/ChenGan666/ZSN.AgentBrook/actions/new",
     "title": "/actions/new",
     "count": 2,
@@ -56,6 +50,12 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook/actions/runs/26868982405/job/79437305831",
     "title": "/actions/runs/26868982405/job/79437305831",
+    "count": 2,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions/runs/26926545695",
+    "title": "/actions/runs/26926545695",
     "count": 2,
     "uniques": 1
   }
