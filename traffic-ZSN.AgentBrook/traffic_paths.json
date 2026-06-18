@@ -2,31 +2,19 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 42,
-    "uniques": 13
+    "count": 37,
+    "uniques": 12
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulse",
     "title": "/pulse",
-    "count": 12,
+    "count": 11,
     "uniques": 4
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
-    "count": 12,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/actions/runs/26868982405",
-    "title": "/actions/runs/26868982405",
-    "count": 8,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/actions",
-    "title": "/actions",
-    "count": 7,
+    "count": 11,
     "uniques": 1
   },
   {
@@ -36,9 +24,21 @@
     "uniques": 1
   },
   {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions",
+    "title": "/actions",
+    "count": 5,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions/runs/26868982405",
+    "title": "/actions/runs/26868982405",
+    "count": 3,
+    "uniques": 1
+  },
+  {
     "path": "/ChenGan666/ZSN.AgentBrook/stargazers",
     "title": "/stargazers",
-    "count": 3,
+    "count": 2,
     "uniques": 2
   },
   {
