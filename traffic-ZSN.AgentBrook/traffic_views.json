@@ -78,14 +78,14 @@
       "uniques": 2
     },
     {
-      "timestamp": "2026-06-04T00:00:00Z",
-      "count": 58,
-      "uniques": 3
-    },
-    {
       "timestamp": "2026-06-05T00:00:00Z",
       "count": 24,
       "uniques": 1
+    },
+    {
+      "timestamp": "2026-06-04T00:00:00Z",
+      "count": 58,
+      "uniques": 3
     },
     {
       "timestamp": "2026-06-06T00:00:00Z",
