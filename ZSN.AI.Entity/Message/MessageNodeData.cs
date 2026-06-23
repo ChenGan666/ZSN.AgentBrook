@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace ZSN.AI.Entity
 {
     /// <summary>
-    /// MessageNode 节点配置数据
+    /// MessageNode 节点配置数据（Entity层，供 toTask() switch 使用）
     /// </summary>
     public class MessageNodeData: NodeData
     {

@@ -1,9 +1,35 @@
 import { defineStore } from 'pinia'
-import type { SessionInfo, ChatMessage, AppInfo, SessionStatusInfo } from '@/types/chat'
+import type {
+  SessionInfo,
+  ChatMessage,
+  AppInfo,
+  SessionStatusInfo,
+  StreamContext,
+} from '@/types/chat'
 import * as sessionApi from '@/services/session'
 import * as chatApi from '@/services/chat'
 import { sessionCache, messageCache } from '@/utils/cache'
 import { normalizeRecord } from '@/utils/process'
+
+/**
+ * Simple stable 8-char hash for deterministic fallback IDs. Same input → same
+ * output, so the same chat-log entry produces the same fallback id across
+ * repeated getChatList calls (which keeps retry/reload's ID-based lookups
+ * stable after a refresh).
+ */
+function stableHash(input: string): string {
+  let h1 = 0xdeadbeef ^ 0
+  let h2 = 0x41c6ce57 ^ 0
+  for (let i = 0; i < input.length; i++) {
+    const ch = input.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  const hash = 4294967296 * (2097151 & h2) + (h1 >>> 0)
+  return hash.toString(16).padStart(8, '0').slice(-8)
+}
 
 function parseChatLog(log: any): ChatMessage | null {
   if (!log) return null
@@ -16,20 +42,40 @@ function parseChatLog(log: any): ChatMessage | null {
     content = log.ContentToGptMsg.content || ''
   }
   if (!content && typeof log.Content === 'string') {
-    try {
-      const parsed = JSON.parse(log.Content)
-      content = parsed.content || ''
-    } catch {
+    const trimmed = log.Content.trim()
+    // Only attempt JSON parse when it actually looks like a JSON object/array.
+    // Previously any string was JSON.parsed and on failure used as raw content,
+    // which leaked raw JSON into the bubble when Content was JSON without a
+    // `content` field.
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(log.Content)
+        if (parsed && typeof parsed === 'object' && 'content' in parsed) {
+          content = parsed.content || ''
+        } else {
+          content = log.Content
+        }
+      } catch {
+        content = log.Content
+      }
+    } else {
       content = log.Content
     }
   }
 
+  // Deterministic fallback id so the same logical message yields the same id
+  // across repeated fetches. This keeps retry/reload's ID-based lookups valid
+  // even after a refresh replaces the message list. (Previously a random id
+  // broke retry after refresh.)
+  const sid = log.ChatSessionID || ''
+  const ts = log.CreateTime || ''
+  const contentKey = stableHash(typeof content === 'string' ? content.slice(0, 256) : '')
   return {
-    id: log.ChatLogID || `log_${Date.now()}_${Math.random()}`,
-    sessionId: log.ChatSessionID || '',
+    id: log.ChatLogID || `log_${sid || 'unknown'}_${role}_${ts}_${contentKey}`,
+    sessionId: sid,
     role,
     content,
-    createdAt: log.CreateTime || new Date().toISOString(),
+    createdAt: ts || new Date().toISOString(),
   }
 }
 
@@ -43,7 +89,50 @@ interface ChatState {
   loadingMessages: boolean
   sessionsTotal: number
   runningSessionIds: string[]
+  /**
+   * Reactive mirror of which sessions currently have an active local SSE
+   * stream. UI reads this to show a streaming indicator. The full
+   * (non-reactive) StreamContext lives in the module-level `streamContexts`
+   * Map because AbortController must stay a plain object.
+   */
+  streamingSessions: Record<string, boolean>
+  /**
+   * Authoritative local terminal-status signal, keyed by sessionId → 0 (success)
+   * or -1 (failed). Written by the SSE terminal handler the moment a terminal
+   * frame arrives, BEFORE the stream's finalizeStream removes the session from
+   * runningSessionIds.
+   *
+   * This exists to fix a status-desync race: previously the heartbeat guard and
+   * the fetchSessions re-apply both judged "is this session locally finished?"
+   * by checking `!runningSessionIds.includes(id)`. But the terminal handler
+   * writes SessionStatus to 0/-1 while the session is STILL in
+   * runningSessionIds (it's only removed on finalizeStream, up to ~15s later).
+   * During that window the heartbeat overwrote the local terminal status with
+   * a lagged server "running" (1), making the status dot flicker back to blue.
+   * Reading this map instead closes the race because it is set immediately on
+   * the terminal frame, independent of runningSessionIds timing.
+   *
+   * Cleared by finalizeStream (after the status has been persisted via
+   * fetchSessions) and by clearAllSessions.
+   */
+  locallyTerminalStatus: Record<string, number>
 }
+
+/**
+ * Module-level (non-reactive) registry of per-session stream contexts. Keyed
+ * by sessionId. When a stream's real SessionID is only learned from the first
+ * SSE frame, the context is migrated from a temporary key to the real one.
+ */
+const streamContexts = new Map<string, StreamContext>()
+
+/**
+ * In-flight dedup for fetchSessions(1). Multiple callers (mount, post-SSE,
+ * first SSE frame, heartbeat) frequently fire fetchSessions(1) concurrently;
+ * without dedup the last-resolving call wins on `this.sessions` and the
+ * localCompleted snapshot is computed from inconsistent intermediate states.
+ * Concurrent calls for page 1 share the same promise.
+ */
+let fetchSessionsPromise: Promise<void> | null = null
 
 export const useChatStore = defineStore('chat', {
   state: (): ChatState => ({
@@ -56,6 +145,8 @@ export const useChatStore = defineStore('chat', {
     loadingMessages: false,
     sessionsTotal: 0,
     runningSessionIds: [],
+    streamingSessions: {},
+    locallyTerminalStatus: {},
   }),
 
   getters: {
@@ -65,10 +156,144 @@ export const useChatStore = defineStore('chat', {
     hasRunningSessions(): boolean {
       return this.runningSessionIds.length > 0
     },
+    /** True if any local SSE stream is active. */
+    anyStreaming(): boolean {
+      return Object.keys(this.streamingSessions).length > 0
+    },
   },
 
   actions: {
+    // ------------------------------------------------------------------
+    // Per-session stream registry
+    // ------------------------------------------------------------------
+
+    /** Whether a local SSE stream is active for the given session. */
+    isStreaming(sessionId: string | null | undefined): boolean {
+      if (!sessionId) return false
+      return !!this.streamingSessions[sessionId]
+    },
+
+    /**
+     * Register a new in-flight stream. The context is keyed by `key` (which
+     * may be a temp key for new chats). `addRunningSession` is called for the
+     * sid and tracked in ctx.registeredSids so unregistration can remove it
+     * later even if the SSE sid changes.
+     */
+    registerStream(key: string, ctx: StreamContext) {
+      streamContexts.set(key, ctx)
+      this.streamingSessions = { ...this.streamingSessions, [key]: true }
+      if (key && !ctx.registeredSids.includes(key)) {
+        ctx.registeredSids.push(key)
+      }
+      this.addRunningSession(key)
+    },
+
+    /**
+     * Move a stream context from one key to another (e.g. temp key → real
+     * SessionID learned from the first SSE frame). Updates runningSessionIds
+     * so both sids stay consistent. After migration the old key's stream
+     * registration is cleared; the context is reachable under the new key.
+     */
+    migrateStream(oldKey: string, newKey: string) {
+      if (!newKey || oldKey === newKey) return
+      const ctx = streamContexts.get(oldKey)
+      if (!ctx) return
+      streamContexts.delete(oldKey)
+      streamContexts.set(newKey, ctx)
+      const next = { ...this.streamingSessions }
+      delete next[oldKey]
+      next[newKey] = true
+      this.streamingSessions = next
+      if (!ctx.registeredSids.includes(newKey)) {
+        ctx.registeredSids.push(newKey)
+      }
+      this.addRunningSession(newKey)
+      // The old sid is no longer the "real" running sid; remove it from the
+      // running list so the heartbeat tracks the correct one.
+      this.removeRunningSession(oldKey)
+    },
+
+    /** Look up the (non-reactive) stream context for a key. */
+    getStreamContext(key: string): StreamContext | undefined {
+      return streamContexts.get(key)
+    },
+
+    /**
+     * Unregister a stream. Removes every sid that was registered for this
+     * stream from runningSessionIds (fixes the leak when the SSE sid differed
+     * from the requested sid). The streamingSessions flag is cleared for the
+     * key.
+     */
+    unregisterStream(key: string) {
+      const ctx = streamContexts.get(key)
+      streamContexts.delete(key)
+      const next = { ...this.streamingSessions }
+      delete next[key]
+      this.streamingSessions = next
+      if (ctx) {
+        for (const sid of ctx.registeredSids) {
+          this.removeRunningSession(sid)
+        }
+      }
+    },
+
+    /** Cancel and unregister every active stream (e.g. on unmount). */
+    cancelAllStreams() {
+      for (const [, ctx] of streamContexts) {
+        try {
+          ctx.abortController.abort()
+        } catch { /* ignore */ }
+      }
+      streamContexts.clear()
+      this.streamingSessions = {}
+    },
+
+    // ------------------------------------------------------------------
+    // Local terminal-status signal (authoritative, independent of
+    // runningSessionIds timing — see ChatState.locallyTerminalStatus doc)
+    // ------------------------------------------------------------------
+
+    /** Record that a session reached a terminal state locally (0=success, -1=failed). */
+    markLocallyTerminal(sessionId: string, status: number) {
+      if (!sessionId) return
+      this.locallyTerminalStatus = { ...this.locallyTerminalStatus, [sessionId]: status }
+    },
+
+    /** Drop the local terminal signal for a session (after it's been persisted). */
+    clearLocallyTerminal(sessionId: string) {
+      if (!sessionId) return
+      if (this.locallyTerminalStatus[sessionId] === undefined) return
+      const next = { ...this.locallyTerminalStatus }
+      delete next[sessionId]
+      this.locallyTerminalStatus = next
+    },
+
+    clearAllLocallyTerminal() {
+      this.locallyTerminalStatus = {}
+    },
+
+    // ------------------------------------------------------------------
+    // Session list
+    // ------------------------------------------------------------------
+
     async fetchSessions(page = 1, size = 50) {
+      // Dedup concurrent page-1 fetches so the localCompleted snapshot is
+      // computed from a single consistent state and we don't fire redundant
+      // network calls. Page>1 (pagination) is not deduped.
+      if (page === 1 && fetchSessionsPromise) {
+        return fetchSessionsPromise
+      }
+      const run = this._doFetchSessions(page, size)
+      if (page === 1) {
+        fetchSessionsPromise = run.finally(() => {
+          fetchSessionsPromise = null
+        })
+        return fetchSessionsPromise
+      }
+      return run
+    },
+
+    async _doFetchSessions(page = 1, size = 50) {
       this.loadingSessions = true
       try {
         const { data } = await sessionApi.getSessionList(page, size)
@@ -76,32 +301,49 @@ export const useChatStore = defineStore('chat', {
           const list = data.Data.Data || []
           this.sessionsTotal = data.Data.total || 0
           if (page === 1) {
-            // Snapshot locally-completed statuses before the server data
-            // overwrites them. removeRunningSession sets SessionStatus=0
-            // but the server DB may not have the update yet.
-            const localCompleted = new Set<string>()
+            // Before the server data overwrites this.sessions, capture the
+            // authoritative local terminal statuses from `locallyTerminalStatus`
+            // (set by the SSE terminal handler) plus any session that's already
+            // terminal AND no longer running. The server DB often lags behind
+            // the local terminal decision, so without re-applying these, a
+            // just-finished session flips back to "running".
+            //
+            // We snapshot from TWO sources:
+            //  - locallyTerminalStatus (authoritative, set on terminal frame)
+            //  - sessions already at 0/-1 and out of runningSessionIds
+            //    (covers sessions that finished in a prior app run / via
+            //     heartbeat agreement and were never re-tracked)
+            const terminalSnapshot = new Map<string, number>(
+              Object.entries(this.locallyTerminalStatus),
+            )
             for (const s of this.sessions) {
-              if (s.SessionStatus === 0 && !this.runningSessionIds.includes(s.ChatSessionID)) {
-                localCompleted.add(s.ChatSessionID)
+              if (
+                (s.SessionStatus === 0 || s.SessionStatus === -1) &&
+                !this.runningSessionIds.includes(s.ChatSessionID) &&
+                !terminalSnapshot.has(s.ChatSessionID)
+              ) {
+                terminalSnapshot.set(s.ChatSessionID, s.SessionStatus)
               }
             }
 
             this.sessions = list
 
             // Re-apply running status for sessions still in the running list
+            // (server may have reported them as 0 due to lag).
             for (const id of this.runningSessionIds) {
-              const s = this.sessions.find(ss => ss.ChatSessionID === id)
+              const s = this.sessions.find((ss) => ss.ChatSessionID === id)
               if (s && s.SessionStatus === 0) {
                 s.SessionStatus = 1
               }
             }
 
-            // Re-apply locally-completed status so sessions that just
-            // finished are not shown as "running" due to server lag
-            for (const id of localCompleted) {
-              const s = this.sessions.find(ss => ss.ChatSessionID === id)
-              if (s && s.SessionStatus === 1) {
-                s.SessionStatus = 0
+            // Re-apply the locally-known terminal status EXACTLY (0 success or
+            // -1 failed). Previously this hardcoded 0, which turned a failed
+            // session's red dot into a green "completed" dot after a refresh.
+            for (const [id, status] of terminalSnapshot) {
+              const s = this.sessions.find((ss) => ss.ChatSessionID === id)
+              if (s) {
+                s.SessionStatus = status
               }
             }
 
@@ -116,9 +358,19 @@ export const useChatStore = defineStore('chat', {
     },
 
     async selectSession(sessionId: string) {
-      // Persist current session's messages before switching away.
-      if (this.currentSessionId && this.currentSessionId !== sessionId && this.messages.length > 0) {
-        messageCache.set(this.currentSessionId, [...this.messages]).catch(() => {})
+      // Persist the OUTGOING session's messages before switching — but only if
+      // this.messages actually belongs to the outgoing session. Previously
+      // there was no invariant tying this.messages to currentSessionId, so a
+      // rapid double-switch could write one session's messages under another
+      // session's cache key (cache poisoning). If the outgoing session still
+      // has an active stream, its authoritative aiMessage lives in the stream
+      // context and will be persisted by the stream itself on completion, so
+      // we skip persisting here to avoid clobbering live data.
+      const oldSid = this.currentSessionId
+      if (oldSid && oldSid !== sessionId && this.messages.length > 0) {
+        if (!this.isStreaming(oldSid)) {
+          messageCache.set(oldSid, [...this.messages]).catch(() => {})
+        }
       }
 
       this.currentSessionId = sessionId
@@ -145,7 +397,7 @@ export const useChatStore = defineStore('chat', {
           // ChatLogIDs, so we match by position rather than by ID.
           if (cachedMessages.length > 0) {
             const cachedWithProcess = cachedMessages.filter(
-              m => m.process && !m.id.startsWith('pending_'),
+              (m) => m.process && !m.id.startsWith('pending_'),
             )
 
             const apiAssistantIndices: number[] = []
@@ -158,12 +410,18 @@ export const useChatStore = defineStore('chat', {
 
             const orderMatchCount = Math.min(cachedWithProcess.length, apiAssistantIndices.length)
             for (let i = 0; i < orderMatchCount; i++) {
-              const processData = cachedWithProcess[i].process
+              const cached = cachedWithProcess[i]
+              const processData = cached.process
               const apiIdx = apiAssistantIndices[i]
               if (processData) {
                 this.messages[apiIdx] = {
                   ...this.messages[apiIdx],
                   process: processData,
+                  // 工作流的最终文本存在执行记录的 Results 里，不在 chat-log
+                  // 的 Content/ContentToGptMsg 字段，所以 parseChatLog 解析出的
+                  // content 可能为空。此时用缓存（SSE 流式积累的）content 回填，
+                  // 避免切换会话回来后最终回复内容丢失。API 有值时优先用 API。
+                  content: this.messages[apiIdx].content || cached.content || '',
                 }
               }
             }
@@ -174,7 +432,7 @@ export const useChatStore = defineStore('chat', {
             // SSE stream can continue to update them and the workflow tree
             // remains visible.
             if (cachedWithProcess.length > apiAssistantIndices.length) {
-              const existingIds = new Set(this.messages.map(m => m.id))
+              const existingIds = new Set(this.messages.map((m) => m.id))
               for (let i = apiAssistantIndices.length; i < cachedWithProcess.length; i++) {
                 const extra = cachedWithProcess[i]
                 if (!existingIds.has(extra.id)) {
@@ -190,17 +448,44 @@ export const useChatStore = defineStore('chat', {
         } else if (cachedMessages.length > 0) {
           this.messages = cachedMessages
         }
+
+        // For a session with an ACTIVE SSE stream, the rebuild above (cache +
+        // API) cannot contain the in-progress assistant message: the cache
+        // write was skipped while streaming (chat.ts:371 guard), and the API
+        // likely hasn't persisted the chat-log row yet. Without this message,
+        // the AI reply area disappears and SSE's getAssistantMsg can't rebind
+        // to a rendered object (so the workflow tree never updates).
+        //
+        // Re-inject the stream's live aiMessage so the bubble renders and SSE
+        // keeps mutating the exact same object reference (identity preserved →
+        // no detach, no freeze). loadSessionExecutionRecords is still skipped
+        // for this session (its isStreaming guard below), so it won't clobber
+        // the live process data. The cache is intentionally NOT re-written
+        // here — the stream owns it and persists on completion.
+        if (this.isStreaming(sessionId)) {
+          const ctx = this.getStreamContext(sessionId)
+          const live = ctx?.aiMessage
+          if (live && !this.messages.some((m) => m.id === live.id)) {
+            this.messages.push(live)
+          }
+        }
       } finally {
         // Keep loading=true until execution records are also loaded below.
         // This prevents the UI from flashing through partial states.
       }
 
-      // Always load execution records so every session — running, completed,
-      // or failed — shows its workflow tree. The execution-records API is the
-      // authoritative source and loadSessionExecutionRecords safely handles all
-      // states (messages with/without process, missing chat-log entries, etc.).
+      // Load execution records so completed/failed sessions show their workflow
+      // tree. BUT skip for sessions with an active SSE stream: the stream is the
+      // authoritative, live source of process data for those sessions, and
+      // loadSessionExecutionRecords would overwrite the live records/outputs
+      // with a potentially-lagged server snapshot — clobbering the workflow
+      // execution result after a switch-back (the reported bug). When the
+      // stream finishes (unregisterStream clears streamingSessions), the next
+      // selectSession / refresh will load records normally.
       try {
-        await this.loadSessionExecutionRecords(sessionId)
+        if (!this.isStreaming(sessionId)) {
+          await this.loadSessionExecutionRecords(sessionId)
+        }
       } finally {
         this.loadingMessages = false
       }
@@ -212,14 +497,20 @@ export const useChatStore = defineStore('chat', {
      *
      * Matching is done by order: the i-th process corresponds to the
      * i-th assistant message that does not already have process data.
+     *
+     * Messages that are currently receiving live SSE updates (loading=true)
+     * are skipped for the moment — their data is live and richer — but the
+     * unmatched process slot is deferred (returned) so the caller / stream
+     * can backfill it once the stream finishes, rather than being silently
+     * dropped as before.
      */
-    async loadSessionExecutionRecords(sessionId: string) {
+    async loadSessionExecutionRecords(sessionId: string): Promise<number> {
       try {
         const { data } = await chatApi.getSessionExecutionRecords(sessionId)
-        if (!data.Success || !data.Data) return
+        if (!data.Success || !data.Data) return 0
 
         let processList = data.Data as any[]
-        if (!Array.isArray(processList) || processList.length === 0) return
+        if (!Array.isArray(processList) || processList.length === 0) return 0
 
         // Merge sub-processes into their parent ProcessInfo.
         // The server groups execution records by ProcessesID, so a workflow
@@ -273,6 +564,7 @@ export const useChatStore = defineStore('chat', {
         // updates — keep their richer real-time data.
         // Messages with loading=false (from cache) may be stale — overwrite them.
         let filledCount = 0
+        let deferredCount = 0
         const matchCount = Math.min(processList.length, allAssistantIndices.length)
         for (let i = 0; i < matchCount; i++) {
           const msgIndex = allAssistantIndices[i]
@@ -286,19 +578,32 @@ export const useChatStore = defineStore('chat', {
           // Preserve streamsByNode from existing process data (SSE provides this)
           const existingStreams = msg.process?.streamsByNode || {}
 
-          // Skip only when SSE is actively streaming to this message —
-          // its data is live and more current than the execution-records snapshot.
-          if (msg.process && msg.loading) continue
+          // Skip when this message is receiving live SSE updates — its data is
+          // live and more current than the execution-records snapshot.
+          // Messages with loading=true are mid-stream (sendMessage sets it);
+          // they are updated by the SSE flush path, not here.
+          if (msg.process && msg.loading) {
+            deferredCount++
+            continue
+          }
 
-          this.messages[msgIndex] = {
-            ...msg,
-            process: {
-              status: proc.Status || msg.process?.status || 'success',
-              results: proc.Results || msg.process?.results || '',
-              timestamp: Date.now(),
-              records,
-              streamsByNode: existingStreams,
-            },
+          // Apply the authoritative execution-records data IN PLACE (mutate the
+          // existing object's `process` field) rather than creating a new
+          // object via `this.messages[msgIndex] = {...}`.
+          //
+          // This is load-bearing for the switch-back workflow-freeze fix: the
+          // SSE stream holds a reference to this exact object (via
+          // getAssistantMsg's rebind). Creating a new object would detach that
+          // reference, so subsequent SSE flushes would silently no-op against a
+          // stale object and the workflow tree would freeze. In-place mutation
+          // preserves object identity, so the live stream keeps updating the
+          // same object the UI renders.
+          msg.process = {
+            status: proc.Status || msg.process?.status || 'success',
+            results: proc.Results || msg.process?.results || '',
+            timestamp: Date.now(),
+            records,
+            streamsByNode: existingStreams,
           }
           filledCount++
         }
@@ -345,15 +650,32 @@ export const useChatStore = defineStore('chat', {
         if (hasChanges) {
           await messageCache.set(sessionId, [...this.messages])
         }
+
+        // Return how many process slots were deferred (i.e. skipped because a
+        // message is mid-stream). Callers / the active stream can use this to
+        // know there is authoritative data waiting to be backfilled.
+        return deferredCount
       } catch {
         // Silently ignore — execution records are an enhancement
+        return 0
       }
     },
 
     async deleteSession(id: string) {
+      // Cancel any active stream for this session first.
+      const ctx = streamContexts.get(id)
+      if (ctx) {
+        try {
+          ctx.abortController.abort()
+        } catch { /* ignore */ }
+        this.unregisterStream(id)
+      }
       await sessionApi.deleteSession(id)
       this.sessions = this.sessions.filter((s) => s.ChatSessionID !== id)
       this.sessionsTotal = Math.max(0, this.sessionsTotal - 1)
+      try {
+        await messageCache.clearSession(id)
+      } catch { /* ignore */ }
       if (this.currentSessionId === id) {
         this.currentSessionId = this.sessions[0]?.ChatSessionID ?? null
         if (this.currentSessionId) {
@@ -381,6 +703,33 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
+    /**
+     * Update a message that lives in a specific session's message list. If the
+     * session is the currently-viewed one, this.messages is updated reactively;
+     * otherwise the change is persisted to that session's cache so it is
+     * visible when the user navigates back. This replaces the old pattern of
+     * only being able to update the currently-displayed messages.
+     */
+    async updateMessageInSession(sessionId: string, messageId: string, updater: (m: ChatMessage) => ChatMessage) {
+      if (this.currentSessionId === sessionId) {
+        const idx = this.messages.findIndex((m) => m.id === messageId)
+        if (idx !== -1) {
+          this.messages[idx] = updater(this.messages[idx])
+          messageCache.set(sessionId, [...this.messages]).catch(() => {})
+        }
+        return
+      }
+      // Background session: read cache, update, write back.
+      try {
+        const cached = await messageCache.getBySession(sessionId)
+        const idx = cached.findIndex((m) => m.id === messageId)
+        if (idx !== -1) {
+          cached[idx] = updater(cached[idx])
+          await messageCache.set(sessionId, cached)
+        }
+      } catch { /* ignore */ }
+    },
+
     addMessage(message: ChatMessage) {
       this.messages.push(message)
     },
@@ -388,13 +737,13 @@ export const useChatStore = defineStore('chat', {
     addRunningSession(sessionId: string) {
       if (!sessionId || this.runningSessionIds.includes(sessionId)) return
       this.runningSessionIds.push(sessionId)
-      const session = this.sessions.find(s => s.ChatSessionID === sessionId)
+      const session = this.sessions.find((s) => s.ChatSessionID === sessionId)
       if (session) session.SessionStatus = 1
     },
 
     removeRunningSession(sessionId: string) {
-      this.runningSessionIds = this.runningSessionIds.filter(id => id !== sessionId)
-      const session = this.sessions.find(s => s.ChatSessionID === sessionId)
+      this.runningSessionIds = this.runningSessionIds.filter((id) => id !== sessionId)
+      const session = this.sessions.find((s) => s.ChatSessionID === sessionId)
       if (session && session.SessionStatus === 1) {
         session.SessionStatus = 0
       }
@@ -410,7 +759,7 @@ export const useChatStore = defineStore('chat', {
       if (!sid) return
 
       // 如果有消息正在 SSE 流式写入（loading=true），跳过刷新避免竞态覆盖
-      if (this.messages.some(m => m.loading)) return
+      if (this.messages.some((m) => m.loading)) return
 
       try {
         const { data } = await chatApi.getChatList(sid)
@@ -423,7 +772,7 @@ export const useChatStore = defineStore('chat', {
         // SSE-created messages use temporary IDs (ai_xxx) while API uses real
         // ChatLogIDs, so we match by position rather than by ID.
         const currentWithProcess = this.messages.filter(
-          m => m.process && !m.id.startsWith('pending_'),
+          (m) => m.process && !m.id.startsWith('pending_'),
         )
 
         // Build the new message list, then re-attach process data by order
@@ -438,20 +787,29 @@ export const useChatStore = defineStore('chat', {
         // Match by order: i-th current process → i-th API assistant message
         const orderMatchCount = Math.min(currentWithProcess.length, apiAssistantIndices.length)
         for (let i = 0; i < orderMatchCount; i++) {
-          const processData = currentWithProcess[i].process
+          const current = currentWithProcess[i]
+          const processData = current.process
           const apiIdx = apiAssistantIndices[i]
           if (processData) {
             this.messages[apiIdx] = {
               ...this.messages[apiIdx],
               process: processData,
+              // 工作流的最终文本在执行记录 Results 里，不在 chat-log Content。
+              // parseChatLog 解析出的 content 可能为空，此时用当前（SSE 积累
+              // 的）content 回填，避免心跳刷新覆盖掉最终回复内容。
+              content: this.messages[apiIdx].content || current.content || '',
             }
           }
         }
 
         await messageCache.set(sid, [...this.messages])
 
-        // Reload execution records to pick up any new data
-        await this.loadSessionExecutionRecords(sid)
+        // Reload execution records to pick up any new data — but not while an
+        // active SSE stream owns this session's process data (it would
+        // overwrite live records with a lagged server snapshot).
+        if (!this.isStreaming(sid)) {
+          await this.loadSessionExecutionRecords(sid)
+        }
       } catch {
         // Silently ignore
       }
@@ -460,9 +818,32 @@ export const useChatStore = defineStore('chat', {
     updateSessionStatusFromHeartbeat(list: SessionStatusInfo[]): SessionStatusInfo[] {
       const completedList: SessionStatusInfo[] = []
       for (const item of list) {
-        const session = this.sessions.find(s => s.ChatSessionID === item.ChatSessionID)
+        const session = this.sessions.find((s) => s.ChatSessionID === item.ChatSessionID)
         if (session) {
-          session.SessionStatus = item.SessionStatus
+          // Authority direction: a locally-known terminal state takes
+          // precedence over a lagged server "running" report.
+          //
+          // The authoritative source is `locallyTerminalStatus`, which is set
+          // the moment the SSE terminal frame arrives — BEFORE the session is
+          // removed from runningSessionIds (that only happens on
+          // finalizeStream, up to ~15s later). Reading this map (not
+          // runningSessionIds membership) closes the race where the heartbeat
+          // overwrote a locally-set terminal status back to 1 during the
+          // terminal→finalize window — the visible symptom was the status dot
+          // flickering from terminal back to blue for a switched-away session.
+          const localTerminal = this.locallyTerminalStatus[item.ChatSessionID]
+          if (localTerminal !== undefined && item.SessionStatus === 1) {
+            // Server lags behind our local terminal decision; keep local status.
+            // (If localTerminal is 0/-1 it stays; we do NOT overwrite with 1.)
+          } else if (localTerminal !== undefined) {
+            // Server agrees the session is terminal (0 or -1). Prefer the
+            // server's value only when it's also terminal, so a server-side
+            // retry that flips failed→success still propagates. But never let
+            // it regress to running.
+            session.SessionStatus = item.SessionStatus
+          } else {
+            session.SessionStatus = item.SessionStatus
+          }
         }
         // 已完成或失败的会话，从运行列表移除
         if (item.SessionStatus !== 1) {
@@ -471,6 +852,52 @@ export const useChatStore = defineStore('chat', {
         }
       }
       return completedList
+    },
+
+    // ------------------------------------------------------------------
+    // Bulk actions (used by UI components instead of direct state mutation)
+    // ------------------------------------------------------------------
+
+    /**
+     * Clear all sessions, messages, and current selection. Cancels any active
+     * streams and clears caches. Replaces the direct state mutation that used
+     * to live in SessionList.vue (which bypassed actions, skipped cache
+     * cleanup, and left streams running).
+     */
+    async clearAllSessions() {
+      this.cancelAllStreams()
+      this.sessions = []
+      this.currentSessionId = null
+      this.messages = []
+      this.sessionsTotal = 0
+      this.runningSessionIds = []
+      this.streamingSessions = {}
+      this.clearAllLocallyTerminal()
+      try {
+        await sessionCache.clear()
+        await messageCache.clear()
+      } catch { /* ignore */ }
+    },
+
+    /**
+     * Reset state when the user switches the active App (starts a fresh chat
+     * context). Cancels streams for the outgoing session. Replaces the direct
+     * state mutation that used to live in AppLayout.vue.
+     */
+    resetToApp(appId: string) {
+      // Cancel the outgoing session's stream if any.
+      if (this.currentSessionId) {
+        const ctx = streamContexts.get(this.currentSessionId)
+        if (ctx) {
+          try {
+            ctx.abortController.abort()
+          } catch { /* ignore */ }
+          this.unregisterStream(this.currentSessionId)
+        }
+      }
+      this.selectedAppId = appId
+      this.currentSessionId = null
+      this.messages = []
     },
   },
 })

@@ -84,6 +84,7 @@ namespace Yannyo.Common.Xml
     }
 
 
+
     /// <summary>
     /// Select节点InnerText访问器类
     /// </summary>

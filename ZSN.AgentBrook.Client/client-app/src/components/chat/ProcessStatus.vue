@@ -4,11 +4,15 @@
       <span class="process-title">
         <span :class="['status-badge', statusClass]">{{ statusText }}</span>
         <div class="process-actions">
-          <el-icon class="action-btn" :size="12" @click.stop="emit('retry')"><RefreshRight /></el-icon>
-          <el-icon class="action-btn" :size="12">
-            <ArrowDown v-if="!panelCollapsed" />
-            <ArrowRight v-else />
-          </el-icon>
+          <span class="action-btn" @click.stop="handleRefreshClick" title="刷新">
+            <el-icon :size="12"><RefreshRight /></el-icon>
+          </span>
+          <span class="action-btn" @click.stop="togglePanel" title="展开/折叠">
+            <el-icon :size="12">
+              <ArrowDown v-if="!panelCollapsed" />
+              <ArrowRight v-else />
+            </el-icon>
+          </span>
         </div>
       </span>
     </div>
@@ -25,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, provide } from 'vue'
 import { ArrowDown, ArrowRight, RefreshRight } from '@element-plus/icons-vue'
 import ProcessNode from './ProcessNode.vue'
 import type { NormalizedRecord, MessageProcess } from '@/types/chat'
@@ -42,6 +46,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   retry: []
+  retryNode: [node: NormalizedRecord]
 }>()
 
 const panelCollapsed = ref(false)
@@ -68,7 +73,7 @@ const statusClass = computed(() => {
   const status = String(props.processData.status || '').toLowerCase()
   if (status === 'running') return 'status-running'
   if (status === 'success') return 'status-success'
-  if (status === 'failed' || status === 'error') return 'status-failed'
+  if (status === 'failed' || status === 'error' || status === 'fail') return 'status-failed'
   return 'status-unknown'
 })
 
@@ -76,7 +81,7 @@ const statusText = computed(() => {
   const status = String(props.processData.status || '').toLowerCase()
   if (status === 'running') return '正在思考'
   if (status === 'success') return '思考完成'
-  if (status === 'failed' || status === 'error') return '出错了'
+  if (status === 'failed' || status === 'error' || status === 'fail') return '出错了'
   return 'Unknown'
 })
 
@@ -222,6 +227,16 @@ function buildProcessTree(records: NormalizedRecord[]): TreeNode[] {
 function togglePanel() {
   panelCollapsed.value = !panelCollapsed.value
 }
+
+function handleRefreshClick() {
+  emit('retry')
+}
+
+function handleRetryNode(node: NormalizedRecord) {
+  emit('retryNode', node)
+}
+
+provide('onRetryNode', handleRetryNode)
 </script>
 
 <style lang="scss" scoped>
@@ -285,9 +300,13 @@ function togglePanel() {
 }
 
 .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #9ca3af;
   cursor: pointer;
   transition: color 0.2s;
+  padding: 2px;
 
   &:hover {
     color: #6b7280;

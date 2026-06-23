@@ -113,9 +113,9 @@ async function handleNewChat() {
 
 function selectApp(app: AppInfo) {
   showAppPicker.value = false
-  chatStore.selectedAppId = app.AppID
-  chatStore.currentSessionId = null
-  chatStore.messages = []
+  // 通过 store action 切换 App：会取消当前会话的活动流并重置选择/消息。
+  // 原先这里直接赋值 store 字段，绕过了 action，不清流也不一致。
+  chatStore.resetToApp(app.AppID)
 }
 </script>
 

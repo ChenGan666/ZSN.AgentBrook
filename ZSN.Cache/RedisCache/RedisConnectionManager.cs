@@ -74,14 +74,17 @@ namespace ZSN.Cache.RedisCache
                 }
                 catch (RedisConnectionException ex) when (IsRetryableException(ex) && attempts <= maxRetryCount)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Redis连接异常，准备第{attempts}次重试: {ex.Message}");
                     Task.Delay(retryDelay * attempts).Wait(); // 指数退避策略
                 }
                 catch (SocketException ex) when (IsRetryableException(ex) && attempts <= maxRetryCount)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Socket异常，准备第{attempts}次重试: {ex.Message}");
                     Task.Delay(retryDelay * attempts).Wait(); // 指数退避策略
                 }
                 catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Redis操作异常: {ex.Message}");
                     throw; // 对于不可重试的异常，直接抛出
                 }
             }
@@ -109,14 +112,17 @@ namespace ZSN.Cache.RedisCache
                 }
                 catch (RedisConnectionException ex) when (IsRetryableException(ex) && attempts <= maxRetryCount)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Redis连接异常，准备第{attempts}次重试: {ex.Message}");
                     await Task.Delay(retryDelay * attempts); // 指数退避策略
                 }
                 catch (SocketException ex) when (IsRetryableException(ex) && attempts <= maxRetryCount)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Socket异常，准备第{attempts}次重试: {ex.Message}");
                     await Task.Delay(retryDelay * attempts); // 指数退避策略
                 }
                 catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Redis操作异常: {ex.Message}");
                     throw; // 对于不可重试的异常，直接抛出
                 }
             }
@@ -137,6 +143,7 @@ namespace ZSN.Cache.RedisCache
                 }
                 catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"创建Redis连接失败: {ex.Message}");
                     throw;
                 }
             });

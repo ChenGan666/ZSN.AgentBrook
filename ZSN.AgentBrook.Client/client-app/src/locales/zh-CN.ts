@@ -122,6 +122,7 @@ export default {
     sessionFailedIncomplete: 'AI 回复未生成，可重试',
     sessionFailedNoResult: '未获取到执行结果',
     waitingForReply: 'AI 正在思考中...',
+    stop: '停止生成',
     workflowLoadHint: '点击查看工作流执行详情',
   },
   time: {

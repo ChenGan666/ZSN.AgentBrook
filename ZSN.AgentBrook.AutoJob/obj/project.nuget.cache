@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "U5mc0T5Q5LY=",
+  "dgSpecHash": "R+4z7/EKRMI=",
   "success": true,
   "projectFilePath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AgentBrook.AutoJob/ZSN.AgentBrook.AutoJob.csproj",
   "expectedPackageFiles": [
@@ -44,8 +44,8 @@
     "/Users/chengan/.nuget/packages/llamasharp/0.23.0/llamasharp.0.23.0.nupkg.sha512",
     "/Users/chengan/.nuget/packages/log4net/2.0.17/log4net.2.0.17.nupkg.sha512",
     "/Users/chengan/.nuget/packages/lucene.net/4.8.0-beta00008/lucene.net.4.8.0-beta00008.nupkg.sha512",
-    "/Users/chengan/.nuget/packages/magick.net-q8-anycpu/14.12.0/magick.net-q8-anycpu.14.12.0.nupkg.sha512",
-    "/Users/chengan/.nuget/packages/magick.net.core/14.12.0/magick.net.core.14.12.0.nupkg.sha512",
+    "/Users/chengan/.nuget/packages/magick.net-q8-anycpu/14.13.1/magick.net-q8-anycpu.14.13.1.nupkg.sha512",
+    "/Users/chengan/.nuget/packages/magick.net.core/14.13.1/magick.net.core.14.13.1.nupkg.sha512",
     "/Users/chengan/.nuget/packages/markdig/0.37.0/markdig.0.37.0.nupkg.sha512",
     "/Users/chengan/.nuget/packages/microsoft.agents.ai/1.0.0-preview.251204.1/microsoft.agents.ai.1.0.0-preview.251204.1.nupkg.sha512",
     "/Users/chengan/.nuget/packages/microsoft.agents.ai.abstractions/1.0.0-preview.251204.1/microsoft.agents.ai.abstractions.1.0.0-preview.251204.1.nupkg.sha512",
@@ -319,6 +319,18 @@
       "warningLevel": 1,
       "filePath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AgentBrook.AutoJob/ZSN.AgentBrook.AutoJob.csproj",
       "libraryId": "Snappier",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "包 \"SQLitePCLRaw.lib.e_sqlite3\" 2.1.6 具有已知的 高 严重性漏洞，https://github.com/advisories/GHSA-2m69-gcr7-jv3q",
+      "projectPath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AgentBrook.AutoJob/ZSN.AgentBrook.AutoJob.csproj",
+      "warningLevel": 1,
+      "filePath": "/Users/chengan/Dev/AI/ZSN.AgentBrook/ZSN.AgentBrook.AutoJob/ZSN.AgentBrook.AutoJob.csproj",
+      "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
       "targetGraphs": [
         "net10.0"
       ]

@@ -674,10 +674,10 @@
           }
         }
       },
-      "Magick.NET-Q8-AnyCPU/14.12.0": {
+      "Magick.NET-Q8-AnyCPU/14.13.1": {
         "type": "package",
         "dependencies": {
-          "Magick.NET.Core": "14.12.0"
+          "Magick.NET.Core": "14.13.1"
         },
         "compile": {
           "lib/net8.0/Magick.NET-Q8-AnyCPU.dll": {
@@ -727,7 +727,7 @@
           }
         }
       },
-      "Magick.NET.Core/14.12.0": {
+      "Magick.NET.Core/14.13.1": {
         "type": "package",
         "compile": {
           "lib/net8.0/Magick.NET.Core.dll": {
@@ -6531,10 +6531,10 @@
         "tools/uninstall.ps1"
       ]
     },
-    "Magick.NET-Q8-AnyCPU/14.12.0": {
-      "sha512": "YGEgNTZ6DaMhXgJYLClRrmEe6CMsEL5E8hy4c2iH/aEmj41ojFAtA/PIXYH1AOYINNEUX/83nLp/y5obt9P/vw==",
+    "Magick.NET-Q8-AnyCPU/14.13.1": {
+      "sha512": "Naw4lYw9Mv+Tnd67H2Un+joZsZTWmbo7A4kycoosM6JnclMXb+ZNRbCqgvMRA6wAEJfybFDiP5NauLgL4xkyXA==",
       "type": "package",
-      "path": "magick.net-q8-anycpu/14.12.0",
+      "path": "magick.net-q8-anycpu/14.13.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -6547,7 +6547,7 @@
         "lib/net8.0/Magick.NET-Q8-AnyCPU.xml",
         "lib/netstandard20/Magick.NET-Q8-AnyCPU.dll",
         "lib/netstandard20/Magick.NET-Q8-AnyCPU.xml",
-        "magick.net-q8-anycpu.14.12.0.nupkg.sha512",
+        "magick.net-q8-anycpu.14.13.1.nupkg.sha512",
         "magick.net-q8-anycpu.nuspec",
         "runtimes/linux-arm64/native/Magick.Native-Q8-arm64.dll.so",
         "runtimes/linux-musl-x64/native/Magick.Native-Q8-x64.dll.so",
@@ -6559,10 +6559,10 @@
         "runtimes/win-x86/native/Magick.Native-Q8-x86.dll"
       ]
     },
-    "Magick.NET.Core/14.12.0": {
-      "sha512": "QPyuk1Lxp1xgSTP8xomnoZjeOtUeTSoeSuEckhGaUAi6GdZ5d2PmZqzr0O4m/zPbC4So/yg5rr2QO4vYD6fB5g==",
+    "Magick.NET.Core/14.13.1": {
+      "sha512": "BhqOKCLixvj/Ofwe+aRPHqoGdWekvKavsQrivBSuUq0zzzijnIF/OxqVA+GCd6WP46C4PaIfGhR65BPi2M0cKg==",
       "type": "package",
-      "path": "magick.net.core/14.12.0",
+      "path": "magick.net.core/14.13.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -6573,7 +6573,7 @@
         "lib/net8.0/Magick.NET.Core.xml",
         "lib/netstandard20/Magick.NET.Core.dll",
         "lib/netstandard20/Magick.NET.Core.xml",
-        "magick.net.core.14.12.0.nupkg.sha512",
+        "magick.net.core.14.13.1.nupkg.sha512",
         "magick.net.core.nuspec"
       ]
     },
@@ -12429,7 +12429,7 @@
   },
   "projectFileDependencyGroups": {
     "net10.0": [
-      "Magick.NET-Q8-AnyCPU >= 14.12.0",
+      "Magick.NET-Q8-AnyCPU >= 14.13.1",
       "Microsoft.Extensions.Hosting >= 9.0.4",
       "Quartz >= 3.13.1",
       "Quartz.Extensions.DependencyInjection >= 3.13.1",
@@ -12535,7 +12535,7 @@
         "dependencies": {
           "Magick.NET-Q8-AnyCPU": {
             "target": "Package",
-            "version": "[14.12.0, )"
+            "version": "[14.13.1, )"
           },
           "Microsoft.Extensions.Hosting": {
             "target": "Package",
@@ -12879,6 +12879,16 @@
       "warningLevel": 1,
       "message": "包 \"Snappier\" 1.0.0 具有已知的 高 严重性漏洞，https://github.com/advisories/GHSA-pggp-6c3x-2xmx",
       "libraryId": "Snappier",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "包 \"SQLitePCLRaw.lib.e_sqlite3\" 2.1.6 具有已知的 高 严重性漏洞，https://github.com/advisories/GHSA-2m69-gcr7-jv3q",
+      "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
       "targetGraphs": [
         "net10.0"
       ]

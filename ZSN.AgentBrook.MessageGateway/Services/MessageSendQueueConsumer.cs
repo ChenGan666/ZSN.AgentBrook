@@ -29,7 +29,8 @@ namespace ZSN.AgentBrook.MessageGateway.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("[MessageSendQueue] 消费者启动");
+            _logger.LogInformation("[MessageSendQueue] 消费者启动，队列: {Queue}, 并发: {Max}",
+                _options.Value.SendQueueName, _options.Value.MaxConcurrentSends);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -75,7 +76,14 @@ namespace ZSN.AgentBrook.MessageGateway.Services
             try
             {
                 task = JsonConvert.DeserializeObject<MessageSendTask>(taskJson);
-                if (task == null) return;
+                if (task == null)
+                {
+                    _logger.LogWarning("[MessageSendQueue] 反序列化失败: {Json}", taskJson);
+                    return;
+                }
+
+                _logger.LogInformation("[MessageSendQueue] 处理任务 RecordID={RecordID}, Channel={Channel}",
+                    task.RecordID, task.ChannelID);
 
                 var request = new SendMessageRequest
                 {
@@ -101,6 +109,9 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                     record.RetryCount = result.RetryCount;
                     MessageSendRecordBussiness.Update(record);
                 }
+
+                _logger.LogInformation("[MessageSendQueue] 任务完成 RecordID={RecordID}, Success={Success}",
+                    task.RecordID, result.Success);
             }
             catch (Exception ex)
             {

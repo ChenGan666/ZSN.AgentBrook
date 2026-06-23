@@ -278,6 +278,7 @@ namespace ZSN.Utils.Core.Utils
                     }
 
 
+
                     int nRealLength = p_Length;
                     int[] anResultFlag = new int[p_Length];
                     byte[] bsResult = null;

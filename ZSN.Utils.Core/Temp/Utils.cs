@@ -38,6 +38,7 @@ namespace Yannyo.Common
         private static string TemplateCookieName = string.Format("templateskinname_{0}_{1}_{2}", AssemblyFileVersion.FileMajorPart, AssemblyFileVersion.FileMinorPart, AssemblyFileVersion.FileBuildPart);
 
 
+
         /// <summary>
         /// 算一个值到另一个值范围内的值
         /// </summary>
@@ -1420,6 +1421,7 @@ namespace Yannyo.Common
         }
 
 
+
         /// <summary>
         /// 将泛型集合类转换成DataTable
         /// </summary>
@@ -2222,6 +2224,7 @@ namespace Yannyo.Common
 
             return s.ToString();
         }
+
 
 
         /// <summary>

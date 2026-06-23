@@ -71,12 +71,18 @@ namespace ZSN.AgentBrook.MessageGateway.Services
 
                 var msgEvent = matchedProvider.ParseWebhookEvent(context, matchedChannel);
                 if (msgEvent == null)
+                {
+                    _logger.LogDebug("[Webhook] 非消息事件，跳过");
                     return new WebhookHandleResult { Success = true, Message = "Non-message event ignored" };
+                }
                 msgEvent.ChannelID = matchedChannel.ChannelID;
 
                 var existingRecord = MessageReceiveRecordBussiness.GetByEventId(msgEvent.EventId);
                 if (existingRecord != null)
+                {
+                    _logger.LogDebug("[Webhook] 重复事件跳过: EventId={EventId}", msgEvent.EventId);
                     return new WebhookHandleResult { Success = true, Message = "Duplicate event" };
+                }
 
                 var receiveRecord = new MessageReceiveRecordInfo
                 {
@@ -104,8 +110,8 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                     receiveRecord.RoutedTaskID = routeResult.CreatedTaskID ?? "";
                     MessageReceiveRecordBussiness.Update(receiveRecord);
 
-                    _logger.LogInformation("[Webhook] 路由完成: Matched={Matched}, TaskID={TaskID}",
-                        routeResult.Matched, routeResult.CreatedTaskID);
+                    _logger.LogInformation("[Webhook] 路由完成: EventId={EventId}, Matched={Matched}, TaskID={TaskID}",
+                        msgEvent.EventId, routeResult.Matched, routeResult.CreatedTaskID);
                 }
 
                 return new WebhookHandleResult { Success = true, Message = "OK" };

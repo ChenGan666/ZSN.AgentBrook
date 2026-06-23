@@ -155,7 +155,7 @@
           "dependencies": {
             "Magick.NET-Q8-AnyCPU": {
               "target": "Package",
-              "version": "[14.12.0, )"
+              "version": "[14.13.1, )"
             },
             "Microsoft.Extensions.Hosting": {
               "target": "Package",

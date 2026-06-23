@@ -1,6 +1,6 @@
 <template>
   <div class="chat-view">
-    <ChatContainer />
+    <ChatContainer @retry-process="handleRetryProcess" @retry-node="handleRetryNode" />
     <ChatInput
       class="floating-input"
       :is-streaming="effectiveRunning"
@@ -19,25 +19,30 @@ import { useChat } from '@/composables/useChat'
 import { useChatStore } from '@/stores/chat'
 
 const chatStore = useChatStore()
-const { sendMessage, cancelStream, isStreaming, streamError } = useChat()
+const { sendMessage, cancelStream, retryNode, reloadNodeExecution, isStreaming, streamError } = useChat()
 
 const currentSessionStatus = computed(() => chatStore.currentSession?.SessionStatus ?? 0)
 
 const effectiveRunning = computed(() => {
   // 服务端状态为运行中
   if (currentSessionStatus.value === 1) return true
-  // 本地 SSE 流式传输：仅当属于当前会话时生效
-  if (isStreaming.value) {
-    if (!chatStore.currentSessionId) return true
-    return chatStore.runningSessionIds.includes(chatStore.currentSessionId)
-  }
-  return false
+  // 本地 SSE 流式传输：isStreaming 现在已经是"当前会话是否有活动流"的
+  // computed（见 useChat.ts），无需再在这里校验 currentSessionId 归属。
+  return isStreaming.value
 })
 
 function handleSend(content: string, files?: File[]) {
   const currentSession = chatStore.currentSession
   const appId = currentSession?.AppID || chatStore.selectedAppId || chatStore.apps[0]?.AppID || ''
   sendMessage(content, chatStore.currentSessionId, appId, files)
+}
+
+function handleRetryProcess(payload: { sessionId: string; processesId: string; messageId: string | null }) {
+  reloadNodeExecution(payload.sessionId, payload.processesId, payload.messageId)
+}
+
+function handleRetryNode(payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }) {
+  retryNode(payload)
 }
 </script>
 

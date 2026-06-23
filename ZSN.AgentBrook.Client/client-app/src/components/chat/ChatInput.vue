@@ -56,7 +56,19 @@
         <el-button text @click="triggerFilePick">
           <el-icon><Paperclip /></el-icon>
         </el-button>
+        <!-- 对话处理中：发送按钮切换为强制停止按钮，点击中断当前会话的 SSE 流。
+             之前这里只有 :disabled 的发送按钮，emit('cancel') 从无触发点，因此
+             缺少强制停止功能。 -->
         <el-button
+          v-if="isRunning"
+          type="danger"
+          :icon="VideoPause"
+          circle
+          :title="t('chat.stop')"
+          @click="emit('cancel')"
+        />
+        <el-button
+          v-else
           type="primary"
           :icon="Promotion"
           circle
@@ -70,7 +82,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Paperclip, Promotion, Document, Close, Microphone, ArrowUp } from '@element-plus/icons-vue'
+import { Paperclip, Promotion, Document, Close, Microphone, ArrowUp, VideoPause } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'

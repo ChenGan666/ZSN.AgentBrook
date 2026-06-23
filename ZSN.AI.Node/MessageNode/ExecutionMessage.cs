@@ -13,7 +13,7 @@ using ZSN.Utils.Core.Extensions;
 namespace ZSN.AI.Node.MessageNode
 {
     /// <summary>
-    /// MessageNode 执行器 — 通过 Redis 队列与 MessageGateway 解耦通信
+    /// MessageNode 执行器 — 轻量级工作流节点，通过 Redis 队列与 MessageGateway 解耦通信
     /// </summary>
     public class ExecutionMessage : BaseExecution
     {
@@ -57,6 +57,8 @@ namespace ZSN.AI.Node.MessageNode
 
             try
             {
+                Logs.Enqueue("=== Message 节点开始执行 ===");
+
                 // 1. 解析配置
                 var nodeData = JsonConvert.DeserializeObject<MessageNodeData>(config.data.ToString());
                 if (nodeData == null) throw new Exception("Message 节点配置解析失败");
@@ -68,11 +70,12 @@ namespace ZSN.AI.Node.MessageNode
                 if (targetUsers == null || targetUsers.Count == 0)
                     throw new Exception("未找到目标用户");
 
-                Logs.Enqueue($"[Init] TargetUsers: {targetUsers.Count}");
+                Logs.Enqueue($"[Init] ChannelID: {nodeData.ChannelID}, Type: {nodeData.MessageType}, TargetUsers: {targetUsers.Count}");
 
                 // 3. 消息内容占位符替换
                 string template = await this.ReplacePromptValueCached(nodeData.MessageTemplate, promptCache, SessionID, AppID, ProcessesID);
 
+                bool isBatch = targetUsers.Count > 1 || (targetUsers.Count == 1 && nodeData.TargetUserConfig.SendIndividually);
                 int successCount = 0;
                 int failedCount = 0;
                 var platformMsgIdMap = new Dictionary<string, string>();
@@ -85,6 +88,7 @@ namespace ZSN.AI.Node.MessageNode
                         ? await this.ReplacePromptValueCached(user.ContentOverride, promptCache, SessionID, AppID, ProcessesID)
                         : template;
 
+                    // 4.1 写入 tb_msg_send_record
                     string sendRecordId = Guid.NewGuid().ToString();
                     var sendRecord = new MessageSendRecordInfo
                     {
@@ -102,6 +106,7 @@ namespace ZSN.AI.Node.MessageNode
                     MessageSendRecordBussiness.Add(sendRecord);
                     recordIds.Add(sendRecordId);
 
+                    // 4.2 构建队列消息体（使用匿名对象避免跨项目类型依赖）
                     var sendTask = new
                     {
                         RecordID = sendRecordId,
@@ -119,11 +124,13 @@ namespace ZSN.AI.Node.MessageNode
 
                     string taskJson = JsonConvert.SerializeObject(sendTask);
                     await _redis.ListLeftPushAsync(_nodeOptions.Value.SendQueueName, taskJson);
+                    Logs.Enqueue($"[Queue] RecordID={sendRecordId}, Target={user.IMUserID}, Name={user.IMUserName}");
                 }
 
                 // 5. 判断 WaitForConfirmation
                 if (nodeData.WaitForConfirmation)
                 {
+                    Logs.Enqueue($"[Wait] 等待 {recordIds.Count} 条发送记录完成...");
                     var waitResults = await WaitForAllSendResultsAsync(recordIds);
 
                     successCount = waitResults.Count(r => r.SendStatus == 1);
@@ -152,9 +159,11 @@ namespace ZSN.AI.Node.MessageNode
                     outputs.Add(new Output { varname = "results", value = $"批量发送 {recordIds.Count} 人，成功 {successCount} 人，失败 {failedCount} 人", nodeId = config.id });
 
                     if (successCount == 0) ExecutionRecordStatus = ExecutionRecordStatus.Fail;
+                    Logs.Enqueue($"[Done] {sendStatus}, Success={successCount}, Failed={failedCount}");
                 }
                 else
                 {
+                    // Fire-and-forget 模式
                     outputs.Add(new Output { varname = "sendSuccess", value = "Queued", nodeId = config.id });
                     outputs.Add(new Output { varname = "sendCount", value = recordIds.Count.ToString(), nodeId = config.id });
                     outputs.Add(new Output { varname = "successCount", value = "0", nodeId = config.id });
@@ -163,8 +172,10 @@ namespace ZSN.AI.Node.MessageNode
                     outputs.Add(new Output { varname = "platformMessageIds", value = "{}", nodeId = config.id });
                     outputs.Add(new Output { varname = "errorMessage", value = "", nodeId = config.id });
                     outputs.Add(new Output { varname = "results", value = $"消息已入队 {recordIds.Count} 人，异步发送中", nodeId = config.id });
+                    Logs.Enqueue("[Done] Fire-and-forget 模式，入队完成");
                 }
 
+                // 6. 触发下游节点
                 WorkflowNodeInfoBussiness.NextNode(
                     AppID, SessionID, ProcessesID, TaskID, FromMainTaskID,
                     AgentNodeID: "", config, inputs, outputs, Logs.ToList());
@@ -183,6 +194,9 @@ namespace ZSN.AI.Node.MessageNode
             return RecordID;
         }
 
+        /// <summary>
+        /// 解析目标用户列表（支持 Static / Dynamic / Query 模式）
+        /// </summary>
         private async Task<List<TargetUserItem>> ResolveTargetUsersAsync(
             TargetUserConfig userConfig, PromptReplaceCache promptCache,
             string SessionID, string AppID, string ProcessesID, List<Inputs> inputs)
@@ -205,6 +219,7 @@ namespace ZSN.AI.Node.MessageNode
                     break;
 
                 case "query":
+                    // 预留接口：后续实现 IUserQueryService 按条件查询
                     _messageLogger.LogWarning("[MessageNode] Query 模式暂未实现，返回空列表");
                     break;
 
@@ -216,6 +231,9 @@ namespace ZSN.AI.Node.MessageNode
             return result;
         }
 
+        /// <summary>
+        /// 从 JSON 字符串解析动态用户列表（兼容大小写字段名）
+        /// </summary>
         private List<TargetUserItem> ParseDynamicUserList(string json)
         {
             var result = new List<TargetUserItem>();
@@ -238,12 +256,15 @@ namespace ZSN.AI.Node.MessageNode
             }
             catch (Exception ex)
             {
-                _messageLogger.LogWarning(ex, "[MessageNode] 解析动态用户列表失败");
+                _messageLogger.LogWarning(ex, "[MessageNode] 解析动态用户列表失败: {Json}", json);
             }
 
             return result;
         }
 
+        /// <summary>
+        /// 兼容大小写的 JToken 字段读取
+        /// </summary>
         private string? GetJTokenValue(JToken token, string key1, string key2)
         {
             if (token[key1] != null) return token[key1]?.ToString();
@@ -251,6 +272,9 @@ namespace ZSN.AI.Node.MessageNode
             return null;
         }
 
+        /// <summary>
+        /// 轮询所有 tb_msg_send_record 等待网关处理完成
+        /// </summary>
         private async Task<List<MessageSendRecordInfo>> WaitForAllSendResultsAsync(List<string> recordIds)
         {
             var timeout = TimeSpan.FromSeconds(_nodeOptions.Value.WaitTimeoutSeconds);
@@ -281,6 +305,7 @@ namespace ZSN.AI.Node.MessageNode
                 await Task.Delay(pollInterval);
             }
 
+            // 超时：返回当前状态（未完成的记录 SendStatus 仍为 0）
             return results;
         }
     }

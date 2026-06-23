@@ -227,9 +227,10 @@ async function handleClearAll() {
       type: 'warning',
     })
     await import('@/services/session').then((m) => m.cleanUpSessions())
-    chatStore.sessions = []
-    chatStore.currentSessionId = null
-    chatStore.messages = []
+    // 通过 store action 清理本地状态：取消所有活动 SSE 流、清空会话列表/
+    // 消息/选择、并清掉缓存。原先这里直接赋值 store 字段，绕过了 action，
+    // 既不清缓存也不取消流，导致孤儿流和缓存残留。
+    await chatStore.clearAllSessions()
     ElMessage.success(t('chat.cleared'))
   } catch { /* cancelled */ }
 }

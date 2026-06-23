@@ -42,7 +42,8 @@ namespace ZSN.AgentBrook.MessageGateway.Services
 
             if (state.IsOpen)
             {
-                _logger.LogWarning("[MessageProviderFactory] Provider {Type} 熔断中", providerType);
+                _logger.LogWarning("[MessageProviderFactory] Provider {Type} 熔断中，恢复时间: {Until}",
+                    providerType, state.OpenUntil);
                 throw new InvalidOperationException($"消息 Provider {providerType} 熔断中");
             }
 

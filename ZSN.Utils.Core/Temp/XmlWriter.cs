@@ -177,6 +177,7 @@ namespace Yannyo.Common
 		#endregion
 
  
+
 		#region 追加子节点
 		/// <summary>
 		/// 追加子节点
@@ -193,6 +194,7 @@ namespace Yannyo.Common
 		}
 
  
+
 		/// <summary>
 		/// 使用默认的Xml文档
 		/// </summary>
@@ -206,6 +208,7 @@ namespace Yannyo.Common
 		#endregion
 
 
+		
 		#region 创建存储生成XML的文件夹
         /// <summary>
         /// 创建存储生成XML的文件夹
@@ -328,8 +331,10 @@ namespace Yannyo.Common
 					PicXmlWriter.Flush();
 					this.SourceDataTable.Dispose();
 				}
+				catch (Exception e)	{	Console.WriteLine ("异常：{0}", e.ToString()); }
 				finally
 				{
+					Console.WriteLine("对文件 {0} 的处理已完成。");
 					if (PicXmlWriter != null)
 						PicXmlWriter.Close();
 					
@@ -338,6 +343,7 @@ namespace Yannyo.Common
 			}	
 			else
 			{
+				Console.WriteLine("对文件 {0} 的处理未完成。");
 				return "";
 			}
 		}	
@@ -439,9 +445,11 @@ namespace Yannyo.Common
 				}
 				catch (Exception e)
 				{
+					Console.WriteLine ("异常：{0}", e.ToString());
 				}
 				finally
 				{
+					Console.WriteLine("对文件 {0} 的处理已完成。");
 					if (PicXmlWriter != null)	
 						PicXmlWriter.Close();
 					
@@ -450,6 +458,7 @@ namespace Yannyo.Common
 			}	
 			else
 			{
+				Console.WriteLine("对文件 {0} 的处理未完成。");
 				return "";
 			}
 		}	
@@ -623,6 +632,7 @@ namespace Yannyo.Common
 		public void SetXMLComponent(XMLComponent xc)
 		{
 			ActualXMLComponent = xc;
+			//Console.WriteLine("FileEncode - {0}", xc.FileEncode);		
 			GetSettingFromComponent( xc);
 		}
         
@@ -684,6 +694,8 @@ namespace Yannyo.Common
 		}
 		void CustomDecoration()
 		{
+			Console.WriteLine("In ConcreteDecorator: decoration goes here");
+			Console.WriteLine("{0}", strDecoratorName);
 		}
 	}
 	*/
@@ -751,6 +763,7 @@ namespace Yannyo.Common
     //        // or a decorator for the component
 
     //        //c.WriteFile();
+    //        Console.WriteLine(c.FileEncode);
 			
     //        /*
     //        c.FileOutPath=null;
@@ -758,7 +771,10 @@ namespace Yannyo.Common
     //        */
 
 			
+			
+    //        Console.WriteLine(c.WriteFile());
     //        if (c.WriteStringBuilder() != null)
+    //            Console.WriteLine(c.WriteStringBuilder().ToString());
 		
 
     //        return 0;

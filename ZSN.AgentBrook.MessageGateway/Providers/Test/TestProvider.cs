@@ -20,6 +20,10 @@ namespace ZSN.AgentBrook.MessageGateway.Providers.Test
 
         public Task<SendResult> SendAsync(SendMessageRequest request, ChannelConfigInfo channelConfig, CancellationToken ct = default)
         {
+            _logger.LogInformation("[TestProvider] 模拟发送: To={User}, Type={Type}, Content={Content}",
+                request.TargetUser, request.MessageType,
+                (request.Content ?? "").Length > 50 ? request.Content[..50] + "..." : request.Content);
+
             return Task.FromResult(new SendResult
             {
                 Success = true,
@@ -49,6 +53,7 @@ namespace ZSN.AgentBrook.MessageGateway.Providers.Test
                 else if (json.TryGetValue("message", out var m)) content = m.ToString();
                 if (json.TryGetValue("fromUser", out var u)) fromUser = u.ToString();
                 if (json.TryGetValue("fromUserName", out var n)) fromUserName = n.ToString();
+                if (json.TryGetValue("fromUserName", StringComparison.OrdinalIgnoreCase, out var n2)) fromUserName = n2.ToString();
                 if (json.TryGetValue("msgType", out var t)) msgType = t.ToString();
                 if (json.TryGetValue("eventId", out var e)) eventId = e.ToString();
                 if (json.TryGetValue("attachments", out var att))

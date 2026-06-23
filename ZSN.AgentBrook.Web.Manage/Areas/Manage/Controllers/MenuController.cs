@@ -101,7 +101,8 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
                 return "[]";
             }
 
-            List<MenuInfo> array = MenuInfoBussiness.GetList("ParentID='" + text + "'");
+            List<MenuInfo> allMenus = MenuInfoBussiness.GetList();
+            List<MenuInfo> array = allMenus.FindAll(x => x.ParentID == text);
             StringBuilder stringBuilder = new StringBuilder("[", array.Count * 50);
             int num = array.Count;
             int num2 = 0;
@@ -114,12 +115,12 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
                 stringBuilder.AppendFormat("\"id\":\"{0}\",", dataRow.ID);
                 stringBuilder.AppendFormat("\"title\":\"{0}\",", dataRow.Title);
                 stringBuilder.AppendFormat("\"ico\":\"{0}\",", text2);
-                stringBuilder.AppendFormat("\"link\":\"{0}\",", "");
+                stringBuilder.AppendFormat("\"link\":\"{0}\",", dataRow.Url);
                 stringBuilder.AppendFormat("\"type\":\"{0}\",", "0");
-                stringBuilder.AppendFormat("\"model\":\"{0}\",", "");
+                stringBuilder.AppendFormat("\"model\":\"{0}\",", "0");
                 stringBuilder.AppendFormat("\"width\":\"{0}\",", "");
                 stringBuilder.AppendFormat("\"height\":\"{0}\",", "");
-                stringBuilder.AppendFormat("\"hasChilds\":\"{0}\",", array.FindAll(x=>x.ParentID == dataRow.ID).Count>0 ? "1" : "0");
+                stringBuilder.AppendFormat("\"hasChilds\":\"{0}\",", allMenus.Exists(x => x.ParentID == dataRow.ID) ? "1" : "0");
                 stringBuilder.AppendFormat("\"childs\":[");
                 stringBuilder.Append("]");
                 stringBuilder.Append("}");

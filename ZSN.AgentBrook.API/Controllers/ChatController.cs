@@ -578,6 +578,87 @@ namespace ZSN.AgentBrook.API.Controllers
             }
         }
 
+        /// <summary>
+        /// 获取会话的所有工作流执行记录（按 ProcessesID 分组）
+        /// </summary>
+        [ApiExplorerSettings(GroupName = "V1-Member")]
+        [HttpPost]
+        [Consumes("application/json")]
+        [MemberCheck(Token = true, MemberToken = true)]
+        public JsonMsg<List<ProcessInfo>> GetSessionExecutionRecords([FromBody] PostData paramValue)
+        {
+            JObject jObject = this.JsonObj;
+            if (jObject.JsonGetValue<int>("status") != -1)
+            {
+                string SessionID = jObject.JsonGetValue<string>("sessionID", "");
+
+                if (string.IsNullOrEmpty(SessionID))
+                {
+                    return JsonMsg<List<ProcessInfo>>.Error(null, ErrorCode.InvalidParameter);
+                }
+
+                // Query all execution records for this session
+                List<WorkflowNodeExecutionRecordInfo> allRecords =
+                    WorkflowNodeExecutionRecordInfoBussiness.GetListBySessionID(SessionID);
+
+                if (allRecords == null || allRecords.Count == 0)
+                {
+                    return JsonMsg<List<ProcessInfo>>.OK(new List<ProcessInfo>());
+                }
+
+                // Group by ProcessesID
+                var groupedByProcess = allRecords
+                    .GroupBy(r => r.ProcessesID ?? "")
+                    .Where(g => !string.IsNullOrEmpty(g.Key))
+                    .ToList();
+
+                List<ProcessInfo> processList = new List<ProcessInfo>();
+
+                foreach (var group in groupedByProcess)
+                {
+                    var records = group.OrderBy(r => r.StartTime).ToList();
+
+                    // Determine overall process status
+                    ProcessStatus processStatus = ProcessStatus.Success;
+                    if (records.Any(r => r.Status == ExecutionRecordStatus.Fail ||
+                                         r.Status == ExecutionRecordStatus.Timeout))
+                    {
+                        processStatus = ProcessStatus.Fail;
+                    }
+                    else if (records.Any(r => r.Status == ExecutionRecordStatus.Running ||
+                                              r.Status == ExecutionRecordStatus.Waiting))
+                    {
+                        processStatus = ProcessStatus.Running;
+                    }
+
+                    // Get the End node's outputs as Results
+                    object results = null;
+                    var endRecord = records.FirstOrDefault(r =>
+                        r.NodeName != null && r.NodeName.StartsWith("End"));
+                    if (endRecord?.Outputs != null)
+                    {
+                        results = endRecord.Outputs;
+                    }
+
+                    processList.Add(new ProcessInfo
+                    {
+                        SessionID = SessionID,
+                        ProcessID = group.Key,
+                        Status = processStatus,
+                        Results = results,
+                        ExecutionRecordInfos = records,
+                        StreamEnvelope = null
+                    });
+                }
+
+                return JsonMsg<List<ProcessInfo>>.OK(processList);
+            }
+            else
+            {
+                return JsonMsg<List<ProcessInfo>>.Error(null, ErrorCode.DataFormatError);
+            }
+        }
+
         [ApiExplorerSettings(GroupName = "V1-Member")]
         [HttpPost]
         [Consumes("application/json")]

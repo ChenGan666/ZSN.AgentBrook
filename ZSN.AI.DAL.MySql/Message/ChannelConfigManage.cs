@@ -9,19 +9,35 @@ namespace ZSN.AI.DAL.MySql
 {
     public partial class ChannelConfigManage : IChannelConfigManage
     {
+        ///表链接
         private string ChannelConfigConnectionName = "MessageDb";
+        ///表名称
         private string ChannelConfigTableName = "tb_msg_channel_config";
+        ///表字段
         private const string ChannelConfigTableField = "ChannelID,ChannelName,ProviderType,ConfigJson,FlowDirection,TargetAppID,SessionTimeoutMinutes,Enabled,CreateTime,UpdateTime";
+        ///添加用表字段
         private const string ChannelConfigTableFieldForAdd = "ChannelID,ChannelName,ProviderType,ConfigJson,FlowDirection,TargetAppID,SessionTimeoutMinutes,Enabled,CreateTime,UpdateTime";
+        ///添加用表字段value
         private const string ChannelConfigTableFieldAltForAdd = "@ChannelID,@ChannelName,@ProviderType,@ConfigJson,@FlowDirection,@TargetAppID,@SessionTimeoutMinutes,@Enabled,@CreateTime,@UpdateTime";
-        public string SetConnectionName(string connName) { return ChannelConfigConnectionName = connName; }
+        public string SetConnectionName(string connName)
+        {
+            return ChannelConfigConnectionName = connName;
+        }
+		/// <summary>
+        /// 增加一条数据
+        /// </summary>
         public string ChannelConfig_Add(ChannelConfigInfo model)
         {
             StringBuilder strSql = new StringBuilder();
-            strSql.Append("insert into "); strSql.Append(ChannelConfigTableName);
-            strSql.Append(" ("); strSql.Append(ChannelConfigTableFieldForAdd);
-            strSql.Append(") values ("); strSql.Append(ChannelConfigTableFieldAltForAdd);
-            strSql.Append(");select @@IDENTITY");
+            strSql.Append("insert into ");
+            strSql.Append(ChannelConfigTableName);
+			strSql.Append(" (");
+            strSql.Append(ChannelConfigTableFieldForAdd);
+            strSql.Append(") values (");
+            strSql.Append(ChannelConfigTableFieldAltForAdd);
+            strSql.Append(")");
+            strSql.Append(";select @@IDENTITY");
+
             MySqlParameter[] parameters = {
                 new MySqlParameter("@ChannelID", MySqlDbType.VarChar,36),
                 new MySqlParameter("@ChannelName", MySqlDbType.VarChar,128),
@@ -34,20 +50,48 @@ namespace ZSN.AI.DAL.MySql
                 new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
                 new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16),
             };
-            parameters[0].Value = model.ChannelID; parameters[1].Value = model.ChannelName;
-            parameters[2].Value = model.ProviderType; parameters[3].Value = model.ConfigJson;
-            parameters[4].Value = model.FlowDirection; parameters[5].Value = model.TargetAppID;
-            parameters[6].Value = model.SessionTimeoutMinutes; parameters[7].Value = model.Enabled;
-            parameters[8].Value = model.CreateTime; parameters[9].Value = model.UpdateTime;
-            object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text, strSql.ToString(), parameters);
-            return obj == null ? String.Empty : model.ChannelID;
+            parameters[0].Value = model.ChannelID;
+            parameters[1].Value = model.ChannelName;
+            parameters[2].Value = model.ProviderType;
+            parameters[3].Value = model.ConfigJson;
+            parameters[4].Value = model.FlowDirection;
+            parameters[5].Value = model.TargetAppID;
+            parameters[6].Value = model.SessionTimeoutMinutes;
+            parameters[7].Value = model.Enabled;
+            parameters[8].Value = model.CreateTime;
+            parameters[9].Value = model.UpdateTime;
+
+            object obj = DbHelper.ExecuteScalar(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text,strSql.ToString(), parameters);
+            if (obj == null)
+            {
+                return String.Empty;
+            }
+            else
+            {
+                 return model.ChannelID;
+            }
         }
+        /// <summary>
+        /// 更新一条数据
+        /// </summary>
         public bool ChannelConfig_Update(ChannelConfigInfo model)
         {
             StringBuilder strSql = new StringBuilder();
-            strSql.Append("update "); strSql.Append(ChannelConfigTableName); strSql.Append(" set ");
-            strSql.Append("ChannelName=@ChannelName,ProviderType=@ProviderType,ConfigJson=@ConfigJson,FlowDirection=@FlowDirection,TargetAppID=@TargetAppID,SessionTimeoutMinutes=@SessionTimeoutMinutes,Enabled=@Enabled,CreateTime=@CreateTime,UpdateTime=@UpdateTime");
-            strSql.Append(" where ChannelID=@ChannelID");
+            strSql.Append("update ");
+            strSql.Append(ChannelConfigTableName);
+            strSql.Append(" set ");
+			strSql.Append("ChannelName=@ChannelName,");
+			strSql.Append("ProviderType=@ProviderType,");
+			strSql.Append("ConfigJson=@ConfigJson,");
+			strSql.Append("FlowDirection=@FlowDirection,");
+			strSql.Append("TargetAppID=@TargetAppID,");
+			strSql.Append("SessionTimeoutMinutes=@SessionTimeoutMinutes,");
+			strSql.Append("Enabled=@Enabled,");
+			strSql.Append("CreateTime=@CreateTime,");
+			strSql.Append("UpdateTime=@UpdateTime");
+
+			strSql.Append(" where ChannelID=@ChannelID");
+
             MySqlParameter[] parameters = {
                 new MySqlParameter("@ChannelID", MySqlDbType.VarChar,36),
                 new MySqlParameter("@ChannelName", MySqlDbType.VarChar,128),
@@ -60,90 +104,188 @@ namespace ZSN.AI.DAL.MySql
                 new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
                 new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16),
             };
-            parameters[0].Value = model.ChannelID; parameters[1].Value = model.ChannelName;
-            parameters[2].Value = model.ProviderType; parameters[3].Value = model.ConfigJson;
-            parameters[4].Value = model.FlowDirection; parameters[5].Value = model.TargetAppID;
-            parameters[6].Value = model.SessionTimeoutMinutes; parameters[7].Value = model.Enabled;
-            parameters[8].Value = model.CreateTime; parameters[9].Value = model.UpdateTime;
-            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text, strSql.ToString(), parameters);
-            return rows > 0;
+            parameters[0].Value = model.ChannelID;
+            parameters[1].Value = model.ChannelName;
+            parameters[2].Value = model.ProviderType;
+            parameters[3].Value = model.ConfigJson;
+            parameters[4].Value = model.FlowDirection;
+            parameters[5].Value = model.TargetAppID;
+            parameters[6].Value = model.SessionTimeoutMinutes;
+            parameters[7].Value = model.Enabled;
+            parameters[8].Value = model.CreateTime;
+            parameters[9].Value = model.UpdateTime;
+
+            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(ChannelConfigConnectionName),CommandType.Text,strSql.ToString(), parameters);
+            if (rows > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
+        /// <summary>
+        /// 删除一条数据
+        /// </summary>
         public bool ChannelConfig_Delete(string channelID)
         {
             StringBuilder strSql = new StringBuilder();
-            strSql.Append("delete from "); strSql.Append(ChannelConfigTableName);
+            strSql.Append("delete from ");
+            strSql.Append(ChannelConfigTableName);
             strSql.Append(" where ChannelID=@ChannelID");
-            MySqlParameter[] parameters = { new MySqlParameter("@ChannelID", MySqlDbType.VarChar, 36) };
+            MySqlParameter[] parameters = {
+							new MySqlParameter("@ChannelID", MySqlDbType.VarChar, 36)
+					};
             parameters[0].Value = channelID;
-            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text, strSql.ToString(), parameters);
-            return rows > 0;
+            int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text,strSql.ToString(), parameters);
+            if (rows > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
+        /// <summary>
+        /// 得到一个对象实体
+        /// </summary>
         public ChannelConfigInfo ChannelConfig_GetModel(string channelID)
         {
             StringBuilder strSql = new StringBuilder();
-            strSql.Append("select "); strSql.Append(ChannelConfigTableField);
-            strSql.Append(" from "); strSql.Append(ChannelConfigTableName);
-            strSql.Append(" where ChannelID=@ChannelID"); strSql.Append(" limit 1");
-            MySqlParameter[] parameters = { new MySqlParameter("@ChannelID", MySqlDbType.VarChar, 36) };
+            strSql.Append("select ");
+            strSql.Append(ChannelConfigTableField);
+            strSql.Append(" from ");
+            strSql.Append(ChannelConfigTableName);
+            strSql.Append(" where ChannelID=@ChannelID");
+            strSql.Append(" limit 1");
+            MySqlParameter[] parameters = {
+							new MySqlParameter("@ChannelID", MySqlDbType.VarChar, 36)
+					};
             parameters[0].Value = channelID;
-            DataSet ds = DbHelper.ExecuteDataset(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text, strSql.ToString(), parameters);
-            if (ds.Tables[0].Rows.Count > 0) return ChannelConfig_DataRowToModel(ds.Tables[0].Rows[0]);
-            else return null;
+            DataSet ds = DbHelper.ExecuteDataset(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text,strSql.ToString(), parameters);
+            if (ds.Tables[0].Rows.Count > 0)
+            {
+                return ChannelConfig_DataRowToModel(ds.Tables[0].Rows[0]);
+            }
+            else
+            {
+                return null;
+            }
         }
+        /// <summary>
+        /// 得到一个对象实体
+        /// </summary>
         public ChannelConfigInfo ChannelConfig_DataRowToModel(DataRow row)
         {
             ChannelConfigInfo model = new ChannelConfigInfo();
             if (row != null)
             {
-                if (row["ChannelID"] != null) model.ChannelID = row["ChannelID"].ToString();
-                if (row["ChannelName"] != null) model.ChannelName = row["ChannelName"].ToString();
-                if (row["ProviderType"] != null) model.ProviderType = int.Parse(row["ProviderType"].ToString());
-                if (row["ConfigJson"] != null) model.ConfigJson = row["ConfigJson"].ToString();
-                if (row["FlowDirection"] != null) model.FlowDirection = int.Parse(row["FlowDirection"].ToString());
-                if (row["TargetAppID"] != null) model.TargetAppID = row["TargetAppID"].ToString();
-                if (row["SessionTimeoutMinutes"] != null) model.SessionTimeoutMinutes = int.Parse(row["SessionTimeoutMinutes"].ToString());
-                if (row["Enabled"] != null)
+				if (row["ChannelID"] != null )
                 {
-                    var enabledStr = row["Enabled"].ToString();
-                    if (enabledStr.Equals("True", StringComparison.OrdinalIgnoreCase)) model.Enabled = 1;
-                    else if (enabledStr.Equals("False", StringComparison.OrdinalIgnoreCase)) model.Enabled = 0;
-                    else model.Enabled = int.Parse(enabledStr);
+						model.ChannelID = row["ChannelID"].ToString();
                 }
-                if (row["CreateTime"] != null) model.CreateTime = DateTime.Parse(row["CreateTime"].ToString());
-                if (row["UpdateTime"] != null) model.UpdateTime = DateTime.Parse(row["UpdateTime"].ToString());
+				if (row["ChannelName"] != null )
+                {
+						model.ChannelName = row["ChannelName"].ToString();
+                }
+				if (row["ProviderType"] != null )
+                {
+						model.ProviderType = int.Parse(row["ProviderType"].ToString());
+                }
+				if (row["ConfigJson"] != null )
+                {
+						model.ConfigJson = row["ConfigJson"].ToString();
+                }
+				if (row["FlowDirection"] != null )
+                {
+						model.FlowDirection = int.Parse(row["FlowDirection"].ToString());
+                }
+				if (row["TargetAppID"] != null )
+                {
+						model.TargetAppID = row["TargetAppID"].ToString();
+                }
+				if (row["SessionTimeoutMinutes"] != null )
+                {
+						model.SessionTimeoutMinutes = int.Parse(row["SessionTimeoutMinutes"].ToString());
+                }
+				if (row["Enabled"] != null )
+                {
+						var enabledStr = row["Enabled"].ToString();
+						if (enabledStr.Equals("True", StringComparison.OrdinalIgnoreCase))
+							model.Enabled = 1;
+						else if (enabledStr.Equals("False", StringComparison.OrdinalIgnoreCase))
+							model.Enabled = 0;
+						else
+							model.Enabled = int.Parse(enabledStr);
+                }
+				if (row["CreateTime"] != null )
+                {
+						model.CreateTime = DateTime.Parse(row["CreateTime"].ToString());
+                }
+				if (row["UpdateTime"] != null )
+                {
+						model.UpdateTime = DateTime.Parse(row["UpdateTime"].ToString());
+                }
             }
             return model;
         }
+        /// <summary>
+        /// 获得数据列表
+        /// </summary>
         public DataSet ChannelConfig_GetList(string strWhere = "")
         {
             StringBuilder strSql = new StringBuilder();
-            strSql.Append("select "); strSql.Append(ChannelConfigTableField);
-            strSql.Append(" FROM "); strSql.Append(ChannelConfigTableName);
-            if (strWhere.Trim() != "") strSql.Append(" where " + strWhere);
-            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text, strSql.ToString());
+            strSql.Append("select ");
+            strSql.Append(ChannelConfigTableField);
+            strSql.Append(" FROM ");
+            strSql.Append(ChannelConfigTableName);
+            if (strWhere.Trim() != "")
+            {
+                strSql.Append(" where " + strWhere);
+            }
+            return DbHelper.ExecuteDataset(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.Text,strSql.ToString());
         }
+        /// <summary>
+        /// 分页获取数据列表
+        /// </summary>
         public DataTable ChannelConfig_GetListByPage(int pageSize, int pageIndex, string strWhere, out int pagetotal, out int total, int orderType = 1, string showName = "*", string orderKey = "CreateTime")
         {
             MySqlParameter[] parameters = {
-                new MySqlParameter("@tableName", MySqlDbType.VarChar, 255),
-                new MySqlParameter("@showFName", MySqlDbType.VarChar, 500),
-                new MySqlParameter("@selectWhere", MySqlDbType.VarChar, 500),
-                new MySqlParameter("@selectOrder", MySqlDbType.VarChar, 500),
-                new MySqlParameter("@pageNo", MySqlDbType.Int32),
-                new MySqlParameter("@pageSize", MySqlDbType.Int32)
+                    new MySqlParameter("@tableName", MySqlDbType.VarChar, 255),
+                    new MySqlParameter("@showFName", MySqlDbType.VarChar, 500),
+                    new MySqlParameter("@selectWhere", MySqlDbType.VarChar, 500),
+                    new MySqlParameter("@selectOrder", MySqlDbType.VarChar, 500),
+                    new MySqlParameter("@pageNo", MySqlDbType.Int32),
+                    new MySqlParameter("@pageSize", MySqlDbType.Int32)
             };
-            parameters[0].Value = "tb_msg_channel_config"; parameters[1].Value = showName;
-            parameters[2].Value = strWhere; parameters[3].Value = orderKey + (orderType == 0 ? " ASC" : " DESC");
-            parameters[4].Value = pageIndex; parameters[5].Value = pageSize;
-            DataSet ds = DbHelper.ExecuteDataset(DbConfig.GetDbInfo(ChannelConfigConnectionName), CommandType.StoredProcedure, "CommonPagenation", parameters);
+            parameters[0].Value = "tb_msg_channel_config";
+            parameters[1].Value = showName;
+            parameters[2].Value = strWhere;
+            parameters[3].Value = orderKey + (orderType == 0 ? " ASC" : " DESC");
+            parameters[4].Value = pageIndex;
+            parameters[5].Value = pageSize;
+            DataSet ds = DbHelper.ExecuteDataset(DbConfig.GetDbInfo(ChannelConfigConnectionName),CommandType.StoredProcedure, "CommonPagenation", parameters);
             total = 0;
             if (ds.Tables.Count > 1)
             {
                 total = Convert.ToInt32((long)ds.Tables[1].Rows[0][0]);
-                pagetotal = (total % pageSize == 0) ? total / pageSize : total / pageSize + 1;
+                if (total % pageSize == 0)
+                {
+                    pagetotal = total / pageSize;
+                }
+                else
+                {
+                    pagetotal = total / pageSize + 1;
+                }
                 return ds.Tables[0];
             }
-            else { pagetotal = 0; return null; }
+            else
+            {
+                pagetotal = 0;
+                return null;
+            }
         }
-    }
+	}
 }

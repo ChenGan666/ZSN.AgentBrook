@@ -332,6 +332,8 @@ namespace ZSN.Utils.Core.Extensions
         }
 
         
+
+
         public static Guid ToGuid(this string str)
         {
             Guid result;

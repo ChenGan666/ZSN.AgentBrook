@@ -263,6 +263,7 @@ namespace ZSN.Cache.MemoryCache
         {
             if (_config.EnableVerboseLogging)
             {
+                System.Diagnostics.Debug.WriteLine($"[MemoryCache] {DateTime.Now:HH:mm:ss.fff} - {message}");
             }
         }
 

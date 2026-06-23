@@ -281,6 +281,54 @@ namespace ZSN.AI.Node
                         Console.WriteLine($"[ClawAI-Resume] EndNodeAsync 完成 - FromMainTaskID: {FromMainTaskID}");
                         await WorkflowNodeInfoBussiness.TryResumeClawAIStepAsync(FromMainTaskID, outputs, Logs);
                     }
+
+                    // ===== IM 自动回传：由 MessageGateway 触发的工作流，End 节点自动回复给 IM 用户 =====
+                    if (!string.IsNullOrEmpty(data.MsgChannelID) && data.MsgReplyMode == "end")
+                    {
+                        try
+                        {
+                            string replyContent = outputs.FirstOrDefault(o => o.varname == "results")?.value ?? "";
+                            if (!string.IsNullOrEmpty(replyContent))
+                            {
+                                string sendRecordId = Guid.NewGuid().ToString();
+                                var sendRecord = new MessageSendRecordInfo
+                                {
+                                    RecordID = sendRecordId,
+                                    ChannelID = data.MsgChannelID,
+                                    SessionID = SessionID,
+                                    TaskID = TaskID,
+                                    NodeID = config.id,
+                                    MessageType = "text",
+                                    Content = replyContent,
+                                    TargetUser = data.MsgFromUser,
+                                    SendStatus = 0,
+                                    CreateTime = DateTime.Now
+                                };
+                                MessageSendRecordBussiness.Add(sendRecord);
+
+                                var sendTask = new
+                                {
+                                    RecordID = sendRecordId,
+                                    ChannelID = data.MsgChannelID,
+                                    MessageType = "text",
+                                    Content = replyContent,
+                                    TargetUser = data.MsgFromUser,
+                                    SessionID = SessionID,
+                                    TaskID = TaskID,
+                                    NodeID = config.id,
+                                    EnqueueTime = DateTime.Now
+                                };
+                                var redis = new ZSN.Utils.Core.Helpers.RedisHelper();
+                                redis.ListLeftPush("msg_send_queue", JsonConvert.SerializeObject(sendTask));
+
+                                Logs.Add($"[IM-Reply] 已入队回传消息: ChannelID={data.MsgChannelID}, TargetUser={data.MsgFromUser}");
+                            }
+                        }
+                        catch (Exception imEx)
+                        {
+                            Logs.Add($"[IM-Reply] 回传失败: {imEx.Message}");
+                        }
+                    }
                 }
 
                 ExecutionRecordStatus = ExecutionRecordStatus.Success;

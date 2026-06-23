@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using ZSN.AI.BLL;
 using ZSN.AI.Core.Interface;
+using ZSN.AI.Core.Utils;
 using ZSN.AI.Entity;
 using ZSN.Utils.Core.Extensions;
 
@@ -164,10 +165,13 @@ namespace ZSN.AI.Node.Utils
 
             try
             {
-                _logger.LogInformation("Phase 3 开始组装");
+                _logger.LogInformation("Phase 3 开始组装: plan.Steps={Steps}, nodeConfigs={Configs}",
+                    plan.Steps.Count, nodeConfigs.Count);
 
                 var result = AssembleWorkflow(currentWorkflow, keepNodeIds,
                     sourceNodeId, plan, nodeConfigs);
+
+                _logger.LogInformation("Phase 3 组装完成, 开始序列化 complete 数据...");
 
                 // 推送完成结果
                 var completeData = new
@@ -194,6 +198,10 @@ namespace ZSN.AI.Node.Utils
                         }).ToList()
                     }
                 };
+
+                // 测试序列化是否成功
+                var testJson = JsonConvert.SerializeObject(completeData);
+                _logger.LogInformation("Phase 3 complete 数据序列化成功, 长度={Len}", testJson.Length);
 
                 await onEvent(new StreamEvent
                 {
@@ -246,9 +254,11 @@ namespace ZSN.AI.Node.Utils
             var rawContent = new StringBuilder();
             var chatResult = _chatService.SendChatAsync(modelConfig, history, ct: ct);
             await foreach (var content in chatResult.WithCancellation(ct))
-                rawContent.Append(content);
+                rawContent.Append(content.ConvertToString());
 
             var rawText = rawContent.ToString();
+            _logger.LogInformation("Phase 1 LLM 原始输出(前500字符): {Raw}",
+                rawText.Length > 500 ? rawText.Substring(0, 500) : rawText);
 
             // 多策略解析规划 JSON
             var plan = TryParsePlanJson(rawText);
@@ -355,7 +365,7 @@ namespace ZSN.AI.Node.Utils
                     var rawContent = new StringBuilder();
                     var chatResult = _chatService.SendChatAsync(modelConfig, history, ct: ct);
                     await foreach (var content in chatResult.WithCancellation(ct))
-                        rawContent.Append(content);
+                        rawContent.Append(content.ConvertToString());
 
                     // 2.3: 多策略解析 LLM 修改字段，合并到基础 Config
                     var modifications = TryParseModificationsJson(rawContent.ToString(), step.StepIndex);

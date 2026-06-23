@@ -1,4 +1,4 @@
-import { ref, onUnmounted } from 'vue'
+import { onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { useSettingsStore } from '@/stores/settings'
@@ -13,8 +13,6 @@ import type {
   StreamEnvelopeItem,
   StreamByNode,
   NormalizedRecord,
-  MessageProcess,
-  ExecutionRecordInfo,
   AttachmentItem,
 } from '@/types/chat'
 import { useFileUpload } from '@/composables/useFileUpload'
@@ -27,6 +25,13 @@ const MEMBER_TOKEN_CHECK_ERROR = 80002
 const STREAM_UI_FLUSH_MS = 200
 const STREAM_MAX_CHARS_PER_NODE = 200000
 const STREAM_TAIL_CHARS = 1200
+/** Max wall-clock silence on an SSE stream before the client aborts. Guards
+ * against a server that sends a terminal-status frame but never closes the
+ * connection (which would leave msg.loading=true forever). */
+const STREAM_SILENCE_TIMEOUT_MS = 90_000
+/** After a terminal-status frame, give the server this long to close the
+ * stream before we abort on the client. */
+const STREAM_FINAL_CLOSE_TIMEOUT_MS = 15_000
 
 function stripMarkdown(text: string): string {
   return text
@@ -45,10 +50,15 @@ export function useChat() {
   const chatStore = useChatStore()
   const settingsStore = useSettingsStore()
   const { t } = useI18n()
-  const isStreaming = ref(false)
   const streamError = ref<string | null>(null)
   const { uploadFile } = useFileUpload()
-  let abortController: AbortController | null = null
+
+  // The global `isStreaming` ref and module-level `abortController` are GONE.
+  // Per-session streaming state now lives in chatStore.streamingSessions and
+  // the non-reactive streamContexts map (see stores/chat.ts). This composable
+  // still exposes an `isStreaming` computed for backward-compat callers, but
+  // it now reflects the *current* session's streaming state.
+  const isStreaming = computed(() => chatStore.isStreaming(chatStore.currentSessionId))
 
   // --- SSE stream merge helpers ---
 
@@ -124,6 +134,53 @@ export function useChat() {
     return 'Document'
   }
 
+  /**
+   * Merge an SSE-accumulated assistant message into a cached message that
+   * represents the same logical reply. Used when a background stream finishes
+   * and we need to fold its data into the target session's cache WITHOUT
+   * duplicating the assistant message. We prefer to update an existing slot
+   * (matched by id, then by order) rather than appending.
+   *
+   * Returns a new array with the message merged in (or appended if no slot
+   * matched). Does NOT mutate the input array.
+   */
+  function mergeSSEMessageIntoCache(
+    cached: ChatMessage[],
+    sseMsg: ChatMessage,
+    sseMsgId: string,
+  ): ChatMessage[] {
+    // 1. Exact id match (the placeholder was cached previously).
+    const exactIdx = cached.findIndex((m) => m.id === sseMsgId)
+    if (exactIdx !== -1) {
+      const merged: ChatMessage = { ...cached[exactIdx], ...sseMsg, id: cached[exactIdx].id }
+      const next = cached.slice()
+      next[exactIdx] = merged
+      return next
+    }
+
+    // 2. Match the last assistant message that is still a placeholder
+    //    (loading or no process) — this is the slot the SSE was filling.
+    for (let i = cached.length - 1; i >= 0; i--) {
+      const m = cached[i]
+      if (m.role === 'assistant' && (m.loading || !m.process)) {
+        const merged: ChatMessage = {
+          ...m,
+          content: sseMsg.content || m.content,
+          process: sseMsg.process || m.process,
+          loading: false,
+          sessionId: sseMsg.sessionId || m.sessionId,
+        }
+        const next = cached.slice()
+        next[i] = merged
+        return next
+      }
+    }
+
+    // 3. No matching slot — append. (The cache previously had fewer assistant
+    //    messages than the SSE produced.)
+    return [...cached, sseMsg]
+  }
+
   // --- Main send logic ---
 
   async function sendMessage(
@@ -132,7 +189,6 @@ export function useChat() {
     appId: string,
     files?: File[],
   ) {
-    isStreaming.value = true
     streamError.value = null
 
     const userMsg: ChatMessage = {
@@ -183,30 +239,11 @@ export function useChat() {
     }
     chatStore.addMessage(aiMsg)
 
-    // 加入运行中会话列表（SSE可能返回新的sessionId，在doSSERequest中更新）
-    if (sessionId) {
-      chatStore.addRunningSession(sessionId)
-    }
+    // The stream is registered inside doSSERequest with the (possibly temp)
+    // key. For a known session we can register up front; for a new chat
+    // (sessionId empty) we defer until the first SSE frame resolves the sid.
 
     await doSSERequest(content, sessionId, appId, aiMsgId, false, attachments)
-
-    // SSE完成后从运行列表移除。
-    // 使用消息中实际解析到的 sessionId（在 SSE 中可能被更新为新的 SessionID），
-    // 避免因用户切换会话导致 chatStore.currentSessionId 指向错误的会话。
-    const resolvedSid = aiMsg.sessionId || sessionId
-    if (resolvedSid) {
-      chatStore.removeRunningSession(resolvedSid)
-    }
-
-    chatStore.fetchSessions(1).catch(() => {})
-
-    if (!document.hasFocus() && settingsStore.notificationEnabled) {
-      const raw = aiMsg.content || ''
-      const isFailed = aiMsg.process?.status === 'failed' || aiMsg.process?.status === 'error'
-      const title = isFailed ? t('chat.notifyFailed') : t('chat.notifyCompleted')
-      const summary = stripMarkdown(raw).slice(0, 120) || (isFailed ? t('chat.notifyViewDetail') : t('chat.notifyViewReply'))
-      platform.notification.show(title, summary, { sessionId: resolvedSid || '' })
-    }
   }
 
   async function doSSERequest(
@@ -217,9 +254,53 @@ export function useChat() {
     isRetry = false,
     attachments: AttachmentItem[] = [],
   ) {
-    abortController = new AbortController()
+    const abortController = new AbortController()
+    // Persistent reference to the AI message that survives session switches.
+    // When the user switches sessions, chatStore.messages is replaced and the
+    // original message is no longer findable via find(). This reference keeps
+    // accumulating SSE data on the correct message object regardless of which
+    // session is currently displayed.
+    let aiMessage: ChatMessage | null = chatStore.messages.find((m) => m.id === aiMsgId) || null
 
+    // Capture the 0-based index of this assistant message within the session's
+    // non-synthetic assistant sequence, BEFORE any session switch. After a
+    // switch-away-then-back, selectSession replaces the ai_<ts> id with the
+    // server's real ChatLogID (order-merge by position), so find(aiMsgId)
+    // fails. This index lets getAssistantMsg re-locate the right store message
+    // and re-bind aiMessage to it, so the live workflow tree keeps updating.
+    const assistantIndex = chatStore.messages.filter(
+      (m) => m.role === 'assistant' && !m.id.startsWith('pending_'),
+    ).length - 1
+
+    // Register the stream under a key. If we already know the sid, use it;
+    // otherwise use the aiMsgId as a temp key until the first frame resolves
+    // the real sid (then migrateStream moves the context).
+    const initialKey = sessionId || aiMsgId
+    chatStore.registerStream(initialKey, {
+      abortController,
+      aiMessage,
+      aiMsgId,
+      originSid: sessionId || '',
+      registeredSids: [],
+      assistantIndex: Math.max(0, assistantIndex),
+    })
+
+    // Track the key the context currently lives under, so we can migrate it.
+    let currentKey = initialKey
     let sessionListFetched = false
+    let terminalStatusSeen = false
+    /** True when the stream ended via abort (user stop / silence timeout) rather
+     * than a natural terminal frame. finalizeStream uses this to mark the session
+     * locally terminal (success/0) so its status doesn't hang on "running". */
+    let streamAborted = false
+    /**
+     * The message id the SSE stream currently writes to. Starts as the temp
+     * ai_<ts> id. After getAssistantMsg re-binds to the real store message
+     * (whose id is a server ChatLogID, after a switch-back), this is updated to
+     * that real id so subsequent updateMessage(...) calls hit the rendered
+     * message instead of silently no-op'ing on the stale temp id.
+     */
+    let liveMsgId = aiMsgId
 
     // pending state for batched UI flush
     let pendingProcess: any = null
@@ -230,16 +311,26 @@ export function useChat() {
     let pendingTimestamp: number | null = null
     let processFlushTimer: ReturnType<typeof setTimeout> | null = null
 
-    // Persistent reference to the AI message that survives session switches.
-    // When the user switches sessions, chatStore.messages is replaced and the
-    // original message is no longer findable via find(). This reference keeps
-    // accumulating SSE data on the correct message object regardless of which
-    // session is currently displayed.
-    let aiMessage: ChatMessage | null = chatStore.messages.find((m) => m.id === aiMsgId) || null
-
+    /**
+     * Resolve the assistant message to write to. Prefer the reactive store
+     * message when the user is viewing this session; otherwise accumulate on
+     * the persistent aiMessage ref (detached from the store, reconciled on
+     * switch-back or written to cache on stream end).
+     *
+     * Re-binding on switch-back: after the user switches away then back,
+     * selectSession replaces the ai_<ts> id with the server's real ChatLogID
+     * (order-merge), so a plain find(aiMsgId) fails. The first time we detect
+     * the user has returned to this stream's session, we re-locate the store
+     * message by the captured assistantIndex (falling back to the last
+     * loading/placeholder assistant), merge the accumulated SSE data into it,
+     * and re-bind aiMessage + liveMsgId so subsequent updates hit the rendered
+     * message. Without this, updateMessage(aiMsgId, ...) is a permanent no-op
+     * and the live workflow tree freezes (the reported bug).
+     */
     const getAssistantMsg = (): ChatMessage | null => {
-      // If the message is currently in the store, use the reactive version
-      const storeMsg = chatStore.messages.find((m) => m.id === aiMsgId)
+      // If the message is currently in the store under the live id, use the
+      // reactive version.
+      const storeMsg = chatStore.messages.find((m) => m.id === liveMsgId)
       if (storeMsg) {
         // Merge any SSE-accumulated data (from the persistent ref) into the
         // store version. Use mergeRecords to avoid duplicating records that
@@ -248,17 +339,14 @@ export function useChat() {
           if (!storeMsg.process) {
             storeMsg.process = aiMessage.process
           } else {
-            // Merge records: SSE records + store records, deduped by recordId
             storeMsg.process.records = mergeRecords(
               storeMsg.process.records || [],
               aiMessage.process.records || [],
             )
-            // Merge streamsByNode
             storeMsg.process.streamsByNode = {
               ...(storeMsg.process.streamsByNode || {}),
               ...(aiMessage.process.streamsByNode || {}),
             }
-            // Use the more-terminal status
             const sseS = aiMessage.process.status
             if (sseS && sseS !== 'running') storeMsg.process.status = sseS
           }
@@ -266,10 +354,124 @@ export function useChat() {
           if (aiMessage.sessionId) storeMsg.sessionId = aiMessage.sessionId
         }
         aiMessage = storeMsg
+        const ctx = chatStore.getStreamContext(currentKey)
+        if (ctx) ctx.aiMessage = storeMsg
         return storeMsg
       }
+
+      // liveMsgId not found in the store. Two cases:
+      //  (a) the user switched to a different session — keep accumulating on
+      //      the detached aiMessage ref (background stream);
+      //  (b) the user switched back to THIS stream's session, but selectSession
+      //      replaced the temp id with a real ChatLogID — re-bind now.
+      const userReturnedToThisSession =
+        !!chatStore.currentSessionId &&
+        (chatStore.currentSessionId === currentKey ||
+          chatStore.currentSessionId === sessionId)
+      if (userReturnedToThisSession) {
+        // Re-locate the store message by the captured assistant index.
+        const nonPendingAssistants = chatStore.messages.filter(
+          (m) => m.role === 'assistant' && !m.id.startsWith('pending_'),
+        )
+        let rebound: ChatMessage | undefined
+        if (assistantIndex >= 0 && assistantIndex < nonPendingAssistants.length) {
+          rebound = nonPendingAssistants[assistantIndex]
+        }
+        // Defensive fallback: index out of range (e.g. server returned fewer
+        // rows than expected) — take the last assistant still loading or
+        // lacking process data, which is the slot SSE is filling.
+        if (!rebound) {
+          for (let i = chatStore.messages.length - 1; i >= 0; i--) {
+            const m = chatStore.messages[i]
+            if (m.role === 'assistant' && (m.loading || !m.process)) {
+              rebound = m
+              break
+            }
+          }
+        }
+        if (rebound) {
+          // Fold the accumulated detached SSE data into the store message.
+          if (aiMessage && aiMessage.process) {
+            if (!rebound.process) {
+              rebound.process = aiMessage.process
+            } else {
+              rebound.process.records = mergeRecords(
+                rebound.process.records || [],
+                aiMessage.process.records || [],
+              )
+              rebound.process.streamsByNode = {
+                ...(rebound.process.streamsByNode || {}),
+                ...(aiMessage.process.streamsByNode || {}),
+              }
+              const sseS = aiMessage.process.status
+              if (sseS && sseS !== 'running') rebound.process.status = sseS
+            }
+            if (aiMessage.content) rebound.content = aiMessage.content
+            if (aiMessage.sessionId) rebound.sessionId = aiMessage.sessionId
+          }
+          // Re-bind: subsequent updates target the real id and render live.
+          aiMessage = rebound
+          liveMsgId = rebound.id
+          const ctx = chatStore.getStreamContext(currentKey)
+          if (ctx) ctx.aiMessage = rebound
+          return rebound
+        }
+      }
+
       // User switched sessions — use the persistent reference to keep accumulating
       return aiMessage
+    }
+
+    /**
+     * Finalize this stream: reset loading, persist to the correct session's
+     * cache (avoiding duplicate assistant messages), and unregister the stream.
+     * Centralizing this guarantees msg.loading is ALWAYS reset on every exit
+     * path (success, error, abort, token-expired) — previously the
+     * token/decrypt early-return paths left loading=true forever, which also
+     * permanently blocked refreshCurrentSessionMessages for the session.
+     */
+    const finalizeStream = async () => {
+      if (processFlushTimer) {
+        clearTimeout(processFlushTimer)
+        processFlushTimer = null
+      }
+      const msg = getAssistantMsg()
+      if (msg) {
+        msg.loading = false
+        // Write back to the store if the message is currently displayed.
+        chatStore.updateMessage(liveMsgId, msg)
+
+        // Persist to cache so the process tree survives session switches.
+        // Be careful: if the user switched sessions, chatStore.messages now
+        // belongs to a different session — we must not cache it under the
+        // wrong sessionId. Update only the target session's cache, and do so
+        // via order-merge (mergeSSEMessageIntoCache) to avoid appending a
+        // duplicate assistant message when the cache already holds the real
+        // ChatLogID entry (which previously caused duplicated AI replies).
+        const targetSid = msg.sessionId || sessionId || ''
+        if (targetSid) {
+          // If the stream was aborted (user stop / silence timeout) and we
+          // never saw a natural terminal frame, mark the session locally
+          // terminal (success) so its status dot doesn't hang on "running"
+          // forever. The locallyTerminalStatus signal also makes the next
+          // heartbeat/fetchSessions respect this terminal decision.
+          if (streamAborted && !terminalStatusSeen) {
+            chatStore.markLocallyTerminal(targetSid, 0)
+            const session = chatStore.sessions.find((s) => s.ChatSessionID === targetSid)
+            if (session && session.SessionStatus === 1) session.SessionStatus = 0
+          }
+          if (chatStore.currentSessionId === targetSid) {
+            messageCache.set(targetSid, [...chatStore.messages]).catch(() => {})
+          } else {
+            try {
+              const cached = await messageCache.getBySession(targetSid)
+              const merged = mergeSSEMessageIntoCache(cached, msg, liveMsgId)
+              await messageCache.set(targetSid, merged)
+            } catch { /* ignore cache errors */ }
+          }
+        }
+      }
+      chatStore.unregisterStream(currentKey)
     }
 
     const flushProcessUI = () => {
@@ -307,12 +509,14 @@ export function useChat() {
         }
       }
 
+      const newStatus = pendingStatus
+        ? pendingProcess?.Status
+          ? pickBetterStatus(pendingStatus, pendingProcess.Status)
+          : pendingStatus
+        : msg.process?.status || 'running'
+
       msg.process = {
-        status:
-          pendingStatus ||
-          pendingProcess?.Status ||
-          msg.process?.status ||
-          'running',
+        status: newStatus,
         results: pendingFinalText,
         timestamp: pendingTimestamp,
         records: mergedRecords,
@@ -323,7 +527,7 @@ export function useChat() {
         msg.content = pendingFinalText
       }
 
-      chatStore.updateMessage(aiMsgId, msg)
+      chatStore.updateMessage(liveMsgId, msg)
 
       pendingProcess = null
       pendingIncomingRecords = []
@@ -353,16 +557,22 @@ export function useChat() {
         }
         msg.content = `错误 (${messageData.ErrorCode}): ${messageData.ErrorDesc || '未知错误'}`
         msg.loading = false
-        chatStore.updateMessage(aiMsgId, msg)
+        chatStore.updateMessage(liveMsgId, msg)
         return
       }
 
-      // Extract SessionID from the SSE message.
-      // Only auto-switch currentSessionId if the user hasn't manually
-      // navigated to a different session. Otherwise the SSE from a
-      // background session would forcibly pull focus back to it.
+      // Extract SessionID from the SSE message. Migrate the stream context to
+      // the real sid when we first learn it (handles new chats where the
+      // request was sent with an empty sessionId). Only auto-switch
+      // currentSessionId if the user hasn't manually navigated to a different
+      // session — otherwise the SSE from a background session would forcibly
+      // pull focus back to it.
       const sseSid = messageData.SessionID || messageData.ProcessInfo?.SessionID
       if (sseSid) {
+        if (sseSid !== currentKey) {
+          chatStore.migrateStream(currentKey, sseSid)
+          currentKey = sseSid
+        }
         const isCurrentSession =
           !chatStore.currentSessionId ||
           chatStore.currentSessionId === sessionId ||
@@ -371,7 +581,6 @@ export function useChat() {
           chatStore.currentSessionId = sseSid
         }
         msg.sessionId = sseSid
-        chatStore.addRunningSession(sseSid)
         if (!sessionListFetched) {
           sessionListFetched = true
           chatStore.fetchSessions(1).catch(() => {})
@@ -442,7 +651,6 @@ export function useChat() {
         if (hasHitlRunning) {
           // HITL detected: flush immediately and pause
           flushProcessUI()
-          // TODO: set active HITL in store if needed
           return
         }
 
@@ -461,27 +669,36 @@ export function useChat() {
         // This prevents the heartbeat from triggering refreshCurrentSessionMessages()
         // (which guards on `messages.some(m => m.loading)`) during the window between
         // terminal status and stream end, avoiding duplicate synthetic workflow blocks.
+        const statusLower = String(status || '').toLowerCase()
         if (
           status &&
-          (String(status).toLowerCase() === 'success' ||
-            String(status).toLowerCase() === 'failed' ||
-            String(status).toLowerCase() === 'error')
+          (statusLower === 'success' ||
+            statusLower === 'failed' ||
+            statusLower === 'error')
         ) {
           flushProcessUI()
-          // 更新当前会话的 SessionStatus
-          const terminalStatus = String(status).toLowerCase() === 'success' ? 0 : -1
+          terminalStatusSeen = true
+          // 更新当前会话的 SessionStatus，并登记本地终态信号。
+          // markLocallyTerminal 是关键：它在终态帧到达的瞬间就把本地终态
+          // 固化进 store（独立于 runningSessionIds 的时序），从而阻止后续
+          // 心跳/ fetchSessions 用服务端滞后的 running(1) 覆盖掉本地终态——
+          // 这正是"切换会话后状态圆点闪烁/失常"的根因。
+          const terminalStatus = statusLower === 'success' ? 0 : -1
           const sid = msg.sessionId || chatStore.currentSessionId
           if (sid) {
-            const session = chatStore.sessions.find(s => s.ChatSessionID === sid)
+            chatStore.markLocallyTerminal(sid, terminalStatus)
+            const session = chatStore.sessions.find((s) => s.ChatSessionID === sid)
             if (session) session.SessionStatus = terminalStatus
           }
         }
 
-        chatStore.updateMessage(aiMsgId, msg)
+        chatStore.updateMessage(liveMsgId, msg)
       }
     }
 
     // --- Build and send request ---
+
+    let silenceTimer: ReturnType<typeof setTimeout> | null = null
 
     try {
       const memberToken = await secureStorage.get('member_token')
@@ -531,6 +748,7 @@ export function useChat() {
 
       if (response.status === 401) {
         await handleTokenExpired()
+        await finalizeStream()
         return
       }
 
@@ -553,11 +771,13 @@ export function useChat() {
 
         if (isTokenErr) {
           await handleTokenExpired()
+          await finalizeStream()
           return
         }
 
         if (isDecryptErr) {
           await retryWithFreshTokens()
+          await finalizeStream()
           return
         }
 
@@ -573,6 +793,7 @@ export function useChat() {
           errorResult.ErrorCode === MEMBER_TOKEN_CHECK_ERROR
         ) {
           await handleTokenExpired()
+          await finalizeStream()
           return
         }
         onMessage({
@@ -581,6 +802,7 @@ export function useChat() {
           ErrorDesc: errorResult.ErrorDesc || `HTTP ${response.status}`,
           Content: `错误: ${errorResult.ErrorDesc || '未知错误'}`,
         })
+        await finalizeStream()
         return
       }
 
@@ -589,9 +811,25 @@ export function useChat() {
       const decoder = new TextDecoder()
       let buffer = ''
 
+      // Arm the silence timer. After a terminal-status frame, allow a shorter
+      // window for the server to close the stream; otherwise use the longer
+      // silence timeout. Guards against a server that never closes the
+      // connection (which would leave msg.loading=true forever).
+      const armSilenceTimer = () => {
+        if (silenceTimer) clearTimeout(silenceTimer)
+        silenceTimer = setTimeout(
+          () => abortController.abort(),
+          terminalStatusSeen ? STREAM_FINAL_CLOSE_TIMEOUT_MS : STREAM_SILENCE_TIMEOUT_MS,
+        )
+      }
+      armSilenceTimer()
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
+
+        // Any received data resets the silence timer.
+        armSilenceTimer()
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
@@ -609,46 +847,55 @@ export function useChat() {
         }
       }
 
-      // Flush any remaining pending data
-      flushProcessUI()
-      const msg = getAssistantMsg()
-      if (msg) {
-        msg.loading = false
-        chatStore.updateMessage(aiMsgId, msg)
+      await finalizeStream()
 
-        // Persist to cache so process tree survives session switches.
-        // Be careful: if the user switched sessions, chatStore.messages now
-        // belongs to a different session — we must not cache it under the
-        // wrong sessionId. Instead, update only the target session's cache.
-        const targetSid = msg.sessionId || sessionId || ''
-        if (targetSid) {
-          if (chatStore.currentSessionId === targetSid) {
-            // User is still viewing this session — cache the full array
-            messageCache.set(targetSid, [...chatStore.messages]).catch(() => {})
-          } else {
-            // User switched away — read existing cache, update the ai message, write back
-            messageCache.getBySession(targetSid).then((cached) => {
-              const idx = cached.findIndex((m: ChatMessage) => m.id === aiMsgId)
-              if (idx !== -1) {
-                cached[idx] = msg
-              } else {
-                cached.push(msg)
-              }
-              return messageCache.set(targetSid, cached)
-            }).catch(() => {})
-          }
-        }
+      // SSE完成后刷新会话列表 + 通知
+      const finalMsg = aiMessage
+      const resolvedSid = finalMsg?.sessionId || sessionId || currentKey
+      chatStore.fetchSessions(1).catch(() => {})
+      // The locally-terminal signal has now been reconciled into sessions[]
+      // by fetchSessions (and the server has caught up). Drop it so it doesn't
+      // accumulate across many sessions over the app lifetime.
+      if (resolvedSid) chatStore.clearLocallyTerminal(resolvedSid)
+
+      if (!document.hasFocus() && settingsStore.notificationEnabled && finalMsg) {
+        const raw = finalMsg.content || ''
+        const isFailed = finalMsg.process?.status === 'failed' || finalMsg.process?.status === 'error'
+        const title = isFailed ? t('chat.notifyFailed') : t('chat.notifyCompleted')
+        const summary = stripMarkdown(raw).slice(0, 120) || (isFailed ? t('chat.notifyViewDetail') : t('chat.notifyViewReply'))
+        platform.notification.show(title, summary, { sessionId: resolvedSid || '' })
       }
     } catch (error: any) {
-      if (error.name === 'AbortError') return
+      if (error.name === 'AbortError') {
+        // Aborted (user cancel, silence timeout, session delete, or unmount).
+        // Flag it so finalizeStream marks the session terminal instead of
+        // leaving it stuck on "running". Still finalize so loading is cleared
+        // and the partial message is persisted.
+        streamAborted = true
+        await finalizeStream()
+        // Persist the terminal status to the server's view of the list, then
+        // drop the local terminal signal (it has now been baked into
+        // sessions[].SessionStatus and is no longer needed as a guard).
+        const finalMsg = aiMessage
+        const resolvedSid = finalMsg?.sessionId || sessionId || currentKey
+        if (resolvedSid) {
+          await chatStore.fetchSessions(1).catch(() => {})
+          chatStore.clearLocallyTerminal(resolvedSid)
+        }
+        return
+      }
       const msg = getAssistantMsg()
       if (msg) {
         msg.loading = false
         msg.content = msg.content || `发送失败: ${error.message}`
-        chatStore.updateMessage(aiMsgId, msg)
+        chatStore.updateMessage(liveMsgId, msg)
       }
+      await finalizeStream()
     } finally {
-      isStreaming.value = false
+      if (silenceTimer) {
+        clearTimeout(silenceTimer)
+        silenceTimer = null
+      }
     }
   }
 
@@ -660,17 +907,28 @@ export function useChat() {
         await handleTokenExpired()
         return
       }
-      // Re-send with fresh tokens - the caller should re-invoke sendMessage
-      // For now, report error to user
       streamError.value = '加密密钥已刷新，请重新发送消息'
     } catch {
       await handleTokenExpired()
     }
   }
 
-  function cancelStream() {
-    abortController?.abort()
-    isStreaming.value = false
+  /**
+   * Cancel the active SSE stream for a session. Defaults to the current
+   * session if none given. This is per-session now — cancelling one session
+   * no longer touches another session's stream (previously there was a single
+   * global abortController, so the cancel button could only ever reach the
+   * most recent stream).
+   */
+  function cancelStream(sessionId?: string) {
+    const sid = sessionId || chatStore.currentSessionId
+    if (!sid) return
+    const ctx = chatStore.getStreamContext(sid)
+    if (ctx) {
+      try {
+        ctx.abortController.abort()
+      } catch { /* ignore */ }
+    }
   }
 
   // --- Retry failed node ---
@@ -698,19 +956,22 @@ export function useChat() {
     const topProcessesId = processesId.includes('_') ? processesId.split('_')[0] : processesId
 
     try {
-      // Optimistically update node status to 'running'
+      // Optimistically update node status to 'running'. Use the
+      // session-aware updater so this works whether or not the session is
+      // currently displayed.
       if (messageId) {
-        const msg = chatStore.messages.find(m => m.id === messageId)
-        if (msg?.process?.records) {
-          const updatedRecords = msg.process.records.map((r: NormalizedRecord) =>
-            r.nodeId === nodeId ? { ...r, status: 'running' as const } : r
-          )
-          msg.process = { ...msg.process, records: updatedRecords, status: 'running' }
-          chatStore.updateMessage(messageId, msg)
-        }
+        await chatStore.updateMessageInSession(sessionId, messageId, (msg) => {
+          if (msg?.process?.records) {
+            const updatedRecords = msg.process.records.map((r: NormalizedRecord) =>
+              r.nodeId === nodeId ? { ...r, status: 'running' as const } : r,
+            )
+            return { ...msg, process: { ...msg.process, records: updatedRecords, status: 'running' } }
+          }
+          return msg
+        })
       }
 
-      const session = chatStore.sessions.find(s => s.ChatSessionID === sessionId)
+      const session = chatStore.sessions.find((s) => s.ChatSessionID === sessionId)
       const appID = session?.AppID || chatStore.selectedAppId || ''
 
       const result = await retryNodeApi({
@@ -720,7 +981,6 @@ export function useChat() {
         TaskID: taskId || '',
         AppID: appID,
       })
-      console.log('retryNode 结果:', result)
 
       // Refresh execution records after retry
       await reloadNodeExecution(sessionId, topProcessesId, messageId)
@@ -729,6 +989,13 @@ export function useChat() {
     }
   }
 
+  /**
+   * Registry of in-flight node-reload SSE streams, keyed by processesId. Each
+   * has its own AbortController. Tracked so concurrent/overlapping retries
+   * don't leak unbounded streams and so they can be cancelled.
+   */
+  const reloadStreams = new Map<string, AbortController>()
+
   async function reloadNodeExecution(
     sessionId: string,
     processesId: string,
@@ -736,37 +1003,71 @@ export function useChat() {
   ) {
     if (!sessionId || !processesId) return
 
-    const targetMsgId = messageId || chatStore.messages.filter(m => m.role === 'assistant').pop()?.id
+    // Resolve the target message id. Prefer the explicit messageId; if absent,
+    // fall back to the last assistant message *in the same session* (look it
+    // up from the store if it's the current session, otherwise from cache).
+    // Previously the fallback grabbed the last assistant message of the
+    // currently-displayed session regardless of sessionId, which could update
+    // the wrong message.
+    let targetMsgId = messageId
+    if (!targetMsgId) {
+      if (chatStore.currentSessionId === sessionId) {
+        targetMsgId = chatStore.messages.filter((m) => m.role === 'assistant').pop()?.id || null
+      } else {
+        try {
+          const cached = await messageCache.getBySession(sessionId)
+          targetMsgId = cached.filter((m) => m.role === 'assistant').pop()?.id || null
+        } catch { /* ignore */ }
+      }
+    }
     if (!targetMsgId) return
 
+    // Abort any prior in-flight reload for the same processesId to avoid
+    // overlapping streams and last-write-wins status regression.
+    const prior = reloadStreams.get(processesId)
+    if (prior) {
+      try {
+        prior.abort()
+      } catch { /* ignore */ }
+      reloadStreams.delete(processesId)
+    }
+
     const abortCtrl = new AbortController()
+    reloadStreams.set(processesId, abortCtrl)
 
     let pendingIncomingRecords: NormalizedRecord[] = []
-    let pendingProcess: any = null
     let pendingStatus = ''
     let flushTimer: ReturnType<typeof setTimeout> | null = null
 
-    const flush = () => {
+    // flush writes to the target message in the target session (current or
+    // background cache). Uses pickBetterStatus so a late 'running' frame can't
+    // regress an already-terminal status (previously last-write-wins could).
+    const flush = async () => {
       flushTimer = null
-      const msg = chatStore.messages.find(m => m.id === targetMsgId)
-      if (!msg || !pendingIncomingRecords.length) return
+      if (!pendingIncomingRecords.length) return
 
-      const prev: NormalizedRecord[] = Array.isArray(msg.process?.records) ? msg.process.records : []
-      msg.process = {
-        status: pendingStatus || msg.process?.status || 'running',
-        results: '',
-        timestamp: Date.now(),
-        records: mergeRecords(prev, pendingIncomingRecords),
-        streamsByNode: msg.process?.streamsByNode || {},
-      }
-      chatStore.updateMessage(targetMsgId, msg)
+      await chatStore.updateMessageInSession(sessionId, targetMsgId!, (msg) => {
+        const prev: NormalizedRecord[] = Array.isArray(msg.process?.records) ? msg.process.records : []
+        const baseStatus = msg.process?.status || 'running'
+        const nextStatus = pendingStatus ? pickBetterStatus(baseStatus, pendingStatus) : baseStatus
+        return {
+          ...msg,
+          process: {
+            status: nextStatus,
+            results: '',
+            timestamp: Date.now(),
+            records: mergeRecords(prev, pendingIncomingRecords),
+            streamsByNode: msg.process?.streamsByNode || {},
+          },
+        }
+      })
       pendingIncomingRecords = []
       pendingStatus = ''
     }
 
     const scheduleFlush = () => {
       if (flushTimer) return
-      flushTimer = setTimeout(flush, 200)
+      flushTimer = setTimeout(() => { flush().catch(() => {}) }, 200)
     }
 
     try {
@@ -836,24 +1137,24 @@ export function useChat() {
                 ? proc.ExecutionRecordInfos.map(normalizeRecord)
                 : []
               if (incoming.length) pendingIncomingRecords.push(...incoming)
-              pendingStatus = proc.Status || pendingStatus
+              pendingStatus = proc.Status ? pickBetterStatus(pendingStatus, proc.Status) : pendingStatus
               scheduleFlush()
             }
           } catch { /* ignore */ }
         }
       }
-      flush()
+      await flush()
     } catch (e: any) {
       if (e.name !== 'AbortError') console.error('reloadNodeExecution 失败:', e)
     } finally {
       if (flushTimer) clearTimeout(flushTimer)
+      reloadStreams.delete(processesId)
     }
   }
 
   async function handleTokenExpired() {
     await secureStorage.remove('member_token')
     await secureStorage.remove('access_token')
-    isStreaming.value = false
     const currentPath = router.currentRoute.value.path
     if (currentPath !== '/login') {
       router.push('/login')
@@ -861,7 +1162,10 @@ export function useChat() {
   }
 
   onUnmounted(() => {
-    cancelStream()
+    // Cancel all active streams when the chat view unmounts. Per-session state
+    // means we must iterate every active stream rather than aborting a single
+    // global controller.
+    chatStore.cancelAllStreams()
   })
 
   return {

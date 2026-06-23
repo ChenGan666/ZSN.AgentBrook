@@ -14,6 +14,7 @@ namespace ZSN.Utils.Core.Helpers
         public static void WriteLine(object obj = null)
         {
             var str = obj?.ToString() ?? "";
+            Console.WriteLine(str);
             NLogHelper.WriteCustom(str, "/ConsoleLog/");
             Console.ResetColor();
         }

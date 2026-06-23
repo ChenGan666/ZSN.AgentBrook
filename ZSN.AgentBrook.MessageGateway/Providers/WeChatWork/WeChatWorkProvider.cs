@@ -68,10 +68,12 @@ namespace ZSN.AgentBrook.MessageGateway.Providers.WeChatWork
 
             if (!string.IsNullOrEmpty(echostr))
             {
+                // URL验证：SHA1(sort(Token, timestamp, nonce, echostr))
                 var calculated = SHA1Hash(SortStrings(cfg.Token, timestamp, nonce, echostr));
                 return Task.FromResult(calculated == msgSignature);
             }
 
+            // 消息验签：从Body XML中提取Encrypt字段
             var encrypt = ExtractEncryptFromBody(context.Body);
             if (string.IsNullOrEmpty(encrypt))
                 return Task.FromResult(false);
@@ -176,6 +178,7 @@ namespace ZSN.AgentBrook.MessageGateway.Providers.WeChatWork
             using var decryptor = aes.CreateDecryptor();
             var decrypted = decryptor.TransformFinalBlock(data, 0, data.Length);
 
+            // 去除随机字符串(16字节) + 消息长度(4字节)
             var msgLen = BitConverter.ToInt32(decrypted, 16);
             if (BitConverter.IsLittleEndian) msgLen = BitConverter.ToInt32(BitConverter.GetBytes(msgLen).Reverse().ToArray(), 0);
             var msgBytes = decrypted.Skip(20).Take(msgLen).ToArray();

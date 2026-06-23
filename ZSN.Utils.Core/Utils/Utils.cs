@@ -236,6 +236,7 @@ namespace ZSN.Utils.Core.Utils
                 return false;
 
 
+
             string Data = "";
 
             StreamReader reader = null;
@@ -288,6 +289,8 @@ namespace ZSN.Utils.Core.Utils
 
 
         }
+
+
 
 
         #endregion
@@ -537,6 +540,7 @@ namespace ZSN.Utils.Core.Utils
                         p_Length = bsSrcString.Length - p_StartIndex;
                         p_TailString = "";
                     }
+
 
 
                     int nRealLength = p_Length;
@@ -1093,6 +1097,7 @@ namespace ZSN.Utils.Core.Utils
         {
             return ToDataTable<T>(list, null);
         }
+
 
 
         /// <summary>

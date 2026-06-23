@@ -119,7 +119,7 @@ export function renderMarkdown(markdown: any): string {
       ],
       ALLOWED_ATTR: [
         'href', 'title', 'target', 'rel', 'src', 'alt', 'width', 'height',
-        'class', 'id', 'onclick',
+        'class', 'id', 'style', 'onclick',
         'viewBox', 'fill', 'stroke', 'stroke-width',
         'x', 'y', 'x1', 'y1', 'x2', 'y2', 'rx', 'ry', 'd', 'points',
       ],

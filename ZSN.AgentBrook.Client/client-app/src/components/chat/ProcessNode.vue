@@ -5,6 +5,10 @@
         {{ node.nodeName || node.nodeId || '未命名节点' }}
       </span>
 
+      <span v-if="isFailed" class="retry-icon" @click.stop="handleRetry" title="重试该节点">
+        <el-icon :size="12"><RefreshRight /></el-icon>
+      </span>
+
       <span v-if="hasChildren || hasChildrenGroups" class="toggle-icon" @click.stop="toggleChildren">
         <el-icon :size="10">
           <ArrowDown v-if="childrenExpanded" />
@@ -97,8 +101,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { ArrowDown, ArrowRight } from '@element-plus/icons-vue'
+import { ref, computed, watch, inject } from 'vue'
+import { ArrowDown, ArrowRight, RefreshRight } from '@element-plus/icons-vue'
 import type { NormalizedRecord } from '@/types/chat'
 
 interface TreeNode extends NormalizedRecord {
@@ -126,11 +130,18 @@ const hasDetails = computed(
     (props.node.logs && props.node.logs.length),
 )
 
+const isFailed = computed(() => {
+  const status = String(props.node.status || '').toLowerCase()
+  return status === 'failed' || status === 'error' || status === 'fail'
+})
+
+const onRetryNode = inject<((node: TreeNode) => void) | null>('onRetryNode', null)
+
 const statusClass = computed(() => {
   const status = String(props.node.status || '').toLowerCase()
   if (status === 'running') return 'status-running'
   if (status === 'success') return 'status-success'
-  if (status === 'failed' || status === 'error') return 'status-failed'
+  if (status === 'failed' || status === 'error' || status === 'fail') return 'status-failed'
   return 'status-unknown'
 })
 
@@ -145,7 +156,7 @@ watch(
   () => props.node.status,
   (newStatus) => {
     const s = String(newStatus || '').toLowerCase()
-    if (s === 'success' || s === 'failed' || s === 'error') {
+    if (s === 'success' || s === 'failed' || s === 'error' || s === 'fail') {
       detailsExpanded.value = false
     }
   },
@@ -157,6 +168,11 @@ function toggleChildren() {
 }
 function handleToggle() {
   if (hasDetails.value) detailsExpanded.value = !detailsExpanded.value
+}
+function handleRetry() {
+  if (onRetryNode) {
+    onRetryNode(props.node)
+  }
 }
 
 function formatValue(val: any): string {
@@ -250,6 +266,19 @@ function calculateDuration(start: string, end: string): string {
   margin-left: auto;
   display: flex;
   align-items: center;
+}
+
+.retry-icon {
+  cursor: pointer;
+  color: #3b82f6;
+  margin-left: 4px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+
+  &:hover {
+    color: #2563eb;
+  }
 }
 
 .node-name {

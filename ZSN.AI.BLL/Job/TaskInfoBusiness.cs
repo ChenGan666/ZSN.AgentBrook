@@ -247,6 +247,7 @@ namespace ZSN.AI.BLL
                 NodeType.ServiceDesk => JsonConvert.DeserializeObject<ServiceDeskData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
                 NodeType.Research => JsonConvert.DeserializeObject<ResearchNodeData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
                 NodeType.Voice => JsonConvert.DeserializeObject<VoiceNodeData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
+                NodeType.Message => JsonConvert.DeserializeObject<MessageNodeData>(JsonConvert.SerializeObject(nodeConfig.data))?.inputs,
 
                 _ => new List<Inputs>()
             };

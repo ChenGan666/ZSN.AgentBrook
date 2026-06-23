@@ -312,6 +312,7 @@ namespace ZSN.Cache.MemoryCache
                     }
                     catch (Exception ex)
                     {
+                        System.Diagnostics.Debug.WriteLine($"处理发布/订阅消息时出错: {ex.Message}");
                     }
                 }
                 

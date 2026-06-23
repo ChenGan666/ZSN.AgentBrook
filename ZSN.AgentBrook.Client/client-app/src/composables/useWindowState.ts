@@ -1,24 +1,33 @@
 import { onMounted, onUnmounted } from 'vue'
 import { isTauri } from '@/platform'
 
+const STORAGE_KEY = 'window_state'
+
 export function useWindowState() {
   if (!isTauri()) return
 
   let saveTimer: ReturnType<typeof setTimeout> | null = null
 
-  async function savePosition() {
-    const { getCurrentWindow } = await import('@tauri-apps/api/window')
-    const win = getCurrentWindow()
-    const pos = await win.outerPosition()
-    const size = await win.outerSize()
-    localStorage.setItem('window_state', JSON.stringify({
-      x: pos.x, y: pos.y,
-      width: size.width, height: size.height,
-    }))
+  async function saveState() {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      const win = getCurrentWindow()
+      const pos = await win.outerPosition()
+      const size = await win.outerSize()
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        x: pos.x, y: pos.y,
+        width: size.width, height: size.height,
+      }))
+    } catch { /* ignore */ }
   }
 
-  async function restorePosition() {
-    const saved = localStorage.getItem('window_state')
+  function scheduleSave() {
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(saveState, 500)
+  }
+
+  async function restoreState() {
+    const saved = localStorage.getItem(STORAGE_KEY)
     if (!saved) return
     try {
       const { x, y, width, height } = JSON.parse(saved)
@@ -32,14 +41,15 @@ export function useWindowState() {
   }
 
   onMounted(() => {
-    restorePosition()
-    window.addEventListener('resize', () => {
-      if (saveTimer) clearTimeout(saveTimer)
-      saveTimer = setTimeout(savePosition, 500)
-    })
+    restoreState()
+    window.addEventListener('resize', scheduleSave)
+    window.addEventListener('beforeunload', saveState)
   })
 
   onUnmounted(() => {
     if (saveTimer) clearTimeout(saveTimer)
+    saveState()
+    window.removeEventListener('resize', scheduleSave)
+    window.removeEventListener('beforeunload', saveState)
   })
 }

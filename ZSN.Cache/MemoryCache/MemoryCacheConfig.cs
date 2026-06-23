@@ -70,6 +70,7 @@ namespace ZSN.Cache.MemoryCache
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"加载内存缓存配置失败: {ex.Message}");
                 return new MemoryCacheConfig(); // 返回默认配置
             }
         }

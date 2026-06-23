@@ -157,3 +157,46 @@ export interface HitlRequest {
   sessionId: string
   messageId: string
 }
+
+/**
+ * Per-session streaming context.
+ *
+ * Holds the non-reactive state for a single in-flight SSE stream. The
+ * `abortController` cannot live in reactive store state (it must remain a
+ * plain object), so these contexts are kept in a module-level Map inside the
+ * chat store and addressed by sessionId. The store's reactive
+ * `streamingSessions: Record<string, boolean>` mirrors membership for the UI.
+ *
+ * A single sendMessage may register under a temporary key when the real
+ * SessionID is unknown (new chat). When the first SSE frame carries the real
+ * SessionID, `migrateStream` moves the context to the real key. All sids that
+ * were registered for this logical stream are tracked in `registeredSids` so
+ * `unregisterStream` can clean up `runningSessionIds` for every sid that was
+ * added (fixing the leak when the SSE sid differs from the requested sid).
+ */
+export interface StreamContext {
+  /** AbortController for the underlying fetch. */
+  abortController: AbortController
+  /** The persistent AI message reference that survives session switches. */
+  aiMessage: ChatMessage | null
+  /** The temp id (ai_<ts>) of the assistant placeholder. */
+  aiMsgId: string
+  /** The original sessionId passed to sendMessage (may be '' for new chats). */
+  originSid: string
+  /**
+   * Every sessionId that has been added to runningSessionIds for this stream.
+   * On unregistration each of these is removed to keep runningSessionIds in
+   * sync regardless of how many times the SSE-provided sid changed.
+   */
+  registeredSids: string[]
+  /**
+   * 0-based index of this stream's assistant message within the session's
+   * non-synthetic assistant message sequence, captured at send time. Used to
+   * re-bind the SSE `aiMessage` to the correct store message after a
+   * switch-away-then-back: when the user returns, `selectSession` replaces the
+   * `ai_<ts>` id with the server's real ChatLogID (order-merge by position),
+   * so `find(aiMsgId)` fails. Falling back to this index re-locates the right
+   * message and re-binds, so the live workflow tree keeps updating.
+   */
+  assistantIndex: number
+}

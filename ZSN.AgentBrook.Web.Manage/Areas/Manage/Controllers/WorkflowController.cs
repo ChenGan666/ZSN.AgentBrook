@@ -22,13 +22,12 @@ using ZSN.AI.Core.Service;
 using ZSN.AI.Core.Utils;
 using ZSN.AI.Entity;
 using ZSN.AI.Entity.Workflow;
-using System.Collections.Concurrent;
-using ZSN.AI.Node.Utils;
 using ZSN.AI.Service.Controllers;
 using ZSN.AI.Service.Token;
 using ZSN.Utils.Core.Extensions;
 using ZSN.Utils.Core.Helpers;
 using Node = ZSN.AI.Node.Utils.Utils;
+using ZSN.AI.Node.Utils;
 
 
 namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
@@ -482,7 +481,7 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
                 catch (InvalidOperationException) { }
             }
 
-            var queue = new ConcurrentQueue<string>();
+            var queue = new System.Collections.Concurrent.ConcurrentQueue<string>();
             var signal = new SemaphoreSlim(0);
             var writerDone = new TaskCompletionSource<bool>();
 

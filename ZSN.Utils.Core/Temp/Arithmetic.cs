@@ -129,6 +129,7 @@ namespace Yannyo.Common
     //}
 
 
+
     ///// <summary>
     ///// IOper 的摘要说明
     ///// 计算符接口
@@ -218,6 +219,7 @@ namespace Yannyo.Common
 		
     //    #endregion
     //}
+
 
 
     ///// <summary>
@@ -619,6 +621,7 @@ namespace Yannyo.Common
                         alExpression[i] = mapValue[j];
                         break;
                     }
+                    //     System.Console.WriteLine("Expression: {0}  >>>  {1}",mapVar[j], mapValue[j]);
                 }
             }
             return alExpression;
@@ -711,11 +714,13 @@ namespace Yannyo.Common
                                     }
                                     else
                                         break;
+                                    //      System.Console.WriteLine("XH{0}",sPop);
 
                                 }
                                 sOperator.Push(word);
                             }
 
+                //    System.Console.WriteLine("{0}",word.ToString());
             }
 
             //中缀表达式全部读完后，若栈中仍有运算符，将其送到输出队列中
@@ -723,6 +728,7 @@ namespace Yannyo.Common
             {
                 string s = sOperator.Pop().ToString();
                 alOutput.Add(s);
+                //    System.Console.WriteLine("{0}:{1}",sOperator.Count,s.ToString());
             }
 
             return alOutput;
@@ -749,6 +755,7 @@ namespace Yannyo.Common
                     if (OperatorMap.IsVar(word))
                     {
                         s.Push(word);
+                        //      System.Console.WriteLine("Push:{0}",word);
                     }
                     else//读到运算符则从栈中依次弹出两个数分别到Y和X，
                         if (OperatorMap.CheckOperator(word))
@@ -771,10 +778,12 @@ namespace Yannyo.Common
                         }
                 }
                 string spop = s.Pop().ToString();
+                //    System.Console.WriteLine("Result:{0}",spop);
                 return spop;
             }
             catch
             {
+                System.Console.WriteLine("Result:表达式不符合运算规则!Sorry!");
                 return "Sorry!Error!";
             }
 

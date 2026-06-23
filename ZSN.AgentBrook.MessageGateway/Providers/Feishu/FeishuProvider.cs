@@ -62,11 +62,13 @@ namespace ZSN.AgentBrook.MessageGateway.Providers.Feishu
             var cfg = ParseConfig(channelConfig.ConfigJson);
             var json = JObject.Parse(context.Body ?? "{}");
 
+            // URL验证：飞书发送 challenge
             var challenge = json["challenge"]?.ToString();
             var token = json["token"]?.ToString();
             if (!string.IsNullOrEmpty(challenge))
                 return Task.FromResult(token == cfg.VerificationToken);
 
+            // 事件推送验证：检查 header 中的 token
             var headerToken = json["header"]?["token"]?.ToString();
             return Task.FromResult(headerToken == cfg.VerificationToken);
         }

@@ -70,6 +70,7 @@ namespace ZSN.Cache.RedisCache
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"加载Redis配置失败: {ex.Message}");
                 return new RedisConfig(); // 返回默认配置
             }
         }

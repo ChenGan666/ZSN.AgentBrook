@@ -156,6 +156,7 @@ namespace ZSN.Cache
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"加载缓存配置失败: {ex.Message}");
                 return new CacheOptions(); // 返回默认配置（Memory类型）
             }
         }
@@ -177,10 +178,12 @@ namespace ZSN.Cache
                 }
                 catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Redis缓存初始化失败: {ex.Message}");
                     
                     // 如果配置为Redis缓存失败时降级到内存缓存
                     if (options.FallbackToMemoryOnRedisFailure)
                     {
+                        System.Diagnostics.Debug.WriteLine("降级到内存缓存");
                         CurrentCacheType = CacheType.Memory;
                         return new MemoryCacheService();
                     }

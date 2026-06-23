@@ -54,7 +54,7 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                         var (ruleWorkflowID, ruleNodeID) = ResolveWorkflowAndNode(rule.TargetAppID);
                         if (string.IsNullOrEmpty(ruleWorkflowID))
                         {
-                            _logger.LogWarning("[Router] 规则指向的应用未配置工作流: RuleID={RuleID}", rule.RuleID);
+                            _logger.LogWarning("[Router] 规则指向的应用未配置工作流: RuleID={RuleID}, AppID={AppID}", rule.RuleID, rule.TargetAppID);
                             continue;
                         }
 
@@ -64,8 +64,8 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                         string taskId = CreateWorkflowTask(rule.TargetAppID, ruleWorkflowID,
                             ruleNodeID, sessionId, processesId, memberID, inputs, @event);
 
-                        _logger.LogInformation("[Router] 任务已创建: TaskID={TaskID}, SessionID={SessionID}",
-                            taskId, sessionId);
+                        _logger.LogInformation("[Router] 任务已创建: TaskID={TaskID}, WorkflowID={WorkflowID}, SessionID={SessionID}",
+                            taskId, ruleWorkflowID, sessionId);
 
                         return new RouteResult
                         {
@@ -109,6 +109,9 @@ namespace ZSN.AgentBrook.MessageGateway.Services
             string taskId = CreateWorkflowTask(channelConfig.TargetAppID, workflowID,
                 nodeID, sessionId, processesId, memberID, inputs, @event);
 
+            _logger.LogInformation("[Router] 直连路由: TaskID={TaskID}, AppID={AppID}, WorkflowID={WorkflowID}",
+                taskId, channelConfig.TargetAppID, workflowID);
+
             return await Task.FromResult(new RouteResult
             {
                 Matched = true,
@@ -118,8 +121,11 @@ namespace ZSN.AgentBrook.MessageGateway.Services
             });
         }
 
+        #region Member 管理
+
         private string EnsureMember(string channelID, string fromUser, string fromUserName)
         {
+            // 确定性 MemberID：同一渠道同一用户始终生成相同 ID
             string memberID = new HashEncrypt().MD5System("im_" + channelID + "_" + fromUser);
 
             try
@@ -144,6 +150,8 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                 };
 
                 MemberInfoBussiness.Add(member);
+                _logger.LogInformation("[Router] 创建临时会员: MemberID={MemberID}, NickName={NickName}, Source={Channel}",
+                    memberID, fromUserName, channelID);
             }
             catch (Exception ex)
             {
@@ -152,6 +160,10 @@ namespace ZSN.AgentBrook.MessageGateway.Services
 
             return memberID;
         }
+
+        #endregion
+
+        #region Session 管理
 
         private string GetOrCreateSessionID(string channelId, string memberID, string appId, int timeoutMinutes)
         {
@@ -171,6 +183,7 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                 }
             }
 
+            // 创建新会话并写入 DB
             string sessionId = Guid.NewGuid().ToString();
             try
             {
@@ -195,12 +208,17 @@ namespace ZSN.AgentBrook.MessageGateway.Services
             return sessionId;
         }
 
+        #endregion
+
+        #region Task 创建
+
         private string CreateWorkflowTask(string appID, string workflowID, string nodeID,
             string sessionId, string processesId, string memberID, List<Inputs> inputs,
             ReceiveMessageEvent @event)
         {
             var taskId = Guid.NewGuid().ToString();
 
+            // 从数据库读取完整节点配置（包含 data），与 ChatController 一致
             NodeConfig nodeConfig;
             var nodeInfo = WorkflowNodeInfoBussiness.GetModel(nodeID);
             if (nodeInfo?.Config != null)
@@ -214,6 +232,7 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                 nodeConfig = new NodeConfig { id = nodeID, type = NodeType.Start, workflowid = workflowID };
             }
 
+            // 构建 TaskData，对齐 ChatController
             var data = new TaskData
             {
                 AppID = appID,
@@ -228,6 +247,7 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                 MsgReplyMode = "end"
             };
 
+            // 附件处理（对齐 ChatController:204-212）
             if (@event.Attachments != null && @event.Attachments.Count > 0)
             {
                 string previewHost = ZSN.Utils.Core.Helpers.ConfigHelper.GetString("previewHost");
@@ -262,6 +282,7 @@ namespace ZSN.AgentBrook.MessageGateway.Services
 
             TaskInfoBussiness.Add(taskInfo);
 
+            // 写入聊天日志（对齐 ChatController:215）
             try
             {
                 var gptMsg = new GptMsg
@@ -278,6 +299,7 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                 _logger.LogWarning(ex, "[Router] 写入聊天日志失败");
             }
 
+            // 写入 Redis 队列供 NodeJob 消费
             try
             {
                 var redis = new ZSN.Utils.Core.Helpers.RedisHelper();
@@ -291,6 +313,10 @@ namespace ZSN.AgentBrook.MessageGateway.Services
 
             return taskId;
         }
+
+        #endregion
+
+        #region Inputs 构建
 
         private List<Inputs> BuildWorkflowInputs(ReceiveMessageEvent @event, MessageRouteRuleInfo rule)
         {
@@ -346,6 +372,10 @@ namespace ZSN.AgentBrook.MessageGateway.Services
             };
         }
 
+        #endregion
+
+        #region 工作流解析
+
         private (string workflowID, string nodeID) ResolveWorkflowAndNode(string appID)
         {
             if (string.IsNullOrEmpty(appID))
@@ -369,6 +399,10 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                 return ("", "");
             }
         }
+
+        #endregion
+
+        #region 规则匹配
 
         private bool MatchRule(MessageRouteRuleInfo rule, ReceiveMessageEvent @event)
         {
@@ -397,6 +431,8 @@ namespace ZSN.AgentBrook.MessageGateway.Services
                     return false;
             }
         }
+
+        #endregion
     }
 
     public class KeywordCondition

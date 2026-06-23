@@ -122,6 +122,7 @@ export default {
     sessionFailedIncomplete: 'AI response not generated, retry available',
     sessionFailedNoResult: 'No execution result received',
     waitingForReply: 'AI is thinking...',
+    stop: 'Stop generating',
     workflowLoadHint: 'Click to view workflow execution details',
   },
   time: {
