@@ -3,18 +3,18 @@
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
     "count": 24,
-    "uniques": 13
+    "uniques": 11
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulse",
     "title": "/pulse",
-    "count": 5,
+    "count": 7,
     "uniques": 4
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
-    "count": 3,
+    "count": 4,
     "uniques": 1
   },
   {
@@ -26,12 +26,6 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/contributors",
     "title": "/graphs/contributors",
-    "count": 1,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues",
-    "title": "/issues",
     "count": 1,
     "uniques": 1
   }
