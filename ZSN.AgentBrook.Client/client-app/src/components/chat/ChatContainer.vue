@@ -21,7 +21,7 @@
     </div>
     <transition name="fade">
       <div v-if="showNewMessageHint" class="new-message-hint" @click="scrollToBottom">
-        有新消息，点击查看
+        {{ t('chat.newMessageHint') }}
       </div>
     </transition>
   </div>

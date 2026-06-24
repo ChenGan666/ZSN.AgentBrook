@@ -1,4 +1,4 @@
-import type { PlatformAdapter, FilePickOptions } from './adapter'
+import type { PlatformAdapter, FilePickOptions, NotificationResult } from './adapter'
 
 export class WebAdapter implements PlatformAdapter {
   storage = {
@@ -58,9 +58,11 @@ export class WebAdapter implements PlatformAdapter {
   private _notificationClickCallback: ((sessionId: string) => void) | null = null
 
   notification = {
-    show: (title: string, body: string, options?: { sessionId?: string }): void => {
-      if (!('Notification' in window)) return
-      const showNotify = () => {
+    show: async (title: string, body: string, options?: { sessionId?: string }): Promise<NotificationResult> => {
+      if (!('Notification' in window)) {
+        return { status: 'unsupported', message: '浏览器不支持通知 API' }
+      }
+      const showNotify = (): NotificationResult => {
         const n = new Notification(title, { body })
         n.onclick = () => {
           window.focus()
@@ -69,14 +71,17 @@ export class WebAdapter implements PlatformAdapter {
             this._notificationClickCallback(options.sessionId)
           }
         }
+        return { status: 'sent' }
       }
       if (Notification.permission === 'granted') {
-        showNotify()
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then((perm) => {
-          if (perm === 'granted') showNotify()
-        })
+        return showNotify()
       }
+      if (Notification.permission !== 'denied') {
+        const perm = await Notification.requestPermission()
+        if (perm === 'granted') return showNotify()
+        return { status: 'permission_denied', message: '通知权限未授予' }
+      }
+      return { status: 'permission_denied', message: '通知权限被拒绝' }
     },
     onNotificationClick: (callback: (sessionId: string) => void): void => {
       this._notificationClickCallback = callback

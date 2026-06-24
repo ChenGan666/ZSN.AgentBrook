@@ -1,0 +1,1 @@
+import{h as t}from"./http-CKHFpLTN.js";import"./index-DDk8HVQ4.js";import"./vendor-vue-3pxxU8Ho.js";import"./vendor-ui-Dztd5Q24.js";import"@tauri-apps/plugin-notification";function i(){return t.post("/Member/Get",{})}function f(e){return t.post("/Member/Save",e)}export{i as getMemberInfo,f as saveMemberInfo};

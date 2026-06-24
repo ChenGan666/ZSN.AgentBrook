@@ -18,7 +18,7 @@ import type {
 import { useFileUpload } from '@/composables/useFileUpload'
 import { normalizeRecord, mergeRecords } from '@/utils/process'
 import { messageCache } from '@/utils/cache'
-import { platform } from '@/platform'
+import { useNotifications } from '@/composables/useNotifications'
 
 const TOKEN_CHECK_ERROR = 80001
 const MEMBER_TOKEN_CHECK_ERROR = 80002
@@ -52,6 +52,7 @@ export function useChat() {
   const { t } = useI18n()
   const streamError = ref<string | null>(null)
   const { uploadFile } = useFileUpload()
+  const { notifySessionCompleted } = useNotifications()
 
   // The global `isStreaming` ref and module-level `abortController` are GONE.
   // Per-session streaming state now lives in chatStore.streamingSessions and
@@ -861,9 +862,11 @@ export function useChat() {
       if (!document.hasFocus() && settingsStore.notificationEnabled && finalMsg) {
         const raw = finalMsg.content || ''
         const isFailed = finalMsg.process?.status === 'failed' || finalMsg.process?.status === 'error'
-        const title = isFailed ? t('chat.notifyFailed') : t('chat.notifyCompleted')
-        const summary = stripMarkdown(raw).slice(0, 120) || (isFailed ? t('chat.notifyViewDetail') : t('chat.notifyViewReply'))
-        platform.notification.show(title, summary, { sessionId: resolvedSid || '' })
+        const summary = stripMarkdown(raw).slice(0, 120)
+        // Route through the coordinator so concurrent completions are deduped
+        // (heartbeat may also notify this same session) and aggregated when
+        // several sessions finish within a short window.
+        notifySessionCompleted(resolvedSid || '', isFailed, summary)
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {

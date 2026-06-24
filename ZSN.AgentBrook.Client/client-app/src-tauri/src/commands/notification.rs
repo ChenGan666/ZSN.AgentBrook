@@ -2,15 +2,21 @@ use tauri::{Runtime, AppHandle};
 
 #[tauri::command]
 pub async fn send_system_notification<R: Runtime>(
-    app: AppHandle<R>,
+    #[allow(unused_variables)] app: AppHandle<R>,
     title: String,
     body: String,
+    #[allow(unused_variables)] session_id: Option<String>,
 ) -> Result<(), String> {
     #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
     {
+        // Use the app's bundle identifier so the OS attributes the
+        // notification to THIS app. Without this:
+        //  - macOS dev builds show the source as "com.apple.Terminal".
+        //  - Windows WinRT silently drops the toast (no registered AppUMID).
+        let identifier = app.config().identifier.clone();
+
         #[cfg(target_os = "macos")]
         {
-            let identifier = app.config().identifier.clone();
             let _ = notify_rust::set_application(&identifier);
         }
 
@@ -18,6 +24,13 @@ pub async fn send_system_notification<R: Runtime>(
         notification.summary(&title);
         notification.body(&body);
         notification.auto_icon();
+
+        #[cfg(windows)]
+        {
+            // notify-rust on Windows needs an explicit appname (= AppUMID hint)
+            // or WinRT rejects the toast. Use the bundle identifier.
+            notification.appname(&identifier);
+        }
 
         notification
             .show()

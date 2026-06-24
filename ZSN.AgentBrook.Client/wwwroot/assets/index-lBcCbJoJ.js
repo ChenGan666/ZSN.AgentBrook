@@ -1,1 +1,0 @@
-import{invoke as a}from"./core-DhEqZVGG.js";async function f(e={}){return typeof e=="object"&&Object.freeze(e),await a("plugin:dialog|open",{options:e})}async function n(e={}){return typeof e=="object"&&Object.freeze(e),await a("plugin:dialog|save",{options:e})}export{f as open,n as save};

@@ -1,4 +1,12 @@
-import type { PlatformAdapter, FilePickOptions } from './adapter'
+import type { PlatformAdapter, FilePickOptions, NotificationResult } from './adapter'
+// Static import so the named exports resolve with full types (vue-tsc
+// sometimes drops non-default exports from dynamic import() type inference).
+// The module loads fine on all Tauri targets; it's only invoked on Windows.
+import {
+  isPermissionGranted as notifIsGranted,
+  requestPermission as notifRequestPermission,
+  sendNotification as notifSend,
+} from '@tauri-apps/plugin-notification'
 
 export class TauriAdapter implements PlatformAdapter {
   storage = {
@@ -66,19 +74,46 @@ export class TauriAdapter implements PlatformAdapter {
 
   private _pendingSessionId: string | null = null
   private _notificationClickCallback: ((sessionId: string) => void) | null = null
+  /** Cached platform string (only resolved once at construction). Used to pick
+   * the notification backend: Windows uses the official plugin (which sets the
+   * AppUMID via Tauri's identifier, required for WinRT to surface the toast);
+   * macOS/Linux keep the custom notify-rust command (the macOS branch works
+   * around a dev-mode bug where tauri-plugin-notification shows the source as
+   * "com.apple.Terminal"). */
+  private _platform: string = ''
 
   notification = {
-    show: (title: string, body: string, options?: { sessionId?: string }): void => {
+    show: async (title: string, body: string, options?: { sessionId?: string }): Promise<NotificationResult> => {
       if (options?.sessionId) {
         this._pendingSessionId = options.sessionId
       }
-      import('@tauri-apps/api/core').then(({ invoke }) => {
-        invoke('send_system_notification', {
-          title,
-          body,
-          sessionId: options?.sessionId || null,
-        })
-      })
+
+      const isWin = this._isWindows()
+
+      // Windows: use the official notification plugin. notify-rust's WinRT
+      // backend silently drops toasts when no Application User Model ID is
+      // registered. The official plugin registers the AppUMID from Tauri's
+      // bundle identifier automatically.
+      if (isWin) {
+        try {
+          let granted = await notifIsGranted()
+          if (!granted) {
+            const perm = await notifRequestPermission()
+            granted = perm === 'granted'
+          }
+          if (!granted) {
+            return { status: 'permission_denied', message: '通知权限未授予' }
+          }
+          notifSend({ title, body })
+          return { status: 'sent' }
+        } catch {
+          // Fall back to the custom Rust command if the plugin is unavailable.
+          return this._sendViaRust(title, body, options?.sessionId)
+        }
+      }
+
+      // macOS / Linux: custom notify-rust command.
+      return this._sendViaRust(title, body, options?.sessionId)
     },
     onNotificationClick: (callback: (sessionId: string) => void): void => {
       this._notificationClickCallback = callback
@@ -91,5 +126,33 @@ export class TauriAdapter implements PlatformAdapter {
         }
       })
     },
+  }
+
+  /** Detect Windows via the WebView user agent. Tauri uses WebView2 (Chromium-
+   * based) on Windows, whose UA always contains "Windows NT"; macOS uses
+   * WKWebView (UA contains "Macintosh"). This avoids a dependency on
+   * tauri-plugin-os. Cached after first resolution. */
+  private _isWindows(): boolean {
+    if (this._platform) return this._platform === 'windows'
+    const isWin = typeof navigator !== 'undefined' && /Windows NT/i.test(navigator.userAgent)
+    this._platform = isWin ? 'windows' : 'other'
+    return isWin
+  }
+
+  /** Invoke the custom Rust notify-rust command (macOS/Linux path, and Windows
+   * fallback if the official plugin throws). Returns a NotificationResult so
+   * callers (test button) can report what happened. */
+  private async _sendViaRust(title: string, body: string, sessionId?: string): Promise<NotificationResult> {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      await invoke('send_system_notification', {
+        title,
+        body,
+        sessionId: sessionId || null,
+      })
+      return { status: 'sent' }
+    } catch (e) {
+      return { status: 'error', message: e instanceof Error ? e.message : String(e) }
+    }
   }
 }

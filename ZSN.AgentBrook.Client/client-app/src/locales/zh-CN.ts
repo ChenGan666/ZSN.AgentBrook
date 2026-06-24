@@ -47,6 +47,13 @@ export default {
     sendKeyEnter: 'Enter 发送',
     sendKeyCtrlEnter: 'Ctrl+Enter 发送',
     notification: '完成通知',
+    notificationTest: '测试通知',
+    notificationTestSent: '已发送测试通知，请查看系统通知中心',
+    notificationTestResult: '诊断：平台={platform}，hasFocus={hasFocus}',
+    notificationTestSentButHidden: '通知已发送但未显示，请检查系统通知设置（Windows: 设置 → 系统 → 通知）',
+    notificationTestDenied: '通知权限未授予，请在系统设置中允许此应用发送通知',
+    notificationTestError: '通知发送失败: {message}',
+    notificationTestUnsupported: '当前环境不支持系统通知',
   },
   profile: {
     title: '个人信息',
@@ -124,6 +131,9 @@ export default {
     waitingForReply: 'AI 正在思考中...',
     stop: '停止生成',
     workflowLoadHint: '点击查看工作流执行详情',
+    newMessageHint: '有新消息，点击查看',
+    notifyMultiTitle: '{count} 个会话已完成',
+    notifyMultiMore: '等 {count} 个',
   },
   time: {
     today: '今天',

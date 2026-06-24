@@ -341,6 +341,7 @@ A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, suppo
 - **Human-in-the-loop** — Workflow human approval interaction
 - **Local Cache** — IndexedDB session/message storage, offline queue support
 - **i18n** — Built-in Chinese/English switching, extensible to more languages
+- **System Notifications** — Desktop/web system notifications on session completion, with short-window aggregation and deduplication across multiple sessions, and cross-heartbeat/SSE duplicate-push prevention; Windows auto-adapts the AppUMID to fix notifications not showing; a one-click test button is available in Settings
 - **Security** — Token encrypted storage, API request signing, XSS protection
 
 [![Client-Login](./README/Client_login.png)](https://agentbrook.com/)

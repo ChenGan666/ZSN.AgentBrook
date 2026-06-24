@@ -26,6 +26,14 @@
       </el-form-item>
       <el-form-item :label="t('settings.notification')">
         <el-switch v-model="settingsStore.notificationEnabled" />
+        <el-button
+          size="small"
+          style="margin-left: 12px"
+          :loading="testing"
+          @click="onTestNotification"
+        >
+          {{ t('settings.notificationTest') }}
+        </el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -34,11 +42,14 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
 import { useSettingsStore, type ThemeMode, type Locale } from '@/stores/settings'
+import { platform } from '@/platform'
 
 const { t, locale } = useI18n()
 const settingsStore = useSettingsStore()
 const theme = ref(settingsStore.theme)
+const testing = ref(false)
 
 const currentLocale = computed({
   get: () => locale.value as Locale,
@@ -53,6 +64,48 @@ watch(() => settingsStore.theme, (v) => { theme.value = v })
 
 function onThemeChange(v: string | number | boolean | undefined) {
   settingsStore.setTheme(v as ThemeMode)
+}
+
+/**
+ * Fire a test notification directly through the platform adapter (bypassing
+ * the document.hasFocus() gate, so it works even while the settings window is
+ * focused). The adapter returns a NotificationResult so we can report the real
+ * outcome: even when the API call succeeds (`status: 'sent'`), the OS may still
+ * suppress the toast if its global notification setting is off — so we show a
+ * follow-up hint pointing the user to the system settings in that case.
+ */
+async function onTestNotification() {
+  testing.value = true
+  try {
+    const result = await platform.notification.show(
+      t('settings.notificationTest'),
+      t('settings.notificationTestSent'),
+      { sessionId: undefined },
+    )
+    // Adapter always returns a NotificationResult now, but guard for safety.
+    const status = result?.status ?? 'sent'
+    switch (status) {
+      case 'sent':
+        // API call succeeded — but the OS can still drop the toast if its
+        // notification setting is off (the root cause we hit). Show a
+        // warning with the hint so the user knows to check system settings.
+        ElMessage.warning(t('settings.notificationTestSentButHidden'))
+        break
+      case 'permission_denied':
+        ElMessage.error(t('settings.notificationTestDenied'))
+        break
+      case 'unsupported':
+        ElMessage.warning(t('settings.notificationTestUnsupported'))
+        break
+      case 'error':
+        ElMessage.error(t('settings.notificationTestError', { message: result?.message ?? '' }))
+        break
+    }
+  } catch (e) {
+    ElMessage.error(t('settings.notificationTestError', { message: e instanceof Error ? e.message : String(e) }))
+  } finally {
+    testing.value = false
+  }
 }
 </script>
 

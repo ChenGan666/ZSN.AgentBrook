@@ -47,6 +47,13 @@ export default {
     sendKeyEnter: 'Enter to Send',
     sendKeyCtrlEnter: 'Ctrl+Enter to Send',
     notification: 'Completion Notification',
+    notificationTest: 'Test Notification',
+    notificationTestSent: 'Test notification sent — check the notification center',
+    notificationTestResult: 'Diagnostics: platform={platform}, hasFocus={hasFocus}',
+    notificationTestSentButHidden: 'Notification was sent but not shown — check the OS notification settings (Windows: Settings → System → Notifications)',
+    notificationTestDenied: 'Notification permission not granted. Allow this app to send notifications in the system settings.',
+    notificationTestError: 'Notification failed: {message}',
+    notificationTestUnsupported: 'System notifications are not supported in this environment',
   },
   profile: {
     title: 'Profile',
@@ -124,6 +131,9 @@ export default {
     waitingForReply: 'AI is thinking...',
     stop: 'Stop generating',
     workflowLoadHint: 'Click to view workflow execution details',
+    newMessageHint: 'New messages, tap to view',
+    notifyMultiTitle: '{count} sessions completed',
+    notifyMultiMore: 'and {count} more',
   },
   time: {
     today: 'Today',
