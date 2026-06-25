@@ -19,7 +19,7 @@ import { useChat } from '@/composables/useChat'
 import { useChatStore } from '@/stores/chat'
 
 const chatStore = useChatStore()
-const { sendMessage, cancelStream, retryNode, reloadNodeExecution, isStreaming, streamError } = useChat()
+const { sendMessage, cancelStream, retryNode, isStreaming, streamError } = useChat()
 
 const currentSessionStatus = computed(() => chatStore.currentSession?.SessionStatus ?? 0)
 
@@ -38,7 +38,11 @@ function handleSend(content: string, files?: File[]) {
 }
 
 function handleRetryProcess(payload: { sessionId: string; processesId: string; messageId: string | null }) {
-  reloadNodeExecution(payload.sessionId, payload.processesId, payload.messageId)
+  // 直接重载整个会话的执行记录（而非单个 processesId），
+  // 确保 ClawAI 子工作流（图片/视频生成等）的最新状态也被拉取。
+  // 单 processesId 的 reloadNodeExecution 在 ClawAI 场景下会拿到
+  // 主 ClawAI 节点的记录，遗漏子工作流的实际完成状态。
+  chatStore.loadSessionExecutionRecords(payload.sessionId)
 }
 
 function handleRetryNode(payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }) {

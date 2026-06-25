@@ -237,6 +237,15 @@ export function useChat() {
       content: '',
       createdAt: new Date().toISOString(),
       loading: true,
+      // Seed an initial process so the workflow area (ProcessStatus) renders
+      // immediately on send and — critically — survives every failure path.
+      // None of the failure handlers (error frame, catch, abort) ever CLEAR
+      // process; they only overwrite content/loading. So a seeded process
+      // stays visible even when the server fails before sending any
+      // ProcessInfo frame (previously the workflow area vanished on failure).
+      // On success, flushProcessUI unconditionally reassigns msg.process with
+      // real data, so the seed is cleanly replaced.
+      process: { status: 'running', results: '', timestamp: null, records: [], streamsByNode: {} },
     }
     chatStore.addMessage(aiMsg)
 
@@ -391,6 +400,21 @@ export function useChat() {
           }
         }
         if (rebound) {
+          // Validate the rebound message actually belongs to this stream's
+          // session. During a selectSession race, chatStore.messages can
+          // momentarily belong to a DIFFERENT session even though
+          // currentSessionId matches this stream — rebinding to that foreign
+          // message would pollute this stream's aiMessage reference with
+          // another session's content (the root cause of cross-session
+          // contamination). If sessionId doesn't match, keep accumulating on
+          // the detached aiMessage ref instead.
+          const belongsToThisStream =
+            !rebound.sessionId ||
+            rebound.sessionId === currentKey ||
+            rebound.sessionId === sessionId
+          if (!belongsToThisStream) {
+            return aiMessage
+          }
           // Fold the accumulated detached SSE data into the store message.
           if (aiMessage && aiMessage.process) {
             if (!rebound.process) {
@@ -460,6 +484,12 @@ export function useChat() {
             chatStore.markLocallyTerminal(targetSid, 0)
             const session = chatStore.sessions.find((s) => s.ChatSessionID === targetSid)
             if (session && session.SessionStatus === 1) session.SessionStatus = 0
+            // Abort without a terminal frame = the workflow didn't complete.
+            // Flip the seeded process status to 'error' so the workflow area
+            // shows an error badge instead of a stuck 'running' state.
+            if (msg.process && String(msg.process.status).toLowerCase() === 'running') {
+              msg.process = { ...msg.process, status: 'error' }
+            }
           }
           if (chatStore.currentSessionId === targetSid) {
             messageCache.set(targetSid, [...chatStore.messages]).catch(() => {})
@@ -558,6 +588,17 @@ export function useChat() {
         }
         msg.content = `错误 (${messageData.ErrorCode}): ${messageData.ErrorDesc || '未知错误'}`
         msg.loading = false
+        // Mark the workflow as errored so the workflow area shows an error
+        // status badge instead of vanishing (process is seeded by sendMessage,
+        // but its status was 'running' — flip it here). Preserve any records
+        // already accumulated.
+        msg.process = {
+          status: 'error',
+          results: '',
+          timestamp: msg.process?.timestamp ?? null,
+          records: msg.process?.records || [],
+          streamsByNode: msg.process?.streamsByNode || {},
+        }
         chatStore.updateMessage(liveMsgId, msg)
         return
       }
@@ -716,7 +757,7 @@ export function useChat() {
         },
         sessionID: sessionId || '',
         appid: appId,
-        SSE_TimeOut: 5,
+        SSE_TimeOut: 30,
       }
 
       let encryptKey = APP_SECRET
@@ -891,6 +932,11 @@ export function useChat() {
       if (msg) {
         msg.loading = false
         msg.content = msg.content || `发送失败: ${error.message}`
+        // Flip the workflow status to error so the area stays visible with an
+        // error badge (process is seeded by sendMessage; preserve its data).
+        if (msg.process && String(msg.process.status).toLowerCase() !== 'success') {
+          msg.process = { ...msg.process, status: 'error' }
+        }
         chatStore.updateMessage(liveMsgId, msg)
       }
       await finalizeStream()
@@ -1084,7 +1130,7 @@ export function useChat() {
         processesID: processesId,
         workflowID: '',
         isAgentNode: false,
-        SSE_TimeOut: 5,
+        SSE_TimeOut: 30,
       }
 
       let encryptKey = APP_SECRET

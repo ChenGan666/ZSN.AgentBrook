@@ -116,6 +116,16 @@ interface ChatState {
    * fetchSessions) and by clearAllSessions.
    */
   locallyTerminalStatus: Record<string, number>
+  /**
+   * Re-entrancy guard for selectSession. Each call increments this and
+   * captures its value; after every await it checks whether it is still the
+   * latest call. If a newer selectSession started (user clicked another
+   * session), the stale call aborts WITHOUT touching this.messages —
+   * preventing the race where currentSessionId and this.messages briefly
+   * belong to different sessions, which caused cross-session message
+   * contamination on rapid switching.
+   */
+  selectSessionToken: number
 }
 
 /**
@@ -147,6 +157,7 @@ export const useChatStore = defineStore('chat', {
     runningSessionIds: [],
     streamingSessions: {},
     locallyTerminalStatus: {},
+    selectSessionToken: 0,
   }),
 
   getters: {
@@ -358,6 +369,14 @@ export const useChatStore = defineStore('chat', {
     },
 
     async selectSession(sessionId: string) {
+      // Re-entrancy guard: capture a token. After each await, if a newer
+      // selectSession started, this (stale) call aborts without touching
+      // this.messages — preventing the race where currentSessionId and
+      // this.messages briefly belong to different sessions (the root cause of
+      // cross-session message contamination on rapid switching).
+      this.selectSessionToken++
+      const myToken = this.selectSessionToken
+
       // Persist the OUTGOING session's messages before switching — but only if
       // this.messages actually belongs to the outgoing session. Previously
       // there was no invariant tying this.messages to currentSessionId, so a
@@ -380,6 +399,8 @@ export const useChatStore = defineStore('chat', {
       let cachedMessages: ChatMessage[] = []
       try {
         cachedMessages = await messageCache.getBySession(sessionId)
+        // Abort if a newer selectSession superseded this one during the await.
+        if (myToken !== this.selectSessionToken) return
         if (cachedMessages.length > 0) {
           this.messages = cachedMessages
         }
@@ -388,6 +409,8 @@ export const useChatStore = defineStore('chat', {
       try {
         // 1. Load chat messages from API
         const { data } = await chatApi.getChatList(sessionId)
+        // Abort if a newer selectSession superseded this one during the await.
+        if (myToken !== this.selectSessionToken) return
         if (data.Success && data.Data) {
           const rawList = data.Data as any[]
           const apiMessages = rawList.map(parseChatLog).filter((m): m is ChatMessage => m !== null)
@@ -397,7 +420,10 @@ export const useChatStore = defineStore('chat', {
           // ChatLogIDs, so we match by position rather than by ID.
           if (cachedMessages.length > 0) {
             const cachedWithProcess = cachedMessages.filter(
-              (m) => m.process && !m.id.startsWith('pending_'),
+              // 排除所有合成消息（pending_ 占位、err_fallback_ 兜底）——它们不应
+              // 参与 order-merge，否则会消耗 assistant 槽位、把 process 错配到错误
+              // 消息，并导致流式会话切换回来时正在执行的 AI 回复区域消失。
+              (m) => m.process && !m.id.startsWith('pending_') && !m.id.startsWith('err_fallback_'),
             )
 
             const apiAssistantIndices: number[] = []
@@ -465,28 +491,50 @@ export const useChatStore = defineStore('chat', {
         if (this.isStreaming(sessionId)) {
           const ctx = this.getStreamContext(sessionId)
           const live = ctx?.aiMessage
-          if (live && !this.messages.some((m) => m.id === live.id)) {
+          // Validate the injected aiMessage actually belongs to this session
+          // (sessionId matches, or is empty for a brand-new chat before the
+          // first frame resolves the sid). A poisoned ctx.aiMessage (e.g. a
+          // rebind that grabbed a foreign session's message during a race)
+          // would otherwise inject another session's content here.
+          const sidOk = !live?.sessionId || live.sessionId === sessionId
+          if (live && sidOk && !this.messages.some((m) => m.id === live.id)) {
             this.messages.push(live)
           }
         }
-      } finally {
-        // Keep loading=true until execution records are also loaded below.
-        // This prevents the UI from flashing through partial states.
-      }
 
-      // Load execution records so completed/failed sessions show their workflow
-      // tree. BUT skip for sessions with an active SSE stream: the stream is the
-      // authoritative, live source of process data for those sessions, and
-      // loadSessionExecutionRecords would overwrite the live records/outputs
-      // with a potentially-lagged server snapshot — clobbering the workflow
-      // execution result after a switch-back (the reported bug). When the
-      // stream finishes (unregisterStream clears streamingSessions), the next
-      // selectSession / refresh will load records normally.
-      try {
+        // Abort if a newer selectSession superseded this one before the heavy
+        // load below — don't run execution records / backfill for a stale session.
+        if (myToken !== this.selectSessionToken) return
+
+        // Load execution records so completed/failed sessions show their workflow
+        // tree. BUT skip for sessions with an active SSE stream: the stream is the
+        // authoritative, live source of process data for those sessions, and
+        // loadSessionExecutionRecords would overwrite the live records/outputs
+        // with a potentially-lagged server snapshot — clobbering the workflow
+        // execution result after a switch-back. When the stream finishes
+        // (unregisterStream clears streamingSessions), the next selectSession /
+        // refresh will load records normally.
         if (!this.isStreaming(sessionId)) {
           await this.loadSessionExecutionRecords(sessionId)
         }
+      } catch {
+        // getChatList / loadSessionExecutionRecords failures are non-fatal: the
+        // cached messages (loaded above) are still shown. Swallow so the finally
+        // block below still runs the backfill — otherwise a network/HTTP error
+        // here would skip ensureProcess and leave failed replies process-less.
       } finally {
+        // If a newer selectSession superseded this call, do NOT run the
+        // backfill or clear loadingMessages here — the newer call owns those.
+        if (myToken !== this.selectSessionToken) return
+        // Unconditionally guarantee every assistant message has a process so
+        // the workflow area ALWAYS renders — even for failed/historical replies
+        // whose cache had no process, whose execution-records API returned
+        // empty, OR when getChatList threw above (caught). This MUST be in the
+        // finally so it runs on EVERY exit path, matching "every AI reply must
+        // show its workflow block (so users can retry failed nodes)".
+        try {
+          this.ensureProcessForAssistantMessages(sessionId)
+        } catch { /* ignore */ }
         this.loadingMessages = false
       }
     },
@@ -661,6 +709,67 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
+    /**
+     * Guarantee every non-synthetic assistant message in `this.messages` has a
+     * `process` field, so the workflow area (ProcessStatus) ALWAYS renders —
+     * even for historical/failed replies whose cache had no process and whose
+     * server returned no execution records.
+     *
+     * This runs UNCONDITIONALLY (independent of loadSessionExecutionRecords's
+     * early-returns or the isStreaming skip), after every message load path
+     * (selectSession, refreshCurrentSessionMessages). Status is inferred from
+     * the session's SessionStatus so the badge is meaningful.
+     */
+    ensureProcessForAssistantMessages(sessionId: string) {
+      const session = this.sessions.find((s) => s.ChatSessionID === sessionId)
+      const inferredStatus = session?.SessionStatus === -1 ? 'failed' : 'success'
+      let changed = false
+
+      // 兜底：失败会话且完全没有任何 AI 回复消息时，创建一个合成消息
+      // 让用户至少能看到红色"出错了"的工作流区域（而非空白对话）。
+      // 不缓存此兜底消息，避免污染后续加载时的缓存合并逻辑。
+      const fallbackId = `err_fallback_${sessionId}`
+      const realAssistantMsg = this.messages.some(
+        (m) => m.role === 'assistant' && m.id !== fallbackId,
+      )
+      if (!realAssistantMsg && inferredStatus === 'failed') {
+        // 清理可能残留的旧 fallback
+        this.messages = this.messages.filter((m) => m.id !== fallbackId)
+        this.messages.push({
+          id: fallbackId,
+          sessionId,
+          role: 'assistant',
+          content: '',
+          createdAt: new Date().toISOString(),
+          loading: false,
+          process: {
+            status: 'failed',
+            results: '',
+            timestamp: null,
+            records: [],
+            streamsByNode: {},
+          },
+        })
+        // 不设置 changed=true —— 纯兜底不写入缓存
+      }
+
+      for (const msg of this.messages) {
+        if (msg.role === 'assistant' && !msg.id.startsWith('pending_') && !msg.id.startsWith('err_fallback_') && !msg.process) {
+          msg.process = {
+            status: inferredStatus,
+            results: '',
+            timestamp: null,
+            records: [],
+            streamsByNode: {},
+          }
+          changed = true
+        }
+      }
+      if (changed) {
+        messageCache.set(sessionId, [...this.messages]).catch(() => {})
+      }
+    },
+
     async deleteSession(id: string) {
       // Cancel any active stream for this session first.
       const ctx = streamContexts.get(id)
@@ -772,7 +881,7 @@ export const useChatStore = defineStore('chat', {
         // SSE-created messages use temporary IDs (ai_xxx) while API uses real
         // ChatLogIDs, so we match by position rather than by ID.
         const currentWithProcess = this.messages.filter(
-          (m) => m.process && !m.id.startsWith('pending_'),
+          (m) => m.process && !m.id.startsWith('pending_') && !m.id.startsWith('err_fallback_'),
         )
 
         // Build the new message list, then re-attach process data by order
@@ -810,6 +919,10 @@ export const useChatStore = defineStore('chat', {
         if (!this.isStreaming(sid)) {
           await this.loadSessionExecutionRecords(sid)
         }
+        // Guarantee every assistant message has a process (workflow area
+        // always renders), regardless of what the execution-records API
+        // returned. Mirrors selectSession's post-load backfill.
+        this.ensureProcessForAssistantMessages(sid)
       } catch {
         // Silently ignore
       }
@@ -818,6 +931,20 @@ export const useChatStore = defineStore('chat', {
     updateSessionStatusFromHeartbeat(list: SessionStatusInfo[]): SessionStatusInfo[] {
       const completedList: SessionStatusInfo[] = []
       for (const item of list) {
+        // 守卫：如果该会话有活跃的 SSE 流，或本地仍认为它在运行（runningSessionIds），
+        // 且服务端报告终结状态（非 1），则整体跳过。
+        // ClawAI 异步并行模式下，主节点 TaskInfo.State=Completed 但子工作流仍在运行，
+        // 服务端会错误地报告 SessionStatus=0，导致会话状态在"运行中"与"已完成"之间
+        // 反复闪烁。扩展守卫：除了 SSE 流活跃的会话外，也保护页面刷新后 SSE 流已断开
+        // 但本地仍追踪为 runningSessionIds 的会话。
+        const isLocallyRunning =
+          this.isStreaming(item.ChatSessionID) ||
+          this.runningSessionIds.includes(item.ChatSessionID)
+
+        if (isLocallyRunning && item.SessionStatus !== 1) {
+          continue
+        }
+
         const session = this.sessions.find((s) => s.ChatSessionID === item.ChatSessionID)
         if (session) {
           // Authority direction: a locally-known terminal state takes
