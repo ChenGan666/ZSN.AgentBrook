@@ -2,14 +2,14 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 24,
-    "uniques": 11
+    "count": 22,
+    "uniques": 10
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulse",
     "title": "/pulse",
-    "count": 7,
-    "uniques": 4
+    "count": 5,
+    "uniques": 3
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
@@ -18,8 +18,8 @@
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/edit/main/README.md",
-    "title": "/edit/main/README.md",
+    "path": "/ChenGan666/ZSN.AgentBrook/compare/traffic",
+    "title": "/compare/traffic",
     "count": 1,
     "uniques": 1
   },
