@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ZSN.AI.BLL;
+using ZSN.AI.Core.Exceptions;
 using ZSN.AI.Core.Interface;
 using ZSN.AI.Entity;
 using ZSN.AI.Entity.Chat;
@@ -303,6 +304,44 @@ namespace ZSN.AI.Node.Claw
                         }
                         throttler.MarkDirty(); // P1: 节流更新
                     }
+                    catch (LLMException llmEx) when (llmEx.IsFatal)
+                    {
+                        // 致命 LLM 错误（403/欠费/key 无效等）：不降级为 workflow_call。
+                        // 降级产生的子 WorkFlow 仍会调用同一个坏掉的 LLM，必然失败，
+                        // 而异步触发后主线程退出 → 只剩 120 分钟超时兜底 → 用户面对长时间静默卡死。
+                        // 因此直接给用户友好错误、标记失败、关闭会话后返回。
+                        LoggerHelper.LogError(_logger, ClawLogModules.CLAW,
+                            $"AI 服务不可用，跳过降级 - SessionID: {SessionID}: {llmEx.Message}", llmEx);
+                        Logs.Enqueue($"✗ AI 服务暂时不可用，请稍后重试");
+                        batchWriter.Append("\n✗ AI 服务暂时不可用，请稍后重试");
+                        throttler.MarkDirty();
+
+                        string userMsg = "AI 服务暂时不可用，请稍后重试";
+                        outputs.Add(new Output
+                        {
+                            varname = "results",
+                            value = userMsg,
+                            nodeId = config.id,
+                            sourceId = $"{config.id}_results"
+                        });
+                        TriggerDownstreamNodes(config, outputs, AppID, SessionID, ProcessesID, TaskID, FromMainTaskID, Logs);
+
+                        ExecutionRecordStatus = ExecutionRecordStatus.Fail;
+                        throttler.FlushWithStatus(ExecutionRecordStatus);
+
+                        // 关闭会话，避免静默卡死
+                        try { AppChatSessionInfoBussiness.UpdateSessionStatus(SessionID, 0); }
+                        catch (Exception statusEx)
+                        {
+                            LoggerHelper.LogWarning(_logger, ClawLogModules.CLAW,
+                                $"[FatalLLM] 更新会话状态失败 - SessionID: {SessionID}: {statusEx.Message}");
+                        }
+
+                        execLogger?.LogFinalResult(userMsg, (DateTime.Now - execStartTime).TotalSeconds, null);
+                        execLogger?.Dispose();
+
+                        return RecordID;
+                    }
                     catch (Exception ex)
                     {
                         LoggerHelper.LogError(_logger, ClawLogModules.CLAW, $"统一规划失败，回退到传统路径: {ex.Message}", ex);
@@ -515,7 +554,7 @@ namespace ZSN.AI.Node.Claw
                     execLogger?.LogFinalResult("[AsyncTrigger] 等待回调恢复", 0, taskPlanning);
                     execLogger?.Dispose();
 
-                    return RecordID; // 返回 RecordID，状态保持 Running
+                    return $"__ASYNC_TRIGGERED__:{RecordID}"; // 异步触发标记 + RecordID，Consumer 据此跳过 SessionStatus=0
                 }
 
                 // === 阶段 4: 后处理(异步) ===
@@ -642,6 +681,45 @@ namespace ZSN.AI.Node.Claw
                 LoggerHelper.LogInfo(_logger, ClawLogModules.EXECUTION, $"执行完成 - SessionID: {SessionID}, 状态: {taskPlanning.PlanningStatus}");
                 
                 ExecutionRecordStatus = ExecutionRecordStatus.Success;
+            }
+            catch (LLMException llmEx) when (llmEx.IsFatal)
+            {
+                // 致命 LLM 错误（403/欠费/key 无效等）：任何路径（统一规划/传统规划/
+                // 直接回复/执行循环）触发的致命错误都汇聚到这里。给用户友好提示、
+                // 标记失败、触发下游（让前端能看到错误结果）、关闭会话，避免静默卡死。
+                LoggerHelper.LogError(_logger, ClawLogModules.CLAW,
+                    $"AI 服务不可用 - SessionID: {SessionID}: {llmEx.Message}", llmEx);
+                string userMsg = "AI 服务暂时不可用，请稍后重试";
+                Logs.Enqueue($"\n✗ {userMsg}");
+                Logs.Enqueue($"堆栈: {llmEx.StackTrace}");
+                batchWriter.Append($"\n✗ {userMsg}");
+                throttler.MarkDirty();
+
+                ExecutionRecordStatus = ExecutionRecordStatus.Fail;
+
+                // 记录执行失败到日志
+                try { execLogger?.LogRaw($"\n✗ {userMsg}\n{llmEx.Message}\n堆栈: {llmEx.StackTrace}"); execLogger?.Dispose(); }
+                catch { /* 日志写入失败不影响主流程 */ }
+
+                // 触发下游节点，确保前端/后续节点能收到错误结果而非无限等待
+                try
+                {
+                    outputs.Add(new Output { varname = "results", value = userMsg, nodeId = config.id, sourceId = $"{config.id}_results" });
+                    TriggerDownstreamNodes(config, outputs, AppID, SessionID, ProcessesID, TaskID, FromMainTaskID, Logs);
+                }
+                catch (Exception triggerEx)
+                {
+                    LoggerHelper.LogWarning(_logger, ClawLogModules.CLAW,
+                        $"[FatalLLM] 触发下游节点失败: {triggerEx.Message}");
+                }
+
+                // 关闭会话，避免静默卡死
+                try { AppChatSessionInfoBussiness.UpdateSessionStatus(SessionID, 0); }
+                catch (Exception statusEx)
+                {
+                    LoggerHelper.LogWarning(_logger, ClawLogModules.CLAW,
+                        $"[FatalLLM] 更新会话状态失败 - SessionID: {SessionID}: {statusEx.Message}");
+                }
             }
             catch (Exception ex)
             {
@@ -1344,17 +1422,48 @@ namespace ZSN.AI.Node.Claw
                 }
 
                 var responseBuilder = new StringBuilder();
-                await foreach (var chunk in _chatService.SendChatAsync(
-                    planningModelConfig, chatMsgs, Function: null,
-                    responseFormat: "json_object",
-                    enableStreamingObservation: false,
-                    progress: null,
-                    ct: System.Threading.CancellationToken.None))
+                try
                 {
-                    responseBuilder.Append(chunk);
+                    await foreach (var chunk in _chatService.SendChatAsync(
+                        planningModelConfig, chatMsgs, Function: null,
+                        responseFormat: "json_object",
+                        enableStreamingObservation: false,
+                        progress: null,
+                        ct: System.Threading.CancellationToken.None))
+                    {
+                        responseBuilder.Append(chunk);
+                    }
+                }
+                catch (LLMException llmEx)
+                {
+                    // 致命错误（401/403/欠费等）不重试、不降级，直接向上抛出，
+                    // 由 ClawAINodeAsync 的 catch 识别并给用户友好提示、关闭会话。
+                    if (llmEx.IsFatal)
+                    {
+                        LoggerHelper.LogError(_logger, ClawLogModules.TASK_PLANNING,
+                            $"统一规划 LLM 调用致命失败，终止重试: {llmEx.Message}", llmEx);
+                        throw;
+                    }
+                    // 非致命 LLM 错误（瞬时网络/500 等）走重试逻辑
+                    lastError = llmEx.Message;
+                    LoggerHelper.LogWarning(_logger, ClawLogModules.TASK_PLANNING,
+                        $"统一规划 LLM 调用失败 (尝试 {attempt + 1}): {llmEx.Message}");
+                    if (attempt < maxRetries) { continue; }
+                    throw;
                 }
 
                 responseText = responseBuilder.ToString().Trim();
+
+                // 防御性守卫：若响应是历史遗留的错误包装字符串（未走 throw 路径的残留），
+                // 直接抛出 LLMException，避免被当作 JSON 解析而产生误导性错误。
+                if (LLMException.IsWrappedErrorResponse(responseText))
+                {
+                    bool fatal = LLMException.IsFatalErrorMessage(responseText);
+                    var wrappedEx = new LLMException(responseText, isFatal: fatal);
+                    LoggerHelper.LogError(_logger, ClawLogModules.TASK_PLANNING,
+                        $"统一规划收到 LLM 错误包装响应，终止: {responseText}", wrappedEx);
+                    throw wrappedEx;
+                }
                 LoggerHelper.LogInfo(_logger, ClawLogModules.TASK_PLANNING, $"统一规划LLM响应 (尝试 {attempt + 1}/{maxRetries + 1}, 长度: {responseText.Length} 字符)");
 
                 // 输出LLM原始响应到日志，便于排查字段映射问题
@@ -2156,6 +2265,7 @@ namespace ZSN.AI.Node.Claw
             List<Output> outputs = new List<Output>();
             ExecutionRecordStatus ExecutionRecordStatus = ExecutionRecordStatus.Success;
             ClawAIExecutionLogger resumeLogger = null;
+            string sessionIDForStatus = ""; // 提到 try 外层，供 catch 块使用
 
             try
             {
@@ -2225,6 +2335,7 @@ namespace ZSN.AI.Node.Claw
 
                 string AppID = context.AppID;
                 string SessionID = context.SessionID;
+                sessionIDForStatus = SessionID; // 供 catch 块使用
                 string ProcessesID = context.ProcessesID;
                 string TaskID = context.TaskID;
                 string MemberID = context.MemberID;
@@ -2513,6 +2624,20 @@ namespace ZSN.AI.Node.Claw
                     }
                 }
                 catch { /* 忽略状态更新失败 */ }
+
+                // 恢复路径失败时将会话标记为失败（不经过 Consumer，需显式写入）
+                try
+                {
+                    if (!string.IsNullOrEmpty(sessionIDForStatus))
+                    {
+                        AppChatSessionInfoBussiness.UpdateSessionStatus(sessionIDForStatus, -1);
+                    }
+                }
+                catch (Exception statusEx)
+                {
+                    LoggerHelper.LogWarning(_logger, ClawLogModules.CLAW,
+                        $"[ContinueFromStep] 更新会话状态失败 - SessionID: {sessionIDForStatus}: {statusEx.Message}");
+                }
             }
 
             return asyncTaskID;
@@ -2626,6 +2751,18 @@ namespace ZSN.AI.Node.Claw
 
             LoggerHelper.LogInfo(_logger, ClawLogModules.EXECUTION,
                 $"\n[异步恢复] 完成 - SessionID: {SessionID}, 状态: {taskPlanning.PlanningStatus}");
+
+            // ClawAI 工作流真正完成（异步触发场景下主任务提前退出时跳过了
+            // Consumer 的 SessionStatus=0），在此补上最终状态。
+            try
+            {
+                AppChatSessionInfoBussiness.UpdateSessionStatus(SessionID, 0);
+            }
+            catch (Exception statusEx)
+            {
+                LoggerHelper.LogWarning(_logger, ClawLogModules.EXECUTION,
+                    $"[FinalizeExecution] 更新会话状态失败 - SessionID: {SessionID}: {statusEx.Message}");
+            }
 
             await Task.CompletedTask;
         }

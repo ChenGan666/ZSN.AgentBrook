@@ -370,8 +370,19 @@ namespace ZSN.AgentBrook.AutoJob
                     
                     task.State = TaskState.Completed;
 
-                    // 更新会话状态为完成
-                    UpdateSessionStatusSafe(taskConfig?.Data?.SessionID, 0);
+                    // ClawAI 异步触发场景：主 ClawAI 任务提前退出（IsAsyncTriggered），
+                    // 子工作流仍在运行。此时不应将 SessionStatus 置 0，否则心跳会在
+                    // 子工作流执行期间看到状态反复闪烁（0→1→0...）。
+                    // 标记通过 ClawAINodeAsync 的返回值传递（__ASYNC_TRIGGERED__:前缀）。
+                    bool isClawAIAsyncTriggered = nodeType == NodeType.ClawAI
+                        && re != null
+                        && re.Contains("__ASYNC_TRIGGERED__");
+
+                    if (!isClawAIAsyncTriggered)
+                    {
+                        // 更新会话状态为完成
+                        UpdateSessionStatusSafe(taskConfig?.Data?.SessionID, 0);
+                    }
 
             }
             catch (Exception ex)

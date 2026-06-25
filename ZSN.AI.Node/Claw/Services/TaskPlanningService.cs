@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ZSN.AI.BLL;
 using ZSN.AI.Core.Interface;
+using ZSN.AI.Core.Exceptions;
 using ZSN.AI.Entity;
 using ZSN.AI.Entity.ClawAI;
 using ZSN.AI.Node.Claw.Interfaces;
@@ -132,6 +133,14 @@ namespace ZSN.AI.Node.Claw.Services
                 await SavePlanningAsync(planning);
 
                 return planning;
+            }
+            catch (LLMException llmEx) when (llmEx.IsFatal)
+            {
+                // 致命 LLM 错误（403/欠费等）：不降级为简单计划——
+                // 降级产生的 workflow_call 仍会调用同一个坏掉的 LLM，必然失败并卡死。
+                LoggerHelper.LogError(_logger, ClawLogModules.TASK_PLANNING,
+                    $" 规划创建失败（LLM 致命错误），终止: {llmEx.Message}", llmEx);
+                throw;
             }
             catch (Exception ex)
             {
@@ -267,6 +276,13 @@ namespace ZSN.AI.Node.Claw.Services
                 await SavePlanningAsync(currentPlanning);
 
                 return currentPlanning;
+            }
+            catch (LLMException llmEx) when (llmEx.IsFatal)
+            {
+                // 致命 LLM 错误（403/欠费等）：不继续重规划循环，向上抛出。
+                LoggerHelper.LogError(_logger, ClawLogModules.TASK_PLANNING,
+                    $" 重新规划失败（LLM 致命错误） - PlanningID: {currentPlanning.PlanningID}: {llmEx.Message}", llmEx);
+                throw;
             }
             catch (Exception ex)
             {

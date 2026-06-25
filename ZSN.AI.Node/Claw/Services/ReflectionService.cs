@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ZSN.AI.Core.Interface;
+using ZSN.AI.Core.Exceptions;
 using ZSN.AI.Entity;
 using ZSN.AI.Entity.ClawAI;
 using ZSN.AI.Node.Claw.Configuration;
@@ -309,6 +310,12 @@ namespace ZSN.AI.Node.Claw.Services
                 LoggerHelper.LogInfo(_logger, ClawLogModules.REFLECTION, $" 步骤质量评分: {qualityScore}");
 
                 return qualityScore;
+            }
+            catch (LLMException llmEx) when (llmEx.IsFatal)
+            {
+                // 致命 LLM 错误：不降级到启发式判断，向上抛出避免后续继续调用坏掉的 LLM。
+                _logger.LogError(llmEx, $"[Reflection] 评估步骤质量失败（LLM 致命错误） - StepIndex: {step.StepIndex}");
+                throw;
             }
             catch (Exception ex)
             {
@@ -879,6 +886,12 @@ namespace ZSN.AI.Node.Claw.Services
                 LoggerHelper.LogInfo(_logger, ClawLogModules.REFLECTION, $" 动态分析完成 - Action: {result.Action}, 建议步骤数: {result.SuggestedSteps?.Count ?? 0}");
 
                 return result;
+            }
+            catch (LLMException llmEx) when (llmEx.IsFatal)
+            {
+                // 致命 LLM 错误：不降级到标准反思（同样会调用坏掉的 LLM），向上抛出。
+                _logger.LogError(llmEx, "[Reflection] 动态任务分析失败（LLM 致命错误）");
+                throw;
             }
             catch (Exception ex)
             {

@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ZSN.AI.BLL;
 using ZSN.AI.Core.Interface;
+using ZSN.AI.Core.Exceptions;
 using ZSN.AI.Entity;
 using ZSN.AI.Entity.ClawAI;
 using ZSN.AI.Node.Claw.Interfaces;
@@ -1746,6 +1747,9 @@ namespace ZSN.AI.Node.Claw.Services
             }
             catch (Exception ex)
             {
+                // LLMException（含致命 403/欠费等）保持原类型向上传播，避免被包装成普通 Exception
+                // 导致上层无法区分可恢复错误与 LLM 不可用。
+                if (ex is LLMException) throw;
                 LoggerHelper.LogError(_logger, ClawLogModules.AGENT_ORCHESTRATION, " LLM 推理失败");
                 throw new Exception($"LLM 推理失败: {ex.Message}", ex);
             }
@@ -1855,6 +1859,7 @@ namespace ZSN.AI.Node.Claw.Services
             }
             catch (Exception ex)
             {
+                if (ex is LLMException) throw;
                 LoggerHelper.LogError(_logger, ClawLogModules.AGENT_ORCHESTRATION, " 数据收集失败");
                 throw new Exception($"数据收集失败: {ex.Message}", ex);
             }
@@ -1967,6 +1972,7 @@ namespace ZSN.AI.Node.Claw.Services
             }
             catch (Exception ex)
             {
+                if (ex is LLMException) throw;
                 LoggerHelper.LogError(_logger, ClawLogModules.AGENT_ORCHESTRATION, " 验证失败");
                 throw new Exception($"验证失败: {ex.Message}", ex);
             }
@@ -2090,6 +2096,7 @@ namespace ZSN.AI.Node.Claw.Services
             }
             catch (Exception ex)
             {
+                if (ex is LLMException) throw;
                 LoggerHelper.LogError(_logger, ClawLogModules.AGENT_ORCHESTRATION, " 综合失败");
                 throw new Exception($"综合失败: {ex.Message}", ex);
             }

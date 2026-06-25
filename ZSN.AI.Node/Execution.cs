@@ -584,42 +584,57 @@ namespace ZSN.AI.Node
                                 }
                             }
 
-                            var chatResult = _chatService.SendChatAsync(
-                                modelConfig,
-                                history,
-                                Function: null,
-                                responseFormat: nodeData.ResponseFormat.IsNullOrEmpty() ? "text" : nodeData.ResponseFormat,
-                                enableStreamingObservation: true,
-                                progress: progress,
-                                ct: CancellationToken.None
-                            );
-
-                            //var chatResult = _chatService.SendChatAsync(modelConfig, history);
-                            StringBuilder rawContent = new StringBuilder();
+                            // 流式调用 + 消费，带重试（仅保护连接/首 token 阶段）
+                            // 一旦首个 token 到达即开始向下游推送，此后出错不再重试（避免重复输出）
+                            // 注意：首 token 前失败会重试；首 token 后失败直接向上抛出（由外层 catch 记录失败）
+                            bool hasStartedStreaming = false;
                             Chats info = null;
-                            List<Chats> MessageList = [];
-
-                            await foreach (var content in chatResult)
+                            results = await RetryPolicy.ExecuteWithConditionAsync(async () =>
                             {
-                                if (info == null)
-                                {
-                                    rawContent.Append(content.ConvertToString());
-                                    info = new Chats();
-                                    info.Id = Guid.NewGuid().ToString();
-                                    info.UserName = AuthorRole.Assistant.ToString();
-                                    info.AppId = AppID;
-                                    info.Context = content.ConvertToString();
-                                    info.CreateTime = DateTime.Now;
+                                StringBuilder rawContent = new StringBuilder();
+                                Chats localInfo = null;
+                                List<Chats> MessageList = [];
 
-                                    MessageList.Add(info);
-                                }
-                                else
+                                // 关闭服务内部观察，由本循环自行控制推送，保证重试时不会重复输出
+                                var chatResult = _chatService.SendChatAsync(
+                                    modelConfig,
+                                    history,
+                                    Function: null,
+                                    responseFormat: nodeData.ResponseFormat.IsNullOrEmpty() ? "text" : nodeData.ResponseFormat,
+                                    enableStreamingObservation: false,
+                                    progress: null,
+                                    ct: CancellationToken.None
+                                );
+
+                                await foreach (var content in chatResult)
                                 {
-                                    rawContent.Append(content.ConvertToString());
+                                    if (localInfo == null)
+                                    {
+                                        rawContent.Append(content.ConvertToString());
+                                        localInfo = new Chats();
+                                        localInfo.Id = Guid.NewGuid().ToString();
+                                        localInfo.UserName = AuthorRole.Assistant.ToString();
+                                        localInfo.AppId = AppID;
+                                        localInfo.Context = content.ConvertToString();
+                                        localInfo.CreateTime = DateTime.Now;
+
+                                        MessageList.Add(localInfo);
+                                        hasStartedStreaming = true; // 首 token 到达，流已建立，此后出错不再重试
+                                        progress?.Report(content.ConvertToString());
+                                    }
+                                    else
+                                    {
+                                        rawContent.Append(content.ConvertToString());
+                                        progress?.Report(content.ConvertToString());
+                                    }
+                                    localInfo.Context = rawContent.ToString();
                                 }
-                                info.Context = rawContent.ToString();
-                            }
-                            results = info?.Context ?? "";
+                                info = localInfo;
+                                return localInfo?.Context ?? "";
+                            },
+                            shouldRetry: ex => !hasStartedStreaming, // 只在尚未开始推送时重试
+                            maxRetries: 3,
+                            delayMs: 3000);
                             if (!string.IsNullOrEmpty(results))
                             {
                                 progress?.Report($"\n✓ 大模型节点执行完成");
@@ -3148,9 +3163,18 @@ namespace ZSN.AI.Node
                                     Style = nodeData.style
                                 };
 
-                                // 8. 调用图像生成服务
+                                // 8. 调用图像生成服务（带重试，应对网络抖动/限流/模型临时不可用）
                                 var imageService = _provider.GetRequiredService<IImageService>();
-                                imageUrl = await imageService.GenerateImageAsync(largeModel, imageRequest);
+                                imageUrl = await RetryPolicy.ExecuteAsync(
+                                    () => imageService.GenerateImageAsync(largeModel, imageRequest),
+                                    maxRetries: 3,
+                                    delayMs: 3000,
+                                    onRetry: (ex, attempt) =>
+                                    {
+                                        Logs.Add($"[图像生成] 第 {attempt} 次重试（间隔3秒），上次错误: {ex.Message}");
+                                        _logger.LogWarning(ex, $"[图像生成] 重试 {attempt}/3 - NodeID: {config.id}");
+                                    }
+                                );
 
                                 Logs.Add($"[图像生成] 成功生成图像");
                                 Logs.Add($"[图像生成] 图像URL: {imageUrl}");
@@ -3420,8 +3444,17 @@ namespace ZSN.AI.Node
                                 
                                 Logs.Add($"[视频生成] 开始提交视频生成任务...");
                                 
-                                // 提交任务
-                                var submitResponse = await videoService.SubmitVideoTaskAsync(largeModel, videoRequest);
+                                // 提交任务（带重试，应对网络抖动/限流/服务临时不可用）
+                                var submitResponse = await RetryPolicy.ExecuteAsync(
+                                    () => videoService.SubmitVideoTaskAsync(largeModel, videoRequest),
+                                    maxRetries: 3,
+                                    delayMs: 3000,
+                                    onRetry: (ex, attempt) =>
+                                    {
+                                        Logs.Add($"[视频生成] 提交任务第 {attempt} 次重试（间隔3秒），错误: {ex.Message}");
+                                        _logger.LogWarning(ex, $"[视频生成] 提交重试 {attempt}/3 - NodeID: {config.id}");
+                                    }
+                                );
                                 taskId = submitResponse.TaskId;
                                 
                                 Logs.Add($"[视频生成] 任务提交成功, 任务ID: {taskId}");
@@ -3436,9 +3469,18 @@ namespace ZSN.AI.Node
                                 }
                                 else
                                 {
-                                    // 否则等待任务完成（最多等待600秒）
+                                    // 否则等待任务完成（最多等待600秒），带重试应对临时失败/超时
                                     Logs.Add($"[视频生成] 等待视频生成完成...");
-                                    var finalResponse = await videoService.GenerateVideoAsync(largeModel, videoRequest, maxWaitSeconds: 600);
+                                    var finalResponse = await RetryPolicy.ExecuteAsync(
+                                        () => videoService.GenerateVideoAsync(largeModel, videoRequest, maxWaitSeconds: 600),
+                                        maxRetries: 3,
+                                        delayMs: 3000,
+                                        onRetry: (ex, attempt) =>
+                                        {
+                                            Logs.Add($"[视频生成] 等待完成第 {attempt} 次重试（间隔3秒），错误: {ex.Message}");
+                                            _logger.LogWarning(ex, $"[视频生成] 等待重试 {attempt}/3 - NodeID: {config.id}");
+                                        }
+                                    );
                                     
                                     if (finalResponse.TaskStatus == VideoTaskStatus.Success && finalResponse.VideoUrls?.Count > 0)
                                     {

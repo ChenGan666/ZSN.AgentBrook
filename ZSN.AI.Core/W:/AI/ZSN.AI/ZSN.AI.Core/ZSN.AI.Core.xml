@@ -123,6 +123,77 @@
             <param name="firstcol"></param>
             <param name="lastcol"></param>
         </member>
+        <member name="T:ZSN.AI.Core.Exceptions.ExceptionHelper">
+            <summary>
+            异常处理辅助工具。
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Exceptions.ExceptionHelper.ExtractFatalLLMException(System.Exception)">
+            <summary>
+            从异常链中提取致命的 <see cref="T:ZSN.AI.Core.Exceptions.LLMException"/>。
+            用于穿透重试策略（如 RetryFailedException）的包装，检测底层 LLM 错误。
+            返回 null 表示异常链中无致命 LLM 错误。
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Exceptions.ExceptionHelper.ExtractLLMException(System.Exception)">
+            <summary>
+            从异常链中提取任意 <see cref="T:ZSN.AI.Core.Exceptions.LLMException"/>（不区分是否致命）。
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Exceptions.LLMException">
+            <summary>
+            LLM 调用异常（HTTP 错误、权限、限流、账户欠费等）。
+            区别于"模型返回了格式错误的 JSON"（可重试 / 可降级），
+            致命异常（<see cref="P:ZSN.AI.Core.Exceptions.LLMException.IsFatal"/>) 通常不可恢复，不应盲目重试或降级。
+            </summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Exceptions.LLMException.StatusCode">
+            <summary>HTTP 状态码（0 表示非 HTTP 错误或无法解析）</summary>
+        </member>
+        <member name="P:ZSN.AI.Core.Exceptions.LLMException.IsFatal">
+            <summary>
+            是否为不可恢复错误（401/403/账户欠费/key 无效等）。
+            致命错误时调用方应快速失败并通知用户，而非退化为重试 / 工作流计划。
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Exceptions.LLMException.IsWrappedErrorResponse(System.String)">
+            <summary>
+            判断一段响应文本是否为 ChatService 历史遗留的错误包装字符串
+            （形如 "生成回答时发生错误：HTTP 403 ..."）。
+            用于对未走 throw 路径的残留调用方做防御性检测。
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Exceptions.LLMException.IsFatalErrorMessage(System.String)">
+            <summary>
+            判断错误信息是否代表不可恢复（致命）错误。
+            检测常见的权限 / 鉴权 / 欠费关键词。
+            </summary>
+        </member>
+        <member name="T:ZSN.AI.Core.Exceptions.LLMExceptionFactory">
+            <summary>
+            从底层异常（Semantic Kernel / OpenAI SDK / HttpRequestException 等）
+            构造 <see cref="T:ZSN.AI.Core.Exceptions.LLMException"/>，解析 HTTP 状态码与是否致命。
+            使用反射探测不同 SDK 的异常属性，避免对具体类型的硬依赖。
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Exceptions.LLMExceptionFactory.FromException(System.Exception)">
+            <summary>
+            从任意异常构造 LLMException。
+            若本身就是 LLMException 则原样返回。
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Exceptions.LLMExceptionFactory.TryGetStatusCode(System.Exception)">
+            <summary>
+            反射探测异常中的 HTTP 状态码。
+            兼容 HttpRequestException.StatusCode、HttpOperationException (SemanticKernel) 等。
+            </summary>
+        </member>
+        <member name="M:ZSN.AI.Core.Exceptions.LLMExceptionFactory.ToInt(System.Object)">
+            <summary>
+            将反射取到的状态码对象（int / 可空 int / 枚举）转换为 int。
+            使用 Convert.ToInt32 兼容枚举与数值类型。
+            </summary>
+        </member>
         <member name="P:ZSN.AI.Core.Handler.KMExcelHandler.StepName">
             <inheritdoc />
         </member>

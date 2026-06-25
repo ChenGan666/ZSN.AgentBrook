@@ -374,9 +374,21 @@ export function useChat() {
       //      the detached aiMessage ref (background stream);
       //  (b) the user switched back to THIS stream's session, but selectSession
       //      replaced the temp id with a real ChatLogID — re-bind now.
+      //
+      // 对新会话：sessionId（原始入参）为 null、currentKey 可能仍是临时 aiMsgId
+      // （第一帧 SSE 带 SessionID 之前），两条精确匹配都会落空 → 不重绑 → SSE
+      // 写到脱离 store 的 aiMessage 引用、updateMessage 因 id 不在 store 而静默
+      // no-op，AI 回复区块即使被 selectSession re-inject 进去也不再更新（Mac 复现
+      // 根因，依赖 WKWebView 与 WebView2 的微任务时序）。加 activeStreamForThisSession
+      // 兜底：当前会话存在活跃流即视为"回到本流会话"，使重绑不再依赖第一帧迁移时序。
+      // activeStreamForThisSession 自带归属校验（findStreamContextBySession），不会
+      // 跨会话污染。
+      const activeStreamForThisSession =
+        !!chatStore.findStreamContextBySession(chatStore.currentSessionId)
       const userReturnedToThisSession =
         !!chatStore.currentSessionId &&
-        (chatStore.currentSessionId === currentKey ||
+        (activeStreamForThisSession ||
+          chatStore.currentSessionId === currentKey ||
           chatStore.currentSessionId === sessionId)
       if (userReturnedToThisSession) {
         // Re-locate the store message by the captured assistant index.
@@ -411,7 +423,8 @@ export function useChat() {
           const belongsToThisStream =
             !rebound.sessionId ||
             rebound.sessionId === currentKey ||
-            rebound.sessionId === sessionId
+            rebound.sessionId === sessionId ||
+            activeStreamForThisSession
           if (!belongsToThisStream) {
             return aiMessage
           }
@@ -473,7 +486,12 @@ export function useChat() {
         // via order-merge (mergeSSEMessageIntoCache) to avoid appending a
         // duplicate assistant message when the cache already holds the real
         // ChatLogID entry (which previously caused duplicated AI replies).
-        const targetSid = msg.sessionId || sessionId || ''
+        const targetSid = msg.sessionId || sessionId || currentKey || ''
+        // 沉淀 sessionId 到消息对象：即使第一帧缺失 SessionID（极端：流被
+        // abort 且从未收到带 sid 的帧），也用 currentKey（已迁移到真实 sid，
+        // 或仍是临时 key）兜底，确保后续 findStreamContextBySession /
+        // mergeSSEMessageIntoCache 能正确归属，避免回复最终丢失归属。
+        if (targetSid && !msg.sessionId) msg.sessionId = targetSid
         if (targetSid) {
           // If the stream was aborted (user stop / silence timeout) and we
           // never saw a natural terminal frame, mark the session locally

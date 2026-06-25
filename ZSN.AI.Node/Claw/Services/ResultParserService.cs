@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ZSN.AI.Core.Interface;
+using ZSN.AI.Core.Exceptions;
 using ZSN.AI.Entity;
 using ZSN.AI.Node.Claw.Interfaces;
 using ZSN.AI.Node.Claw.Utils;
@@ -232,6 +233,13 @@ namespace ZSN.AI.Node.Claw.Services
 
                 LoggerHelper.LogInfo(_logger, ClawLogModules.RESULT_PARSER, $" LLM 提取完成，结果长度: {extractedData?.Length ?? 0}");
                 return extractedData;
+            }
+            catch (LLMException llmEx) when (llmEx.IsFatal)
+            {
+                // 致命 LLM 错误：不静默返回空数组，向上抛出。
+                LoggerHelper.LogError(_logger, ClawLogModules.RESULT_PARSER,
+                    $" LLM 提取失败（致命错误）: {llmEx.Message}", llmEx);
+                throw;
             }
             catch (Exception ex)
             {

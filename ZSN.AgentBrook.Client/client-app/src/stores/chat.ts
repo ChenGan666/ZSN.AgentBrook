@@ -9,7 +9,7 @@ import type {
 import * as sessionApi from '@/services/session'
 import * as chatApi from '@/services/chat'
 import { sessionCache, messageCache } from '@/utils/cache'
-import { normalizeRecord } from '@/utils/process'
+import { normalizeRecord, mergeRecords } from '@/utils/process'
 
 /**
  * Simple stable 8-char hash for deterministic fallback IDs. Same input → same
@@ -230,6 +230,51 @@ export const useChatStore = defineStore('chat', {
     },
 
     /**
+     * Find an active stream context associated with a session, tolerating the
+     * temp-key window. For a brand-new chat the stream is registered under the
+     * `aiMsgId` temp key until the first SSE frame migrates it to the real sid
+     * (see migrateStream). During that window `isStreaming(realSid)` and
+     * `getStreamContext(realSid)` return false even though a live stream exists
+     * — which makes selectSession's re-inject guard (chat.ts:491) skip the live
+     * AI message and the reply block disappears when the user clicks the new
+     * session mid-stream (reproduces on Mac, not Windows, due to WKWebView vs
+     * WebView2 timing differences). This scans all contexts and matches by:
+     *   - exact key == sessionId (already migrated), OR
+     *   - ctx.originSid == sessionId (stream sent with a known sid), OR
+     *   - ctx.aiMessage?.sessionId == sessionId (first frame already set it).
+     * It does NOT match a context whose aiMessage.sessionId is empty on a
+     * foreign sid (that would attribute ANY brand-new orphan stream to the
+     * clicked session — cross-session contamination).
+     */
+    findStreamContextBySession(sessionId: string | null | undefined): StreamContext | undefined {
+      if (!sessionId) return undefined
+      const exact = streamContexts.get(sessionId)
+      if (exact) return exact
+      for (const [, ctx] of streamContexts) {
+        if (ctx.originSid === sessionId) return ctx
+        const liveSid = ctx.aiMessage?.sessionId
+        if (liveSid && liveSid === sessionId) return ctx
+      }
+      // 兜底：未迁移的临时 key 流（新会话第一帧 SSE 带 SessionID 之前）。此时流
+      // 挂在 aiMsgId 临时 key 下，originSid=''、aiMessage.sessionId=''，上面的
+      // 精确匹配都落空——这正是 Mac 上"点击新会话时第一帧还没到"的窗口，若不兜
+      // 底则 selectSession 的 re-inject 被跳过、AI 回复区块消失。
+      //
+      // 不能无条件把任意孤儿临时 key 流匹配给点击的会话（会把 A 会话的流错配给
+      // B 会话 → 跨会话污染）。安全判据：该临时流的 aiMsgId 恰好存在于当前
+      // this.messages 里（selectSession 已为本次 sessionId 重建好列表，且 live
+      // 占位消息就在其中）。用一个明确属于本会话列表的 aiMsgId 作为锚点，才能
+      // 确定这个未迁移的临时 key 流属于当前 sessionId。
+      const liveMsgIds = new Set(this.messages.map((m) => m.id))
+      for (const [, ctx] of streamContexts) {
+        if (ctx.aiMsgId && liveMsgIds.has(ctx.aiMsgId) && !ctx.originSid) {
+          return ctx
+        }
+      }
+      return undefined
+    },
+
+    /**
      * Unregister a stream. Removes every sid that was registered for this
      * stream from runningSessionIds (fixes the leak when the SSE sid differed
      * from the requested sid). The streamingSessions flag is cleared for the
@@ -387,7 +432,11 @@ export const useChatStore = defineStore('chat', {
       // we skip persisting here to avoid clobbering live data.
       const oldSid = this.currentSessionId
       if (oldSid && oldSid !== sessionId && this.messages.length > 0) {
-        if (!this.isStreaming(oldSid)) {
+        // findStreamContextBySession tolerates the temp-key window (new chat
+        // whose stream hasn't migrated to its real sid yet); isStreaming(oldSid)
+        // would return false in that window and let us clobber the live stream's
+        // authoritative cache here.
+        if (!this.findStreamContextBySession(oldSid)) {
           messageCache.set(oldSid, [...this.messages]).catch(() => {})
         }
       }
@@ -488,17 +537,74 @@ export const useChatStore = defineStore('chat', {
         // for this session (its isStreaming guard below), so it won't clobber
         // the live process data. The cache is intentionally NOT re-written
         // here — the stream owns it and persists on completion.
-        if (this.isStreaming(sessionId)) {
-          const ctx = this.getStreamContext(sessionId)
-          const live = ctx?.aiMessage
+        //
+        // We look up the stream context via findStreamContextBySession instead
+        // of isStreaming(sessionId)+getStreamContext(sessionId). For a NEW chat
+        // the stream is registered under the aiMsgId temp key until the first
+        // SSE frame calls migrateStream; during that window the real sid key is
+        // absent, so the old `isStreaming(sessionId)` guard skipped the push
+        // and the reply block vanished when the user clicked the new session
+        // mid-stream (Mac repro). findStreamContextBySession matches the still-
+        // temp-keyed context by originSid / aiMessage.sessionId, closing it.
+        const streamCtx = this.findStreamContextBySession(sessionId)
+        if (streamCtx) {
+          const live = streamCtx.aiMessage
           // Validate the injected aiMessage actually belongs to this session
           // (sessionId matches, or is empty for a brand-new chat before the
           // first frame resolves the sid). A poisoned ctx.aiMessage (e.g. a
           // rebind that grabbed a foreign session's message during a race)
           // would otherwise inject another session's content here.
-          const sidOk = !live?.sessionId || live.sessionId === sessionId
-          if (live && sidOk && !this.messages.some((m) => m.id === live.id)) {
-            this.messages.push(live)
+          const liveSid = live?.sessionId
+          const sidOk = !liveSid || liveSid === sessionId
+          if (live && sidOk) {
+            // 定位本流在当前 messages 里的 assistant 槽位（按 streamCtx.
+            // assistantIndex，回落到"最后一个 loading/无 process 的 assistant"）。
+            // 服务端常在流式中就已持久化 assistant 行（真实 ChatLogID），它和 live
+            // 的 aiMsgId 占位 id 不同——若直接 push 会产生两条 AI 回复区块。这里
+            // 改为把 live 的 SSE 数据合并进已有槽位并把流重绑到它；仅当没有任何
+            // 槽位时才 push 占位。合并写法复用 getAssistantMsg / mergeSSEMessageIntoCache。
+            const nonPendingAssistants = this.messages.filter(
+              (m) => m.role === 'assistant' && !m.id.startsWith('pending_'),
+            )
+            let slot: ChatMessage | undefined
+            const ai = streamCtx.assistantIndex
+            if (ai >= 0 && ai < nonPendingAssistants.length) {
+              slot = nonPendingAssistants[ai]
+            }
+            if (!slot) {
+              for (let i = this.messages.length - 1; i >= 0; i--) {
+                const m = this.messages[i]
+                if (m.role === 'assistant' && (m.loading || !m.process)) {
+                  slot = m
+                  break
+                }
+              }
+            }
+            if (slot && slot.id !== live.id) {
+              if (live.process) {
+                if (!slot.process) {
+                  slot.process = live.process
+                } else {
+                  slot.process.records = mergeRecords(
+                    slot.process.records || [],
+                    live.process.records || [],
+                  )
+                  slot.process.streamsByNode = {
+                    ...(slot.process.streamsByNode || {}),
+                    ...(live.process.streamsByNode || {}),
+                  }
+                  const sseS = live.process.status
+                  if (sseS && sseS !== 'running') slot.process.status = sseS
+                }
+                if (live.content) slot.content = slot.content || live.content
+                if (live.sessionId) slot.sessionId = live.sessionId
+              }
+              // 重绑流到该槽位：getAssistantMsg 的重绑分支（已放宽过）会把 slot
+              // 重新绑为 aiMessage 并把 liveMsgId 设为 slot.id，后续 SSE 直接写它。
+              streamCtx.aiMessage = slot
+            } else if (!slot && !this.messages.some((m) => m.id === live.id)) {
+              this.messages.push(live)
+            }
           }
         }
 
@@ -810,6 +916,13 @@ export const useChatStore = defineStore('chat', {
       if (idx !== -1) {
         this.messages[idx] = updated
       }
+      // id 未命中：直接 no-op，不去找别的 slot 合并、也不 push。
+      // getAssistantMsg 的 Path A 与重绑分支返回的都是 this.messages 数组里的实际
+      // 引用，并在返回前已就地写入 process/content；liveMsgId 也会在同一次调用里
+      // 被重绑为真实 slot id。因此当 messageId miss（多为 selectSession 把临时
+      // ai_<ts> 换成真实 ChatLogID 后的陈旧 id）时，真实渲染对象已是最新——无需
+      // 再去找别的 slot 合并（会把本流结果写到错误的行 → 无结果输出），也不需 push
+      // （会产生重复 AI 区块）。保持静默即可。
     },
 
     /**
@@ -867,8 +980,13 @@ export const useChatStore = defineStore('chat', {
       const sid = this.currentSessionId
       if (!sid) return
 
-      // 如果有消息正在 SSE 流式写入（loading=true），跳过刷新避免竞态覆盖
+      // 如果有消息正在 SSE 流式写入（loading=true），跳过刷新避免竞态覆盖。
+      // 另外只要本会话有活跃 SSE 流就跳过：selectSession 重建期间 this.messages
+      // 可能短暂全是 API 消息（无 loading 标志），此时心跳触发本方法会整体
+      // this.messages = apiMessages 覆盖，把 re-inject 的 live AI 占位抹掉
+      // （Mac 时序下可观测到）。
       if (this.messages.some((m) => m.loading)) return
+      if (this.findStreamContextBySession(sid)) return
 
       try {
         const { data } = await chatApi.getChatList(sid)

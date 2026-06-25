@@ -21,6 +21,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using ZSN.AI.BLL;
 using ZSN.AI.Core.Common.DependencyInjection;
+using ZSN.AI.Core.Exceptions;
 using ZSN.AI.Core.Interface;
 using ZSN.AI.Core.Utils;
 using ZSN.AI.Entity;
@@ -190,8 +191,10 @@ namespace ZSN.AI.Core.Service
                 if (streamError != null)
                 {
                     LogLLMCall("SendChatAsync", ModelConfig, history, null, sw.ElapsedMilliseconds, "error", streamError.Message);
-                    yield return $"生成回答时发生错误：{streamError.Message}";
-                    yield break;
+                    // 抛出显式异常，让调用方区分"LLM 调用失败"与"正常模型输出"。
+                    // 历史做法是把错误字符串 yield 出去，导致 JSON 解析型调用方
+                    // 把 "生成回答时发生错误：HTTP 403 ..." 当作模型回复解析而崩溃。
+                    throw LLMExceptionFactory.FromException(streamError);
                 }
 
                 var final = sb.ToString();
@@ -220,8 +223,8 @@ namespace ZSN.AI.Core.Service
                 if (callError != null)
                 {
                     LogLLMCall("SendChatAsync", ModelConfig, history, null, sw.ElapsedMilliseconds, "error", callError.Message);
-                    yield return $"生成回答时发生错误：{callError.Message}";
-                    yield break;
+                    // 抛出显式异常（详见上方 streaming 分支说明）。
+                    throw LLMExceptionFactory.FromException(callError);
                 }
 
                 if (result?.Content != null && result.Content.Length > 0)
@@ -256,8 +259,8 @@ namespace ZSN.AI.Core.Service
             }
             catch (Exception ex)
             {
-                // 异常时返回错误信息
-                return new[] { $"生成回答时发生错误：{ex.Message}" };
+                // 抛出显式异常，避免把错误字符串当作正常响应返回给调用方解析。
+                throw LLMExceptionFactory.FromException(ex);
             }
         }
 
