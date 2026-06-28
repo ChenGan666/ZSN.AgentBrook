@@ -642,7 +642,7 @@ CREATE TABLE `tb_large_model_info` (
   `TypeCode` int DEFAULT NULL COMMENT '类型编号',
   `TypeName` varchar(50) DEFAULT NULL COMMENT '类型名称',
   `EndPoint` varchar(255) DEFAULT NULL COMMENT '模型地址',
-  `MConfig` varchar(512) DEFAULT NULL COMMENT '配置信息Json',
+  `MConfig` TEXT DEFAULT NULL COMMENT '配置信息Json',
   `Description` varchar(512) DEFAULT NULL COMMENT '描述',
   `SystemStatus` int DEFAULT NULL COMMENT '系统状态',
   `CreateTime` datetime DEFAULT NULL COMMENT '创建时间',

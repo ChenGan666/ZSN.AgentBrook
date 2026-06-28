@@ -1,6 +1,10 @@
 <template>
   <div class="chat-view">
-    <ChatContainer @retry-process="handleRetryProcess" @retry-node="handleRetryNode" />
+    <ChatContainer
+      @retry-process="handleRetryProcess"
+      @retry-node="handleRetryNode"
+      @regenerate="handleRegenerate"
+    />
     <ChatInput
       class="floating-input"
       :is-streaming="effectiveRunning"
@@ -19,7 +23,7 @@ import { useChat } from '@/composables/useChat'
 import { useChatStore } from '@/stores/chat'
 
 const chatStore = useChatStore()
-const { sendMessage, cancelStream, retryNode, isStreaming, streamError } = useChat()
+const { sendMessage, regenerate, cancelStream, retryNode, isStreaming, streamError } = useChat()
 
 const currentSessionStatus = computed(() => chatStore.currentSession?.SessionStatus ?? 0)
 
@@ -47,6 +51,10 @@ function handleRetryProcess(payload: { sessionId: string; processesId: string; m
 
 function handleRetryNode(payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }) {
   retryNode(payload)
+}
+
+function handleRegenerate(messageId: string) {
+  regenerate(messageId)
 }
 </script>
 

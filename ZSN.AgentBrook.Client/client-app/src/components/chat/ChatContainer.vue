@@ -14,6 +14,7 @@
         :message="msg"
         @retry-process="(payload) => emit('retryProcess', payload)"
         @retry-node="(payload) => emit('retryNode', payload)"
+        @regenerate="(messageId) => emit('regenerate', messageId)"
       />
       <div v-if="!chatStore.loadingMessages && chatStore.messages.length === 0" class="empty-state">
         <p>{{ t('chat.startNewConversation') }}</p>
@@ -39,6 +40,7 @@ const { t } = useI18n()
 const emit = defineEmits<{
   retryProcess: [payload: { sessionId: string; processesId: string; messageId: string | null }]
   retryNode: [payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }]
+  regenerate: [messageId: string]
 }>()
 
 const chatStore = useChatStore()

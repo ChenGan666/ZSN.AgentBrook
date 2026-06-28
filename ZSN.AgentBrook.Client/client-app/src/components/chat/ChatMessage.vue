@@ -89,6 +89,33 @@
           />
         </template>
       </template>
+
+      <!-- Copy reply button (assistant only, requires content, not loading) -->
+      <button
+        v-if="message.role === 'assistant' && message.content && !message.loading"
+        class="copy-reply-btn"
+        type="button"
+        :title="t('chat.copyReply')"
+        @click="copyContent"
+      >
+        <el-icon :size="14">
+          <Select v-if="copied" />
+          <CopyDocument v-else />
+        </el-icon>
+        <span class="copy-reply-label">{{ copied ? t('chat.copied') : t('chat.copyReply') }}</span>
+      </button>
+
+      <!-- Regenerate button (assistant only, completed) -->
+      <button
+        v-if="message.role === 'assistant' && message.content && !message.loading"
+        class="copy-reply-btn"
+        type="button"
+        :title="t('chat.regenerate')"
+        @click="$emit('regenerate', message.id)"
+      >
+        <el-icon :size="14"><RefreshRight /></el-icon>
+        <span class="copy-reply-label">{{ t('chat.regenerate') }}</span>
+      </button>
     </div>
   </div>
 </template>
@@ -96,7 +123,8 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Loading } from '@element-plus/icons-vue'
+import { Loading, CopyDocument, Select, RefreshRight } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { renderMarkdown } from '@/utils/markdown'
 import { execHumanInTheLoop, execHumanInTheLoopByForm } from '@/services/hitl'
 import { useChatStore } from '@/stores/chat'
@@ -113,10 +141,13 @@ const props = defineProps<{
 const emit = defineEmits<{
   retryProcess: [payload: { sessionId: string; processesId: string; messageId: string | null }]
   retryNode: [payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }]
+  regenerate: [messageId: string]
 }>()
 
 const chatStore = useChatStore()
 const streamScrollRef = ref<HTMLElement | null>(null)
+const copied = ref(false)
+let copiedTimer: ReturnType<typeof setTimeout> | null = null
 
 // --- Workflow lazy-load ---
 const workflowLoading = ref(false)
@@ -182,6 +213,28 @@ const formattedTime = computed(() => {
 })
 
 const renderedContent = computed(() => renderMarkdown(props.message.content))
+
+async function copyContent() {
+  const text = props.message.content || ''
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    // Fallback for environments without the async clipboard API.
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    try { document.execCommand('copy') } catch { /* ignore */ }
+    document.body.removeChild(ta)
+  }
+  copied.value = true
+  if (copiedTimer) clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => { copied.value = false }, 1500)
+  ElMessage.success(t('chat.copied'))
+}
 
 function formatFileSize(bytes: number): string {
   if (!bytes) return '0 B'
@@ -659,5 +712,32 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
 @keyframes rotating {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+// --- Copy reply button (bottom-left of assistant message) ---
+.copy-reply-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  user-select: none;
+
+  &:hover {
+    color: #6b7280;
+    background: #f3f4f6;
+  }
+
+  &:active {
+    color: #3b82f6;
+  }
 }
 </style>

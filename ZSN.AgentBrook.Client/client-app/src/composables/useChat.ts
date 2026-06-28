@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { useSettingsStore } from '@/stores/settings'
 import { secureStorage } from '@/utils/storage'
-import { getChatCompletionsUrl, getNodeExecutionRecordUrl, retryNode as retryNodeApi } from '@/services/chat'
+import { getChatCompletionsUrl, getChatRegenerateUrl, getNodeExecutionRecordUrl, retryNode as retryNodeApi } from '@/services/chat'
 import { createApiRequest, APP_SECRET } from '@/utils/crypto'
 import { getAccessToken, refreshMemberToken } from '@/services/auth'
 import router from '@/router'
@@ -256,6 +256,78 @@ export function useChat() {
     await doSSERequest(content, sessionId, appId, aiMsgId, false, attachments)
   }
 
+  /**
+   * 重新生成指定 AI 回复(原地替换)。语义同 ChatGPT "Regenerate":以原始用户输入
+   * 重新跑整轮工作流,新结果流式回填到同一个 AI 区块(id 不变)。
+   *
+   * 实现:
+   *  1. 按 assistant 消息在 chatStore.messages 里的位置向前找最近一条 role==='user'
+   *     的 content(用户/回复是平级相邻元素,无 parent/child 关系)。
+   *  2. 取 assistant 消息的 sessionId、process.records[0].processesId(旧轮)。
+   *  3. 原地重置该 assistant 消息为 loading 占位(content 清空、process 重建)。
+   *  4. 复用其 id 作为 SSE 的 aiMsgId,调用 doSSERequest 走 /Chat/Regenerate,
+   *     携带旧 processesID(后端删旧记录)+ 原始用户 attachments(若需)。
+   */
+  async function regenerate(assistantMessageId: string) {
+    const messages = chatStore.messages
+    const idx = messages.findIndex((m) => m.id === assistantMessageId)
+    if (idx < 0) {
+      console.warn('regenerate: 未找到 assistant 消息', assistantMessageId)
+      return
+    }
+    const assistantMsg = messages[idx]
+    if (assistantMsg.role !== 'assistant') {
+      console.warn('regenerate: 目标消息不是 assistant', assistantMessageId)
+      return
+    }
+    // 正在生成中,忽略重复点击
+    if (chatStore.isStreaming(assistantMsg.sessionId)) {
+      return
+    }
+
+    // 向前找最近一条 user 消息取原始输入(用户消息存的是原始 content)。
+    let userInput = ''
+    let userFiles: ChatMessage['files']
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        userInput = messages[i].content
+        userFiles = messages[i].files
+        break
+      }
+    }
+    if (!userInput) {
+      console.warn('regenerate: 未找到原始用户输入')
+      return
+    }
+
+    const sessionId = assistantMsg.sessionId
+    const session = chatStore.sessions.find((s) => s.ChatSessionID === sessionId)
+    const appId = session?.AppID || chatStore.selectedAppId || chatStore.apps[0]?.AppID || ''
+    // 旧轮 ProcessesID(后端据此删旧记录)。取 process.records 里第一个非空的。
+    const oldProcessesID =
+      assistantMsg.process?.records?.find((r) => r.processesId)?.processesId || ''
+
+    // 原地重置 assistant 消息为 loading 占位(id 保持不变 → 原地替换)。
+    chatStore.updateMessage(assistantMessageId, {
+      ...assistantMsg,
+      content: '',
+      loading: true,
+      process: { status: 'running', results: '', timestamp: null, records: [], streamsByNode: {} },
+    })
+
+    // 还原用户附件为 AttachmentItem(原始 user 消息的 files 仅存元数据,无 FileCode)。
+    // 重新生成无法重新上传,故 attachments 为空 —— 后端会从会话历史/原始输入复跑。
+    await doSSERequest(
+      userInput,
+      sessionId,
+      appId,
+      assistantMessageId,
+      false,
+      [],
+      oldProcessesID ? { processesID: oldProcessesID } : undefined,
+    )
+  }
+
   async function doSSERequest(
     content: string,
     sessionId: string | null,
@@ -263,6 +335,10 @@ export function useChat() {
     aiMsgId: string,
     isRetry = false,
     attachments: AttachmentItem[] = [],
+    // When set, the request targets /Chat/Regenerate instead of /Chat/completions.
+    // regenerateMeta carries the old ProcessesID (for cleanup) and the original
+    // user attachments. The businessData differs accordingly (see below).
+    regenerateMeta?: { processesID: string; userAttachments?: AttachmentItem[] },
   ) {
     const abortController = new AbortController()
     // Persistent reference to the AI message that survives session switches.
@@ -764,19 +840,37 @@ export function useChat() {
       const memberToken = await secureStorage.get('member_token')
       const accessToken = await secureStorage.get('access_token')
 
-      const businessData = {
-        status: 0,
-        stream: true,
-        messages: {
-          role: 'User',
-          content,
-          Attachments: attachments,
-          AdditionalOptions: {},
-        },
-        sessionID: sessionId || '',
-        appid: appId,
-        SSE_TimeOut: 30,
-      }
+      const isRegenerate = !!regenerateMeta
+      // Regenerate 的 businessData 与 completions 不同:复用已有 session(不新建),
+      // 携带旧 ProcessesID(后端据此删旧记录),messages 为原始用户输入。
+      const businessData = isRegenerate
+        ? {
+            status: 0,
+            stream: true,
+            messages: {
+              role: 'User',
+              content,
+              Attachments: regenerateMeta?.userAttachments || [],
+              AdditionalOptions: {},
+            },
+            sessionID: sessionId || '',
+            appid: appId,
+            processesID: regenerateMeta?.processesID || '',
+            SSE_TimeOut: 30,
+          }
+        : {
+            status: 0,
+            stream: true,
+            messages: {
+              role: 'User',
+              content,
+              Attachments: attachments,
+              AdditionalOptions: {},
+            },
+            sessionID: sessionId || '',
+            appid: appId,
+            SSE_TimeOut: 30,
+          }
 
       let encryptKey = APP_SECRET
       let signKey = APP_SECRET
@@ -799,7 +893,7 @@ export function useChat() {
         headers['memberbearer'] = memberToken
       }
 
-      const response = await fetch(getChatCompletionsUrl(), {
+      const response = await fetch(isRegenerate ? getChatRegenerateUrl() : getChatCompletionsUrl(), {
         method: 'POST',
         headers,
         body: JSON.stringify(apiRequest),
@@ -1048,6 +1142,7 @@ export function useChat() {
         TaskID: taskId || '',
         AppID: appID,
       })
+      console.log('retryNode 结果:', result)
 
       // Refresh execution records after retry
       await reloadNodeExecution(sessionId, topProcessesId, messageId)
@@ -1237,6 +1332,7 @@ export function useChat() {
 
   return {
     sendMessage,
+    regenerate,
     cancelStream,
     retryNode,
     reloadNodeExecution,

@@ -8,6 +8,11 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AboutSettings: typeof import('./components/settings/AboutSettings.vue')['default']
+    AgentMentionPopover: typeof import('./components/agent/AgentMentionPopover.vue')['default']
+    AgentMessage: typeof import('./components/agent/AgentMessage.vue')['default']
+    AgentSessionList: typeof import('./components/agent/AgentSessionList.vue')['default']
+    AgentStageItem: typeof import('./components/agent/AgentStageItem.vue')['default']
+    AgentTaskPanel: typeof import('./components/agent/AgentTaskPanel.vue')['default']
     AppLayout: typeof import('./components/layout/AppLayout.vue')['default']
     AppSettings: typeof import('./components/settings/AppSettings.vue')['default']
     CacheSettings: typeof import('./components/settings/CacheSettings.vue')['default']
@@ -46,7 +51,9 @@ declare module 'vue' {
     FileUploader: typeof import('./components/common/FileUploader.vue')['default']
     FloatingToolbar: typeof import('./components/common/FloatingToolbar.vue')['default']
     HitlInputPanel: typeof import('./components/chat/HitlInputPanel.vue')['default']
+    LocalAuthorizePanel: typeof import('./components/agent/LocalAuthorizePanel.vue')['default']
     MeetingTranscribe: typeof import('./components/common/MeetingTranscribe.vue')['default']
+    ModelSelector: typeof import('./components/agent/ModelSelector.vue')['default']
     ProcessNode: typeof import('./components/chat/ProcessNode.vue')['default']
     ProcessStatus: typeof import('./components/chat/ProcessStatus.vue')['default']
     ProfileSettings: typeof import('./components/settings/ProfileSettings.vue')['default']

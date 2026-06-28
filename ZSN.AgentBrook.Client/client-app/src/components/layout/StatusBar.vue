@@ -35,6 +35,7 @@ import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import { useChatStore } from '@/stores/chat'
+import { useAgentStore } from '@/stores/agent'
 import { useAuth } from '@/composables/useAuth'
 
 const { t } = useI18n()
@@ -42,9 +43,16 @@ const router = useRouter()
 const userStore = useUserStore()
 const appStore = useAppStore()
 const chatStore = useChatStore()
+const agentStore = useAgentStore()
 const { logout } = useAuth()
 
 const sessionTitle = computed(() => {
+  if (appStore.mode === 'agent') {
+    const session = agentStore.currentSessionId
+      ? agentStore.sessions.find((s) => s.id === agentStore.currentSessionId)
+      : null
+    return session?.title || t('agent.newSession')
+  }
   if (chatStore.currentSessionId && chatStore.currentSession) {
     return chatStore.currentSession.TopicSummary || t('chat.newConversation')
   }
@@ -90,12 +98,23 @@ async function handleLogout() {
   gap: 8px;
 }
 
+.status-left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.status-right {
+  flex-shrink: 0;
+}
+
 .connection-info {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
   color: var(--text-secondary, #909399);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .connection-dot {
@@ -110,5 +129,8 @@ async function handleLogout() {
 .app-name {
   font-size: 14px;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

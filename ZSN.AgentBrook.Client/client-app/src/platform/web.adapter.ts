@@ -45,6 +45,29 @@ export class WebAdapter implements PlatformAdapter {
     },
   }
 
+  /**
+   * 本地能力（L5）—— Web 环境降级：不支持本地文件/命令。
+   * 所有方法抛"不支持"提示，业务层据此给用户降级说明而非崩溃。
+   */
+  local = {
+    available: false,
+    async readFile() {
+      throw new Error('当前环境（浏览器）不支持本地文件读取')
+    },
+    async writeFile() {
+      throw new Error('当前环境（浏览器）不支持本地文件写入')
+    },
+    async listDir() {
+      throw new Error('当前环境（浏览器）不支持本地目录读取')
+    },
+    async pickDirectory(): Promise<string | null> {
+      return null
+    },
+    async exec() {
+      throw new Error('当前环境（浏览器）不支持命令执行')
+    },
+  }
+
   system = {
     platform: 'web' as const,
     async openExternal(url: string): Promise<void> {

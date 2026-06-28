@@ -191,6 +191,11 @@ namespace ZSN.AgentBrook.API.Controllers
                                             appChatSession.CreateTime = DateTime.Now;
                                             AppChatSessionInfoBussiness.Add(appChatSession);
                                         }
+                                        else
+                                        {
+                                            appChatSession.CreateTime = DateTime.Now;
+                                            AppChatSessionInfoBussiness.Update(appChatSession);
+                                        }
                                     }
 
                                     messageData.SessionID = SessionID;
@@ -432,6 +437,195 @@ namespace ZSN.AgentBrook.API.Controllers
             else
             {
                 return JsonMsg<MessageData>.Error(null, ErrorCode.DataFormatError);
+            }
+        }
+
+
+        /// <summary>
+        /// 重新生成整轮对话(Regenerate):以原始用户输入重新跑工作流,
+        /// 结果通过 SSE 流式回传。与 completions 的关键差异:
+        ///   1) 不重复写入 User 日志(completions 每次都会 Add 一条 User);
+        ///   2) 先删除旧轮的最后一条 Assistant 日志 + 旧 ProcessesID 的执行记录与任务,
+        ///      避免历史重复;新轮的 Assistant 日志由 End 节点自动写入;
+        ///   3) 复用现有 Session,不新建。
+        /// </summary>
+        [ApiExplorerSettings(GroupName = "V1-Member")]
+        [HttpPost]
+        [Consumes("application/json")]
+        [MemberCheck(Token = true, MemberToken = true)]
+        public async Task<IActionResult> Regenerate([FromBody] PostData paramValue, CancellationToken cancellationToken)
+        {
+            List<MessageData> messageDataList = new List<MessageData>();
+            JObject jObject = this.JsonObj;
+            if (jObject.JsonGetValue<int>("status") != -1)
+            {
+                bool stream = jObject.JsonGetValue<bool>("stream", true);
+                GptMsg Inputs = jObject.JsonGetValue<GptMsg>("messages");
+                string SessionID = jObject.JsonGetValue<string>("sessionID", "");
+                string MemberID = memberSetting.FullMember.Member.MemberID;
+                string AppID = jObject.JsonGetValue<string>("appid", "");
+                string OldProcessesID = jObject.JsonGetValue<string>("processesID", "");
+
+                int SSE_TimeOut = jObject.JsonGetValue<int>("SSE_TimeOut", ConfigHelper.GetInt("SSE_TimeOut"));
+
+                if (AppID.IsNullOrEmpty() || SessionID.IsNullOrEmpty())
+                {
+                    messageDataList.Add(new MessageData() { Content = "AppID or SessionID IsNullOrEmpty", Role = "system" });
+                    return BadRequest(JsonMsg<IReadOnlyList<MessageData>>.Error(messageDataList, ErrorCode.DataFormatError));
+                }
+
+                WorkflowNodeInfo nodeInfo = WorkflowNodeInfoBussiness.GetAppStartNode(AppID);
+                if (nodeInfo == null || nodeInfo.Config == null)
+                {
+                    messageDataList.Add(new MessageData() { Content = "Start node not found", Role = "system" });
+                    return BadRequest(JsonMsg<IReadOnlyList<MessageData>>.Error(messageDataList, ErrorCode.DataFormatError));
+                }
+
+                NodeConfig nodeConfig = JsonConvert.DeserializeObject<NodeConfig>(nodeInfo.Config.ToString());
+                if (nodeConfig == null || nodeConfig.data == null)
+                {
+                    messageDataList.Add(new MessageData() { Content = "Start node config invalid", Role = "system" });
+                    return BadRequest(JsonMsg<IReadOnlyList<MessageData>>.Error(messageDataList, ErrorCode.DataFormatError));
+                }
+
+                // --- 1. 删旧轮产物,避免历史重复(不删 User 日志) ---
+                List<AppChatLogInfo> oldLogs = AppChatLogInfoBussiness.GetListBySessionID(AppID, SessionID);
+                if (oldLogs != null && oldLogs.Count > 0)
+                {
+                    var lastAssistantLog = oldLogs.Where(l => l.Role == AuthorRole.Assistant.ToString())
+                                                  .OrderByDescending(l => l.LogOrder)
+                                                  .FirstOrDefault();
+                    if (lastAssistantLog != null && !lastAssistantLog.ChatLogID.IsNullOrEmpty())
+                    {
+                        AppChatLogInfoBussiness.Delete(lastAssistantLog.ChatLogID);
+                    }
+                }
+                if (!OldProcessesID.IsNullOrEmpty())
+                {
+                    try
+                    {
+                        WorkflowNodeExecutionRecordInfoBussiness.DeleteByWhere($" SessionID='{SessionID}' and ProcessesID LIKE '{OldProcessesID}%'");
+                        TaskInfoBussiness.DeleteByWhere($" SessionID='{SessionID}' and ProcessesID LIKE '{OldProcessesID}%'");
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleHelper.WriteError($"Regenerate 清理旧记录失败: {ex.Message}");
+                    }
+                }
+
+                // --- 2. 重置会话状态为运行中 ---
+                AppChatSessionInfoBussiness.UpdateSessionStatus(SessionID, 1);
+
+                // --- 3. 新建任务并跑(镜像 completions,但不再写 User 日志) ---
+                string ProcessesID = Guid.NewGuid().ToString();
+                string ChannelCode = Guid.NewGuid().ToString();
+
+                MessageData messageData = new MessageData();
+                messageData.AppID = AppID;
+                messageData.ProcessesID = ProcessesID;
+                messageData.SessionID = SessionID;
+
+                TaskData data = new TaskData() { AppID = AppID, SessionID = SessionID, ProcessesID = ProcessesID, AgentNodeID = "" };
+                data.Inputs = new List<Inputs>();
+                data.Inputs.Add(new Inputs() { value = Inputs.content, varname = "input" });
+
+                // 处理附件 URI(与 completions 一致)
+                string previewHost = ConfigHelper.GetString("previewHost");
+                if (Inputs.Attachments != null)
+                {
+                    foreach (var item in Inputs.Attachments)
+                    {
+                        item.FileURI = string.Format(previewHost, item.FileCode);
+                    }
+                    data.AttachmentItems = Inputs.Attachments;
+                }
+                data.AdditionalOptions = Inputs.AdditionalOptions;
+
+                // 查找是否有未完成的 HumanInTheLoop 任务(与 completions 一致的处理)
+                bool hasRunningTask = false;
+                List<WorkflowNodeExecutionRecordInfo> _HumanTasksRecords = WorkflowNodeExecutionRecordInfoBussiness.GetList($" SessionID='{SessionID}' and NodeName in('{NodeType.HumanInTheLoop.ToString()}','{NodeType.HumanInTheLoopInput.ToString()}') and Status = {(int)ExecutionRecordStatus.Running} ");
+                hasRunningTask = _HumanTasksRecords?.Count > 0 ? true : false;
+
+                if (hasRunningTask == false)
+                {
+                    TaskInfo taskInfo = new TaskInfo();
+                    taskInfo.SessionID = SessionID;
+                    taskInfo.TaskID = Guid.NewGuid().ToString();
+                    taskInfo.TaskType = nodeConfig.type;
+                    taskInfo.TaskConfig = new TaskConfig();
+                    taskInfo.TaskConfig.NodeConfig = nodeConfig;
+                    taskInfo.TaskConfig.Data = data;
+                    taskInfo.LoopType = LoopType.NOLoop;
+                    taskInfo.RepeatValue = 1;
+                    taskInfo.RedoCount = 0;
+                    taskInfo.CreateTime = DateTime.Now;
+                    taskInfo.UpdateTime = DateTime.Now;
+                    taskInfo.FromTaskID = "";
+                    taskInfo.FromMainTaskID = "";
+                    TaskInfoBussiness.Add(taskInfo);
+                }
+                else
+                {
+                    ErrorCode errorCode = ErrorCode.None;
+                    TaskController _taskController = new TaskController();
+                    _taskController.execHumanInTheLoopByUserInput(_HumanTasksRecords, Inputs, data, SessionID, out errorCode);
+                }
+
+                messageData.Content = messageData.ProcessesID;
+
+                _ = Task.Run(() => _taskManager.RunProcessAsync(SessionID, ProcessesID, TimeSpan.FromMinutes(SSE_TimeOut), channelCode: ChannelCode));
+
+                messageDataList.Add(messageData);
+
+                // --- 4. SSE 流式回传(与 completions 一致) ---
+                var channel = _taskManager.GetChannel(SessionID, ProcessesID, ChannelCode);
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(SSE_TimeOut));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+                var ct = linkedCts.Token;
+                if (stream)
+                {
+                    Response.Headers.Append("Content-Type", "text/event-stream");
+                    Response.Headers.Append("Cache-Control", "no-cache");
+                    Response.Headers.Append("Connection", "keep-alive");
+
+                    try
+                    {
+                        await foreach (var message in channel.Reader.ReadAllAsync(ct))
+                        {
+                            if (ct.IsCancellationRequested) break;
+                            var json = JsonConvert.SerializeObject(message);
+                            var sseLine = $"data: {json}\n\n";
+                            var bytes = Encoding.UTF8.GetBytes(sseLine);
+                            await Response.Body.WriteAsync(bytes, ct);
+                            await Response.Body.FlushAsync(ct);
+                        }
+                        return new EmptyResult();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return new EmptyResult();
+                    }
+                }
+                else
+                {
+                    var _jsonSb = new StringBuilder();
+                    try
+                    {
+                        await foreach (var message in channel.Reader.ReadAllAsync(ct))
+                        {
+                            if (ct.IsCancellationRequested) break;
+                            _jsonSb.Append(JsonConvert.SerializeObject(message));
+                        }
+                    }
+                    catch (OperationCanceledException) { }
+                    messageDataList.Add(new MessageData() { AppID = AppID, SessionID = SessionID, ProcessesID = ProcessesID, Content = _jsonSb.ToString(), Role = "assistant" });
+                    return Ok(JsonMsg<IReadOnlyList<MessageData>>.OK(messageDataList, SessionID: SessionID));
+                }
+            }
+            else
+            {
+                messageDataList.Add(new MessageData() { Content = JsonConvert.SerializeObject(jObject), Role = "system" });
+                return BadRequest(JsonMsg<IReadOnlyList<MessageData>>.Error(messageDataList, ErrorCode.DataFormatError));
             }
         }
 

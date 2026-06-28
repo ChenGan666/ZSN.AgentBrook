@@ -61,6 +61,77 @@ export class TauriAdapter implements PlatformAdapter {
     },
   }
 
+  /**
+   * 本地能力（文件读写/命令执行）—— L5。
+   * 仅 Tauri 环境实现；命令执行依赖 src-tauri shell.scope 白名单 + 客户端 CommandGuard。
+   */
+  local = {
+    available: true,
+    async readFile(path: string) {
+      // 动态 import；项目 tauri 插件类型解析不全，用 as any 规避（运行时 API 存在）
+      const fs: any = await import('@tauri-apps/plugin-fs')
+      // 优先用 readTextFile；不可用则 readFile 解码
+      if (typeof fs.readTextFile === 'function') {
+        const content: string = await fs.readTextFile(path)
+        return { path, content }
+      }
+      const bytes: Uint8Array = await fs.readFile(path)
+      return { path, content: new TextDecoder().decode(bytes) }
+    },
+    async writeFile(path: string, content: string) {
+      const fs: any = await import('@tauri-apps/plugin-fs')
+      if (typeof fs.writeTextFile === 'function') {
+        await fs.writeTextFile(path, content)
+      } else {
+        await fs.writeFile(path, new TextEncoder().encode(content))
+      }
+    },
+    async listDir(path: string) {
+      const fs: any = await import('@tauri-apps/plugin-fs')
+      const entries: any[] = await fs.readDir(path)
+      return entries.map((e: any) => e.name).filter((n: any): n is string => !!n)
+    },
+    async pickDirectory(): Promise<string | null> {
+      const dialog: any = await import('@tauri-apps/plugin-dialog')
+      const result: any = await dialog.open({ directory: true })
+      // 单选目录返回 string；多选返回数组
+      return typeof result === 'string' ? result : null
+    },
+    async exec(command: string, args: string[], cwd?: string, timeoutSec = 60) {
+      const shell: any = await import('@tauri-apps/plugin-shell')
+      // 参数数组形式（非 shell 字符串），由 Tauri shell scope + CommandGuard 双重防护
+      const cmd = shell.Command.create(command, args, cwd ? { cwd } : undefined)
+      const stdoutChunks: string[] = []
+      const stderrChunks: string[] = []
+      cmd.stdout.on('data', (line: string) => stdoutChunks.push(line))
+      cmd.stderr.on('data', (line: string) => stderrChunks.push(line))
+
+      const timeout = setTimeout(() => {
+        // 超时强制终止子进程
+        try {
+          void cmd.kill()
+        } catch {
+          /* ignore */
+        }
+      }, timeoutSec * 1000)
+
+      try {
+        const child = await cmd.execute()
+        clearTimeout(timeout)
+        const MAX = 1 * 1024 * 1024 // 输出上限 1MB
+        const join = (arr: string[]) => {
+          const s = arr.join('\n')
+          return s.length > MAX ? `${s.slice(0, MAX)}…（输出已截断）` : s
+        }
+        return { code: child.code, stdout: join(stdoutChunks), stderr: join(stderrChunks) }
+      } catch (e) {
+        clearTimeout(timeout)
+        const msg = e instanceof Error ? e.message : String(e)
+        return { code: -1, stdout: '', stderr: msg }
+      }
+    },
+  }
+
   system = {
     platform: 'tauri' as const,
     async openExternal(url: string): Promise<void> {

@@ -65,10 +65,44 @@ export interface PlatformNotification {
   onNotificationClick?(callback: (sessionId: string) => void): void
 }
 
+/** 本地能力（文件读写/命令执行）—— 仅 Tauri 环境实现，Web 环境降级提示。 */
+export interface LocalFileResult {
+  path: string
+  content: string
+}
+
+export interface LocalExecResult {
+  code: number
+  stdout: string
+  stderr: string
+}
+
+export interface PlatformLocal {
+  /** 平台是否支持本地能力（Tauri=true，Web=false）。 */
+  available: boolean
+  /** 读取本地文件为文本。 */
+  readFile(path: string): Promise<LocalFileResult>
+  /** 写入文本到本地文件。 */
+  writeFile(path: string, content: string): Promise<void>
+  /** 列出目录下的条目。 */
+  listDir(path: string): Promise<string[]>
+  /** 用用户选择的目录对话框选一个目录（自动获得该目录访问权）。 */
+  pickDirectory(): Promise<string | null>
+  /**
+   * 执行命令（参数数组，非 shell 字符串，防注入）。
+   * @param command 命令名（必须在 shell scope 白名单内）
+   * @param args 参数数组
+   * @param cwd 工作目录
+   * @param timeoutSec 超时（秒）
+   */
+  exec(command: string, args: string[], cwd?: string, timeoutSec?: number): Promise<LocalExecResult>
+}
+
 export interface PlatformAdapter {
   storage: PlatformStorage
   file: PlatformFile
   audio: PlatformAudio
   system: PlatformSystem
   notification: PlatformNotification
+  local: PlatformLocal
 }

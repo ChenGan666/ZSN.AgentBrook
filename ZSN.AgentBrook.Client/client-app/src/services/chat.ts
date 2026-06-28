@@ -14,6 +14,11 @@ export function getChatCompletionsUrl() {
   return `${getBaseUrl()}/Chat/completions`
 }
 
+/** Regenerate (重新生成) endpoint URL. Consumed as an SSE stream like completions. */
+export function getChatRegenerateUrl() {
+  return `${getBaseUrl()}/Chat/Regenerate`
+}
+
 export function getNodeExecutionRecordUrl() {
   return `${getBaseUrl()}/Chat/GetNodeExecutionRecord`
 }

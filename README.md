@@ -42,7 +42,7 @@
 - **MCP 工具协议** — 内置 MCP Server/Client，快速接入外部工具和数据源
 - **多模型支持** — OpenAI / Claude / DeepSeek / Ollama / 智谱 / 百度 等主流模型，可按节点独立配置
 - **实时流式输出** — 基于 Redis Stream 的流式响应，前端实时展示 LLM 生成过程
-- **跨平台客户端** — Vue3 + Tauri 桌面客户端，支持 SSE 流式对话、语音输入、文件上传、Human-in-the-loop 交互，Web SPA 模式开箱即用
+- **Chat + Agent 双模式客户端** — Vue3 + Tauri 桌面客户端，Chat 模式支持 SSE 流式对话/工作流驱动，Agent 模式支持 Plan-Act-Reflect 智能体编排，附带语音输入、文件上传、Human-in-the-loop 交互，Web SPA 模式开箱即用
 - **浏览器自动化** — 基于 Playwright 的 Agent 浏览器，支持网页操作与数据采集
 
 ---
@@ -331,10 +331,15 @@ MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消
 
 ### 10. 跨平台客户端 (ZSN.AgentBrook.Client)
 
-基于 Vue3 + TypeScript + Element Plus + Tauri 的跨平台客户端，支持 Web SPA 和桌面应用两种部署模式：
+基于 Vue3 + TypeScript + Element Plus + Tauri 的跨平台客户端，支持 Web SPA 和桌面应用两种部署模式，提供 **Chat** 和 **Agent** 双模式交互：
+
+**Chat 模式** — 传统对话式 AI 交互，选择工作流应用后发送消息，通过 SSE 实时接收工作流执行进度与 AI 回复，支持多会话管理、重新生成（Regenerate）、节点重试。
+
+**Agent 模式** — 客户端智能体编排，用户选择"编排大脑"模型后，Agent 自动执行 Plan-Act-Reflect 循环：规划 → 调用工作流 App → 反思结果 → 继续或完成，实现多步复杂任务自主编排。
 
 **核心特性：**
 - **双模式部署** — Tauri 桌面应用（Windows/macOS）+ Web SPA（.NET 宿主），一份前端代码两种部署
+- **Chat + Agent 双模式** — 侧栏一键切换，Chat 工作流驱动对话 / Agent Plan-Act-Reflect 自主编排，各自独立会话管理
 - **SSE 流式对话** — 实时展示 LLM 生成过程，支持工作流节点状态展示
 - **语音输入** — FunASR 2pass 实时语音识别，Tauri 原生音频采集
 - **文件上传** — 多格式支持，大文件分片上传，图片压缩
@@ -345,7 +350,8 @@ MessageGateway 是独立的 IM 消息网关服务，负责接收和发送 IM 消
 - **安全机制** — Token 加密存储，API 请求签名，XSS 防护
 
 [![客户端-登录](./README/Client_login.png)](https://agentbrook.com/)
-[![客户端-主界面](./README/Client_main.png)](https://agentbrook.com/)
+[![客户端-主界面-Chat模式](./README/Client_main_chat.png)](https://agentbrook.com/)
+[![客户端-主界面-Agent模式](./README/Client_main_agent.png)](https://agentbrook.com/)
 
 
 **技术架构：**
@@ -357,13 +363,13 @@ ZSN.AgentBrook.Client/
 ├── wwwroot/                # Vue3 构建产物（SPA 模式）
 └── client-app/             # Vue3 前端源码
     ├── src/
-    │   ├── views/          # 页面（Login, Chat, Settings, MeetingTranscribe, MiniChat）
-    │   ├── components/     # 组件（chat, layout, settings, common）
-    │   ├── composables/    # 组合式函数（useAuth, useChat, useVoice, useFileUpload）
-    │   ├── services/       # API 服务（http, auth, chat, session, hitl, voiceApi）
-    │   ├── stores/         # Pinia 状态管理
+    │   ├── views/          # 页面（Login, Chat, Agent, Settings, MeetingTranscribe, MiniChat）
+    │   ├── components/     # 组件（chat, agent, layout, settings, common）
+    │   ├── composables/    # 组合式函数（useChat, useAgentOrchestrator, useVoice, useFileUpload 等）
+    │   ├── services/       # API 服务（http, auth, chat, agent, model, session, hitl, voiceApi）
+    │   ├── stores/         # Pinia 状态管理（app, chat, agent 等）
     │   ├── platform/       # 平台适配层（Tauri / Web）
-    │   └── utils/          # 工具函数（cache, crypto, db, markdown）
+    │   └── utils/          # 工具函数（cache, crypto, db, markdown, sseRequest, agentPlan）
     └── src-tauri/          # Tauri 桌面端配置
 ```
 

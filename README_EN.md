@@ -42,7 +42,7 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 - **MCP Tool Protocol** — Built-in MCP Server/Client for quick integration of external tools and data sources
 - **Multi-Model Support** — OpenAI / Claude / DeepSeek / Ollama / Zhipu / Baidu and other mainstream models, configurable per node
 - **Real-time Streaming Output** — Streaming response based on Redis Stream, real-time display of LLM generation process on the frontend
-- **Cross-Platform Client** — Vue3 + Tauri desktop client, supporting SSE streaming chat, voice input, file upload, Human-in-the-loop interaction, Web SPA mode out-of-the-box
+- **Chat + Agent Dual-Mode Client** — Vue3 + Tauri desktop client, Chat mode for SSE streaming conversation / workflow-driven interaction, Agent mode for Plan-Act-Reflect agent orchestration, with voice input, file upload, Human-in-the-loop interaction, Web SPA mode out-of-the-box
 - **Browser Automation** — Playwright-based agent browser, supporting web page operations and data collection
 
 ---
@@ -331,10 +331,15 @@ Built-in MCP Server and Client, supporting:
 
 ### 10. Cross-Platform Client (ZSN.AgentBrook.Client)
 
-A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, supporting both Web SPA and desktop application deployment modes:
+A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, supporting both Web SPA and desktop application deployment modes, featuring **Chat** and **Agent** dual-mode interaction:
+
+**Chat Mode** — Traditional conversational AI interaction. Select a workflow app and send messages, receiving real-time workflow execution progress and AI responses via SSE. Supports multi-session management, Regenerate, and node retry.
+
+**Agent Mode** — Client-side agent orchestration. The user selects an "orchestration brain" model, and the Agent autonomously executes a Plan-Act-Reflect loop: Plan → Call workflow App → Reflect on results → Continue or Finish, enabling multi-step complex task auto-orchestration.
 
 **Core Features:**
 - **Dual-Mode Deployment** — Tauri desktop app (Windows/macOS) + Web SPA (.NET host), one frontend codebase for both
+- **Chat + Agent Dual Mode** — One-click sidebar toggle between Chat (workflow-driven) and Agent (Plan-Act-Reflect orchestration), each with independent session management
 - **SSE Streaming Chat** — Real-time display of LLM generation process, workflow node status display
 - **Voice Input** — FunASR 2pass real-time speech recognition, Tauri native audio capture
 - **File Upload** — Multi-format support, large file chunked upload, image compression
@@ -345,7 +350,8 @@ A cross-platform client based on Vue3 + TypeScript + Element Plus + Tauri, suppo
 - **Security** — Token encrypted storage, API request signing, XSS protection
 
 [![Client-Login](./README/Client_login.png)](https://agentbrook.com/)
-[![Client-Main](./README/Client_main.png)](https://agentbrook.com/)
+[![Client-Main-Chat](./README/Client_main_chat.png)](https://agentbrook.com/)
+[![Client-Main-Agent](./README/Client_main_agent.png)](https://agentbrook.com/)
 
 
 **Tech Architecture:**
@@ -357,13 +363,13 @@ ZSN.AgentBrook.Client/
 ├── wwwroot/                # Vue3 build output (SPA mode)
 └── client-app/             # Vue3 frontend source
     ├── src/
-    │   ├── views/          # Pages (Login, Chat, Settings, MeetingTranscribe, MiniChat)
-    │   ├── components/     # Components (chat, layout, settings, common)
-    │   ├── composables/    # Composables (useAuth, useChat, useVoice, useFileUpload)
-    │   ├── services/       # API services (http, auth, chat, session, hitl, voiceApi)
-    │   ├── stores/         # Pinia state management
+    │   ├── views/          # Pages (Login, Chat, Agent, Settings, MeetingTranscribe, MiniChat)
+    │   ├── components/     # Components (chat, agent, layout, settings, common)
+    │   ├── composables/    # Composables (useChat, useAgentOrchestrator, useVoice, useFileUpload, etc.)
+    │   ├── services/       # API services (http, auth, chat, agent, model, session, hitl, voiceApi)
+    │   ├── stores/         # Pinia state management (app, chat, agent, etc.)
     │   ├── platform/       # Platform adapter (Tauri / Web)
-    │   └── utils/          # Utilities (cache, crypto, db, markdown)
+    │   └── utils/          # Utilities (cache, crypto, db, markdown, sseRequest, agentPlan)
     └── src-tauri/          # Tauri desktop configuration
 ```
 

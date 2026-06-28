@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => ({
     strictPort: true,
     host: host || false,
     hmr: host ? { protocol: 'ws', host, port: 1421 } : undefined,
-    watch: { ignored: ['**/src-tauri/**'] },
+    watch: { ignored: ['**/src-tauri/**', '**/_node_modules_old_*/**'] },
   },
   build: {
     target: 'es2021',
