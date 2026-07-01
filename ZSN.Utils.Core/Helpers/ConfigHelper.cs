@@ -133,7 +133,12 @@ namespace ZSN.Utils.Core.Helpers
                 throw new FileNotFoundException("配置文件不存在", ConfigFilePath);
 
             var jsonText = File.ReadAllText(ConfigFilePath);
-            var jsonObject = JsonNode.Parse(jsonText) as JsonObject;
+            var documentOptions = new JsonDocumentOptions
+            {
+                AllowTrailingCommas = true,
+                CommentHandling = JsonCommentHandling.Skip
+            };
+            var jsonObject = JsonNode.Parse(jsonText, null, documentOptions) as JsonObject;
             if (jsonObject == null)
                 throw new Exception("配置文件格式错误");
 
