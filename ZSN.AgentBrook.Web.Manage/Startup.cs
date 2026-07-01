@@ -23,6 +23,7 @@ using ZSN.AI.KnowledgeBase.Repositories;
 using ZSN.AI.KnowledgeBase.Services;
 using ZSN.AI.Node.ServiceDesk;
 using ZSN.AI.Service.Base;
+using ZSN.AgentBrook.Web.Manage.Middleware;
 using ZSN.Utils.Core.Helpers;
 
 namespace ZSN.AgentBrook.Web
@@ -49,6 +50,7 @@ namespace ZSN.AgentBrook.Web
             services.AddRazorPages().AddRazorRuntimeCompilation();
             services.AddControllersWithViews();
             services.AddHttpClient(); // 注册 HttpClient 工厂服务
+            services.AddHttpContextAccessor();
 
             services.AddCors(options =>
             {
@@ -83,6 +85,10 @@ namespace ZSN.AgentBrook.Web
             services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.IResponseGenerator, ZSN.AI.Node.ServiceDesk.Services.ResponseGenerator>();
             services.AddScoped<ZSN.AI.Node.ServiceDesk.Interfaces.ISessionStateManager, ZSN.AI.Node.ServiceDesk.Services.SessionStateManager>();
             services.AddScoped<ExecutionServiceDesk>();
+
+            // 首次运行欢迎向导服务
+            services.AddScoped<ZSN.AgentBrook.Web.Manage.Services.IWelcomeEnvironmentService, ZSN.AgentBrook.Web.Manage.Services.WelcomeEnvironmentService>();
+            services.AddScoped<ZSN.AgentBrook.Web.Manage.Services.IWelcomeStartInfoService, ZSN.AgentBrook.Web.Manage.Services.WelcomeStartInfoService>();
 
             // 注册工作流自动生成器
             services.AddScoped<ZSN.AI.Node.Utils.WorkflowAutoGenerator>();
@@ -240,6 +246,9 @@ namespace ZSN.AgentBrook.Web
             }).Wait();
 
             app.UseRouting();
+
+            // 首次运行拦截中间件
+            app.UseFirstRunMiddleware();
 
             app.UseCors();
             

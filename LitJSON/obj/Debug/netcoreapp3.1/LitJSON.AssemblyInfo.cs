@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LitJSON")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0349562625e34d833a4c4272d85d12408ca2baa")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c935def035824fc59673c7cf5c489ca5bcbb7ad0")]
 [assembly: System.Reflection.AssemblyProductAttribute("LitJSON")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LitJSON")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

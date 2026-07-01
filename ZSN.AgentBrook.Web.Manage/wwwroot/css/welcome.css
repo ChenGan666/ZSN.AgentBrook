@@ -1,0 +1,282 @@
+body {
+    background: #f5f7fa;
+    min-height: 100vh;
+}
+
+.welcome-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.welcome-box {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 640px;
+    overflow: hidden;
+}
+
+.welcome-header {
+    text-align: center;
+    padding: 40px 30px 20px;
+    background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+    color: #fff;
+}
+
+.welcome-header .logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: #fff;
+    padding: 6px;
+}
+
+.welcome-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.welcome-header p {
+    margin: 8px 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.welcome-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 30px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #999;
+    font-size: 14px;
+}
+
+.step-item.active {
+    color: #1e88e5;
+    font-weight: 500;
+}
+
+.step-item.completed {
+    color: #43a047;
+}
+
+.step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #fff;
+    font-size: 12px;
+}
+
+.step-item.active .step-number {
+    background: #1e88e5;
+}
+
+.step-item.completed .step-number {
+    background: #43a047;
+}
+
+.step-line {
+    width: 40px;
+    height: 2px;
+    background: #e0e0e0;
+    margin: 0 12px;
+}
+
+.welcome-body {
+    padding: 30px;
+    min-height: 280px;
+}
+
+.step-content {
+    display: none;
+}
+
+.step-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-content h2 {
+    margin: 0 0 16px;
+    font-size: 20px;
+    color: #333;
+}
+
+.step-content .desc {
+    margin: 0 0 12px;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.check-list {
+    margin-top: 20px;
+}
+
+.check-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #fafafa;
+}
+
+.check-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #e3f2fd;
+    color: #1e88e5;
+    margin-right: 12px;
+    font-size: 16px;
+}
+
+.check-item.success .check-icon {
+    background: #e8f5e9;
+    color: #43a047;
+}
+
+.check-item.error .check-icon {
+    background: #ffebee;
+    color: #e53935;
+}
+
+.check-info {
+    flex: 1;
+}
+
+.check-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.check-status {
+    font-size: 12px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.check-item.error .check-status {
+    color: #e53935;
+}
+
+.check-result-msg {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: none;
+}
+
+.check-result-msg.error {
+    display: block;
+    background: #ffebee;
+    color: #c62828;
+}
+
+.check-result-msg.success {
+    display: block;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.consent-box {
+    display: flex;
+    gap: 24px;
+    margin: 24px 0;
+}
+
+.consent-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+}
+
+.consent-label input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.send-detail {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 8px;
+    background: #f6ffed;
+    border: 1px solid #b7eb8f;
+}
+
+.send-detail.no-send {
+    background: #fff1f0;
+    border-color: #ffa39e;
+}
+
+.detail-title {
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.send-detail ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.8;
+}
+
+.success-icon {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.success-icon i {
+    font-size: 48px;
+    color: #43a047;
+}
+
+.welcome-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 30px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafafa;
+}
+
+.welcome-footer .layui-btn {
+    min-width: 100px;
+}

@@ -44,6 +44,8 @@ x86/
 [Oo]bj/
 bld/
 
+ZSN.Service.AgentBrook/
+
 ## NuGet
 *.nupkg
 *.snupkg

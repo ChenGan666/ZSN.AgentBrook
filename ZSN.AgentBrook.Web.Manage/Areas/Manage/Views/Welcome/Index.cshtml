@@ -1,0 +1,134 @@
+@{
+    ViewData["Title"] = "欢迎使用 AgentBrook";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="welcome-container">
+    <div class="welcome-box">
+        <div class="welcome-header">
+            <img src="~/favicon.ico" alt="AgentBrook" class="logo" />
+            <h1>AgentBrook</h1>
+            <p>AI 应用开发平台</p>
+        </div>
+
+        <div class="welcome-steps">
+            <div class="step-item active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-title">欢迎</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-item" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-title">环境检测</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-item" data-step="3">
+                <span class="step-number">3</span>
+                <span class="step-title">信息收集</span>
+            </div>
+        </div>
+
+        <div class="welcome-body">
+            <!-- 步骤 1: 欢迎 -->
+            <div class="step-content active" data-step="1">
+                <h2>欢迎使用 AgentBrook</h2>
+                <p class="desc">AgentBrook 是一个 AI 应用开发平台，支持知识库、工作流、Agent 编排、多轮对话等功能。</p>
+                <p class="desc">本向导将帮助您完成首次启动的基础配置，并确认系统环境是否正常运行。</p>
+            </div>
+
+            <!-- 步骤 2: 环境检测 -->
+            <div class="step-content" data-step="2">
+                <h2>系统环境检测</h2>
+                <p class="desc">正在检测数据库、API 服务、Redis 等必要组件...</p>
+                <p class="desc">提示：环境检测失败时仍可点击"下一步"继续完成首次运行向导，后续可在配置中修复相关问题。</p>
+
+                <div class="check-list">
+                    <div class="check-item" data-check="database">
+                        <div class="check-icon"><i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></i></div>
+                        <div class="check-info">
+                            <div class="check-title">数据库</div>
+                            <div class="check-status">检测中...</div>
+                        </div>
+                    </div>
+                    <div class="check-item" data-check="api">
+                        <div class="check-icon"><i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></i></div>
+                        <div class="check-info">
+                            <div class="check-title">API 服务</div>
+                            <div class="check-status">检测中...</div>
+                        </div>
+                    </div>
+                    <div class="check-item" data-check="redis">
+                        <div class="check-icon"><i class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></i></div>
+                        <div class="check-info">
+                            <div class="check-title">Redis / AutoJob</div>
+                            <div class="check-status">检测中...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="check-result-msg"></div>
+            </div>
+
+            <!-- 步骤 3: 信息收集 -->
+            <div class="step-content" data-step="3">
+                <h2>欢迎使用 AgentBrook</h2>
+                <p class="desc">为了帮助我们了解项目的使用情况，是否允许发送匿名统计信息？</p>
+
+                <div class="consent-box">
+                    <label class="consent-label">
+                        <input type="radio" name="consent" value="true" checked />
+                        <span>同意</span>
+                    </label>
+                    <label class="consent-label">
+                        <input type="radio" name="consent" value="false" />
+                        <span>不同意</span>
+                    </label>
+                </div>
+
+                <div class="send-detail">
+                    <div class="detail-title">发送内容：</div>
+                    <ul>
+                        <li>✓ AgentBrook 版本</li>
+                        <li>✓ 操作系统</li>
+                        <li>✓ 国家（IP）</li>
+                        <li>✓ 首次启动时间</li>
+                    </ul>
+                </div>
+
+                <div class="send-detail no-send">
+                    <div class="detail-title">不会发送：</div>
+                    <ul>
+                        <li>× 用户文件</li>
+                        <li>× 工作流</li>
+                        <li>× Prompt</li>
+                        <li>× API Key</li>
+                        <li>× 数据库</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 完成 -->
+            <div class="step-content" data-step="4">
+                <h2>完成</h2>
+                <p class="desc">首次启动配置已完成，正在进入系统...</p>
+                <div class="success-icon">
+                    <i class="layui-icon layui-icon-ok"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="welcome-footer">
+            <button class="layui-btn layui-btn-primary" id="btn-prev" style="display:none;">上一步</button>
+            <button class="layui-btn" id="btn-next">下一步</button>
+            <button class="layui-btn" id="btn-submit" style="display:none;">提交</button>
+        </div>
+    </div>
+</div>
+
+@section Css{
+    <link rel="stylesheet" href="~/css/welcome.css" />
+}
+
+@section Js{
+    <script src="~/js/welcome.js"></script>
+}
