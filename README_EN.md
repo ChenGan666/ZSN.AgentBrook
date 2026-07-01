@@ -27,6 +27,12 @@ Visual Workflow Orchestration · Multi-Model Agents · RAG Knowledge Base · MCP
 
 </div>
 
+<div align="center">
+
+⭐ **If this project helps you, please give us a Star!**
+
+</div>
+
 ---
 
 ## Platform Highlights
