@@ -789,7 +789,7 @@ namespace ZSN.AI.Node.Claw
             while (shouldContinue && iteration < maxIterations)
             {
                 iteration++;
-                var iterMsg = $"\n--- 迭代 {iteration}/{maxIterations} ---";
+                var iterMsg = $"\n--- 迭代 {iteration}/{maxIterations} ---\n";
                 Logs.Enqueue(iterMsg);
                 progress?.Report(iterMsg);
                 //_ = _streamSync.AppendDeltaAsync(streamKey, SessionID, ProcessesID, TaskID, "", iterMsg + "\n");
@@ -934,7 +934,7 @@ namespace ZSN.AI.Node.Claw
                             finalResult = reflectionResult.FinalAnswer;
                             taskPlanning.PlanningStatus = PlanningStatus.Completed;
                             shouldContinue = false;
-                            var completeMsg = "✓ 任务完成";
+                            var completeMsg = "✓ 任务完成\n";
                             Logs.Enqueue(completeMsg);
                             progress?.Report(completeMsg);
                             //_ = _streamSync.AppendDeltaAsync(streamKey, SessionID, ProcessesID, TaskID, "", completeMsg + "\n");
@@ -949,7 +949,7 @@ namespace ZSN.AI.Node.Claw
                             break;
 
                         case ReflectionAction.ContinueExecution:
-                            var continueMsg = "→ 继续执行下一步";
+                            var continueMsg = "→ 继续执行下一步\n";
                             Logs.Enqueue(continueMsg);
 
                             progress?.Report(continueMsg);
@@ -957,7 +957,7 @@ namespace ZSN.AI.Node.Claw
                             break;
 
                         case ReflectionAction.RetryStep:
-                            var retryMsg = $"↻ 重试步骤: {reflectionResult.RetryStepIndex}";
+                            var retryMsg = $"↻ 重试步骤: {reflectionResult.RetryStepIndex}\n";
                             Logs.Enqueue(retryMsg);
                             progress?.Report(retryMsg);
                             //_ = _streamSync.AppendDeltaAsync(streamKey, SessionID, ProcessesID, TaskID, "", retryMsg + "\n");
@@ -968,7 +968,7 @@ namespace ZSN.AI.Node.Claw
                         case ReflectionAction.Replan:
                             if (nodeData.taskPlanningConfig.allowDynamicReplanning)
                             {
-                                var replanMsg = "⚡ 触发动态重新规划";
+                                var replanMsg = "⚡ 触发动态重新规划\n";
                                 Logs.Enqueue(replanMsg);
                                 progress?.Report(replanMsg);
 
@@ -995,7 +995,7 @@ namespace ZSN.AI.Node.Claw
                                         Logs
                                     );
 
-                                    var replanDoneMsg = $"✓ 动态规划完成: 总共 {taskPlanning.TotalSteps} 个步骤";
+                                    var replanDoneMsg = $"✓ 动态规划完成: 总共 {taskPlanning.TotalSteps} 个步骤\n";
                                     Logs.Enqueue(replanDoneMsg);
                                     progress?.Report(replanDoneMsg);
                                 }
@@ -1018,14 +1018,14 @@ namespace ZSN.AI.Node.Claw
                                         progress
                                     );
                                     
-                                    var replanDoneMsg = $"✓ 重新规划完成: {taskPlanning.TotalSteps} 个步骤";
+                                    var replanDoneMsg = $"✓ 重新规划完成: {taskPlanning.TotalSteps} 个步骤\n";
                                     Logs.Enqueue(replanDoneMsg);
                                     progress?.Report(replanDoneMsg);
                                 }
                             }
                             else
                             {
-                                var noReplanMsg = "⚠ 需要重新规划,但未启用动态规划";
+                                var noReplanMsg = "⚠ 需要重新规划,但未启用动态规划\n";
                                 Logs.Enqueue(noReplanMsg);
                                 progress?.Report(noReplanMsg);
                                 //_ = _streamSync.AppendDeltaAsync(streamKey, SessionID, ProcessesID, TaskID, "", noReplanMsg + "\n");
@@ -1033,12 +1033,12 @@ namespace ZSN.AI.Node.Claw
                             break;
 
                         case ReflectionAction.Fail:
-                            var failMsg = $"✗ 任务失败: {reflectionResult.Reason}";
+                            var failMsg = $"✗ 任务失败: {reflectionResult.Reason}\n";
                             Logs.Enqueue(failMsg);
                             progress?.Report(failMsg);
                             //_ = _streamSync.AppendDeltaAsync(streamKey, SessionID, ProcessesID, TaskID, "", failMsg + "\n");
                             taskPlanning.PlanningStatus = PlanningStatus.Failed;
-                            finalResult = $"任务执行失败: {reflectionResult.Reason}";
+                            finalResult = $"任务执行失败: {reflectionResult.Reason}\n";
                             shouldContinue = false;
                             break;
                     }
@@ -1051,7 +1051,7 @@ namespace ZSN.AI.Node.Claw
                         finalResult = _agentOrchestrationService.CombineStepResults(taskPlanning);
                         taskPlanning.PlanningStatus = PlanningStatus.Completed;
                         shouldContinue = false;
-                        var allDoneMsg = "✓ 所有步骤执行完成";
+                        var allDoneMsg = "✓ 所有步骤执行完成\n";
                         Logs.Enqueue(allDoneMsg);
                         progress?.Report(allDoneMsg);
                         //_ = _streamSync.AppendDeltaAsync(streamKey, SessionID, ProcessesID, TaskID, "", allDoneMsg + "\n");
@@ -1091,7 +1091,7 @@ namespace ZSN.AI.Node.Claw
                 {
                     try
                     {
-                        var optimizeMsg = "\n优化最终结果...";
+                        var optimizeMsg = "\n优化最终结果...\n";
                         Logs.Enqueue(optimizeMsg);
                         progress?.Report(optimizeMsg);
 
@@ -1105,14 +1105,14 @@ namespace ZSN.AI.Node.Claw
                             progress
                         );
 
-                        var optimizedMsg = "✓ 结果优化完成";
+                        var optimizedMsg = "✓ 结果优化完成\n";
                         Logs.Enqueue(optimizedMsg);
                         progress?.Report(optimizedMsg);
                     }
                     catch (Exception ex)
                     {
                         LoggerHelper.LogError(_logger, ClawLogModules.EXECUTION, "优化最终结果失败,使用原始结果", ex);
-                        var errorMsg = $"⚠ 结果优化失败: {ex.Message},使用原始结果";
+                        var errorMsg = $"⚠ 结果优化失败: {ex.Message},使用原始结果\n";
                         Logs.Enqueue(errorMsg);
 
                         progress?.Report(errorMsg);
@@ -1231,7 +1231,7 @@ namespace ZSN.AI.Node.Claw
                     endTime = step.EndTime
                 });
                 
-                progress?.Report($"[STEP_UPDATE]{stepUpdateJson}[/STEP_UPDATE]");
+                progress?.Report($"\n[STEP_UPDATE]{stepUpdateJson}[/STEP_UPDATE]\n");
             }
             catch (Exception ex)
             {

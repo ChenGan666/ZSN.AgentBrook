@@ -21,6 +21,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using ZSN.AI.BLL;
+using ZSN.AI.Core.Exceptions;
 using ZSN.AI.Core.Interface;
 using ZSN.AI.Core.Models.Image;
 using ZSN.AI.Core.Models.Video;
@@ -548,7 +549,7 @@ namespace ZSN.AI.Node
                     if (nodeData != null)
                     {
                         nodeData.prompt = await this.ReplacePromptValue(nodeData.prompt, inputs, config.fromNodeId, SessionID, AppID, ProcessesID);
-                        progress?.Report("\n=== 开始执行大模型节点 ===");
+                        progress?.Report("\n=== 开始执行大模型节点 ===\n");
                         batchWriter.Flush();
                         string results = "";
 
@@ -595,17 +596,28 @@ namespace ZSN.AI.Node
                                 Chats localInfo = null;
                                 List<Chats> MessageList = [];
 
-                                // 关闭服务内部观察，由本循环自行控制推送，保证重试时不会重复输出
+                                // 开启流式：ChatService 经 GetStreamingChatMessageContentsAsync 逐 token 回吐 delta，
+                                // 并通过 inner progress 把每个 delta 转发到方法级 progress -> batchWriter -> Redis -> SSE。
+                                // inner progress 同时在首 token 置位 hasStartedStreaming：比 foreach 首迭代更早，
+                                // 保证中途失败时 shouldRetry 判定准确（首 token 后不再重试，避免重复输出）。
+                                // 注意：不能用方法级 progress 置位——它还承载诊断消息(行 552 在 retry 块之前执行)，
+                                // 会提前置位导致重试永远不触发。
                                 var chatResult = _chatService.SendChatAsync(
                                     modelConfig,
                                     history,
                                     Function: null,
                                     responseFormat: nodeData.ResponseFormat.IsNullOrEmpty() ? "text" : nodeData.ResponseFormat,
-                                    enableStreamingObservation: false,
-                                    progress: null,
+                                    enableStreamingObservation: true,
+                                    progress: new Progress<string>(delta =>
+                                    {
+                                        hasStartedStreaming = true; // 首 delta 到达，流已建立，此后出错不再重试
+                                        progress.Report(delta);
+                                    }),
                                     ct: CancellationToken.None
                                 );
 
+                                // 流式分支下 SendChatAsync 最后只 yield 一次 final（完整内容），
+                                // delta 已在 ChatService 内经 progress 推送过，此处仅消费 final、不再 Report（否则整段重复）。
                                 await foreach (var content in chatResult)
                                 {
                                     if (localInfo == null)
@@ -619,13 +631,10 @@ namespace ZSN.AI.Node
                                         localInfo.CreateTime = DateTime.Now;
 
                                         MessageList.Add(localInfo);
-                                        hasStartedStreaming = true; // 首 token 到达，流已建立，此后出错不再重试
-                                        progress?.Report(content.ConvertToString());
                                     }
                                     else
                                     {
                                         rawContent.Append(content.ConvertToString());
-                                        progress?.Report(content.ConvertToString());
                                     }
                                     localInfo.Context = rawContent.ToString();
                                 }
@@ -637,7 +646,7 @@ namespace ZSN.AI.Node
                             delayMs: 3000);
                             if (!string.IsNullOrEmpty(results))
                             {
-                                progress?.Report($"\n✓ 大模型节点执行完成");
+                                progress?.Report($"\n✓ 大模型节点执行完成\n");
                                 batchWriter.Flush();
                             }
                             await _streamSync.AppendDoneAsync(streamKey, SessionID, ProcessesID, TaskID, config.id, TimeSpan.FromMinutes(10));
@@ -675,6 +684,16 @@ namespace ZSN.AI.Node
             {
                 Logs.Add(ex.Message);
                 ExecutionRecordStatus = ExecutionRecordStatus.Fail;
+
+                // 致命 LLM 错误（403/欠费等）：向用户输出友好提示，避免前端静默卡死。
+                // ChatService 已改为抛出 LLMException；重试策略将其包装为 RetryFailedException，
+                // 因此需遍历 InnerException 链检测。
+                var fatalLLM = ExceptionHelper.ExtractFatalLLMException(ex);
+                if (fatalLLM != null)
+                {
+                    try { progress?.Report("\n✗ AI 服务暂时不可用，请稍后重试\n"); batchWriter?.Flush(); }
+                    catch { /* 流式输出失败不影响错误记录 */ }
+                }
             }
 
             ZSN.AI.Node.Utils.Utils.updateExcutionRecord(RecordID, ExecutionRecordStatus, outputs, Logs);

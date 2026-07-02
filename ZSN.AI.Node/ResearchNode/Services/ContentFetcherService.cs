@@ -54,7 +54,7 @@ namespace ZSN.AI.Node.ResearchNode.Services
                             _logger.LogDebug("[ContentFetcher] 缓存命中: {Url}", url);
                             results.Add(cached);
                             completed++;
-                            progress?.Report($"\n📄 抓取中: {completed}/{filteredUrls.Count} 页完成");
+                            progress?.Report($"\n📄 抓取中: {completed}/{filteredUrls.Count} 页完成\n");
                             continue;
                         }
                     }
@@ -65,7 +65,7 @@ namespace ZSN.AI.Node.ResearchNode.Services
                 var content = await FetchSingleAsync(url, maxContentLength, ct);
                 results.Add(content);
                 completed++;
-                progress?.Report($"\n📄 抓取中: {completed}/{filteredUrls.Count} 页完成");
+                progress?.Report($"\n📄 抓取中: {completed}/{filteredUrls.Count} 页完成\n");
 
                 // 写入缓存
                 if (_options.Value.EnableContentCache && content.Success)
