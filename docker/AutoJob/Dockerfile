@@ -132,9 +132,13 @@ RUN chmod +x /app/browsers/chromium_headless_shell-*/chrome-linux/headless_shell
 
 # =========================================================
 # Runtime User
+# 以 root 运行，与 API/Manage/MCPServer 保持一致。
+# 原因：shared_volume 由多个容器共享，API 以 root 写入 /shared/file/...，
+# 若 AutoJob 以非 root（appuser）运行，无法在 root 属主目录下创建
+# FileConversions 输出子目录，导致 UnauthorizedAccessException。
 # =========================================================
 
-USER appuser
+# USER appuser
 
 # =========================================================
 # Entrypoint
