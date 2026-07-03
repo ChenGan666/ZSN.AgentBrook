@@ -57,13 +57,13 @@ layui.use(function () {
             type: 'POST',
             dataType: 'json',
             success: function (result) {
-                envOk = result.allOk;
+                envOk = result.AllOk;
 
-                updateCheckItem('database', result.databaseOk, result.databaseMessage);
-                updateCheckItem('api', result.apiOk, result.apiMessage);
-                updateCheckItem('redis', result.redisOk, result.redisMessage);
+                updateCheckItem('database', result.DatabaseOk, result.DatabaseMessage);
+                updateCheckItem('api', result.ApiOk, result.ApiMessage);
+                updateCheckItem('redis', result.RedisOk, result.RedisMessage);
 
-                if (result.allOk) {
+                if (result.AllOk) {
                     $('.check-result-msg').addClass('success').text('环境检测通过，点击"下一步"继续。').show();
                 } else {
                     var msg = '部分环境检测未通过，您仍可点击"下一步"继续，但部分功能可能无法使用。';

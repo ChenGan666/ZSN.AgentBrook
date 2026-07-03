@@ -96,7 +96,7 @@ namespace ZSN.AgentBrook.Web.Manage.Services
 
             return new StartInfoRequest
             {
-                Version = GetAgentBrookVersionAsync().Result ?? "1.0.0",
+                Version = _configuration.GetValue<string>("Welcome:Version") ?? GetAgentBrookVersionAsync().Result ?? "1.0.0",
                 Os = os,
                 Country = country,
                 Ip = ip,
