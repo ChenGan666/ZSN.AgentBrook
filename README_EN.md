@@ -86,6 +86,8 @@ AI.Entity ───────────────────────�
    │
    ├── AgentBrook.AutoJob ────────────────────── (Background task scheduling)
    │
+   ├── AgentBrook.AutoPublishJob ───────────── (App Factory build service)
+   │
    ├── AgentBrook.Client ──────────────────────── (Cross-platform client)
    │
    ├── AgentBrook.Web / Web.Manage ───────────── (Frontend interfaces)
@@ -117,6 +119,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AgentBrook.Web** | Frontend interface (React + Ant Design Pro) | React, Ant Design Pro |
 | **ZSN.AgentBrook.Web.Manage** | Admin dashboard (LayUI): App/Model/Knowledge Base/Session Management/Menu Config | LayUI, jQuery |
 | **ZSN.AgentBrook.AutoJob** | Background task scheduler, polling and executing workflow tasks | Quartz.NET |
+| **ZSN.AgentBrook.AutoPublishJob** | App Factory build service: compiles an App config into a standalone desktop/Web app | Tauri, npm, Rust/MSVC |
 | **ZSN.AgentBrook.Plugins** | Application-level plugins | |
 | **ZSN.AgentBrowser** | AI browser automation | Playwright |
 | **ZSN.Cache** | Distributed caching service | Redis, MemoryCache |
@@ -480,6 +483,10 @@ dotnet run --project ZSN.AgentBrook.API
 
 # Start the background task scheduler (workflow execution)
 dotnet run --project ZSN.AgentBrook.AutoJob
+
+# Start the App Factory build service (compiles an App into a standalone desktop/Web app;
+# the build host needs Node/Rust/MSVC/Git preinstalled, optional)
+dotnet run --project ZSN.AgentBrook.AutoPublishJob
 
 # Start the messaging gateway (IM message send/receive, optional)
 dotnet run --project ZSN.AgentBrook.MessageGateway

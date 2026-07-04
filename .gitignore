@@ -153,3 +153,8 @@ __pycache__/
 **/*.csproj.nuget.g.targets
 **/*.csproj.nuget.g.props
 **/project.nuget.cache
+
+## ZSN.AgentBrook.AutoPublishJob 运行时产物（工作区/模板缓存/构建产物，运行时生成）
+ZSN.AgentBrook.AutoPublishJob/Workspace/
+ZSN.AgentBrook.AutoPublishJob/Templates/
+ZSN.AgentBrook.AutoPublishJob/Artifacts/

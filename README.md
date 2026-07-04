@@ -86,6 +86,8 @@ AI.Entity ───────────────────────�
    │
    ├── AgentBrook.AutoJob ────────────────────── (后台任务调度)
    │
+   ├── AgentBrook.AutoPublishJob ───────────── (应用工厂打包服务)
+   │
    ├── AgentBrook.Client ──────────────────────── (跨平台客户端)
    │
    ├── AgentBrook.Web / Web.Manage ───────────── (前端界面)
@@ -117,6 +119,7 @@ AI.Entity ───────────────────────�
 | **ZSN.AgentBrook.Web** | 前端界面（React + Ant Design Pro） | React, Ant Design Pro |
 | **ZSN.AgentBrook.Web.Manage** | 管理后台（LayUI）：应用/模型/知识库/会话管理/菜单配置等 | LayUI, jQuery |
 | **ZSN.AgentBrook.AutoJob** | 后台任务调度器，轮询执行工作流任务 | Quartz.NET |
+| **ZSN.AgentBrook.AutoPublishJob** | 应用工厂打包服务：把 App 配置编译为独立的桌面/Web 应用 | Tauri, npm, Rust/MSVC |
 | **ZSN.AgentBrook.Plugins** | 应用级插件 | |
 | **ZSN.AgentBrowser** | AI 浏览器自动化 | Playwright |
 | **ZSN.Cache** | 分布式缓存服务 | Redis, MemoryCache |
@@ -480,6 +483,9 @@ dotnet run --project ZSN.AgentBrook.API
 
 # 启动后台任务调度（工作流执行）
 dotnet run --project ZSN.AgentBrook.AutoJob
+
+# 启动应用工厂打包服务（把 App 编译为独立桌面/Web 应用，打包机需预装 Node/Rust/MSVC/Git，可选）
+dotnet run --project ZSN.AgentBrook.AutoPublishJob
 
 # 启动消息网关（IM 消息收发，可选）
 dotnet run --project ZSN.AgentBrook.MessageGateway
