@@ -2,13 +2,13 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 73,
-    "uniques": 25
+    "count": 75,
+    "uniques": 26
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulse",
     "title": "/pulse",
-    "count": 16,
+    "count": 14,
     "uniques": 1
   },
   {
@@ -20,8 +20,8 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook/tree/main",
     "title": "/tree/main",
-    "count": 5,
-    "uniques": 3
+    "count": 7,
+    "uniques": 4
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/stargazers",
@@ -42,21 +42,21 @@
     "uniques": 2
   },
   {
+    "path": "/ChenGan666/ZSN.AgentBrook/issues",
+    "title": "/issues",
+    "count": 3,
+    "uniques": 2
+  },
+  {
     "path": "/ChenGan666/ZSN.AgentBrook/activity",
     "title": "/activity",
     "count": 2,
     "uniques": 2
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues",
-    "title": "/issues",
+    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
+    "title": "/pulls",
     "count": 2,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/branches",
-    "title": "/branches",
-    "count": 1,
     "uniques": 1
   }
 ]
