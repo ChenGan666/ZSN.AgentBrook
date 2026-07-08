@@ -4,6 +4,7 @@
       @retry-process="handleRetryProcess"
       @retry-node="handleRetryNode"
       @regenerate="handleRegenerate"
+      @hitl-submitted="handleHitlSubmitted"
     />
     <ChatInput
       class="floating-input"
@@ -23,7 +24,7 @@ import { useChat } from '@/composables/useChat'
 import { useChatStore } from '@/stores/chat'
 
 const chatStore = useChatStore()
-const { sendMessage, regenerate, cancelStream, retryNode, isStreaming, streamError } = useChat()
+const { sendMessage, regenerate, cancelStream, retryNode, reloadNodeExecution, isStreaming, streamError } = useChat()
 
 const currentSessionStatus = computed(() => chatStore.currentSession?.SessionStatus ?? 0)
 
@@ -55,6 +56,16 @@ function handleRetryNode(payload: { nodeId: string; sessionId: string; processes
 
 function handleRegenerate(messageId: string) {
   regenerate(messageId)
+}
+
+function handleHitlSubmitted(payload: { sessionId: string; processesId: string; messageId: string | null }) {
+  // HITL 提交成功后恢复监听：重新以 SSE 拉取该流程的执行记录，
+  // 使后续节点的执行结果继续实时渲染（原 completions 流可能已中断）。
+  if (payload.processesId) {
+    reloadNodeExecution(payload.sessionId, payload.processesId, payload.messageId)
+  } else if (payload.sessionId) {
+    chatStore.loadSessionExecutionRecords(payload.sessionId)
+  }
 }
 </script>
 

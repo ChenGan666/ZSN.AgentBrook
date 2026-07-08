@@ -15,6 +15,7 @@
         @retry-process="(payload) => emit('retryProcess', payload)"
         @retry-node="(payload) => emit('retryNode', payload)"
         @regenerate="(messageId) => emit('regenerate', messageId)"
+        @hitl-submitted="(payload) => emit('hitlSubmitted', payload)"
       />
       <div v-if="!chatStore.loadingMessages && chatStore.messages.length === 0" class="empty-state">
         <p>{{ t('chat.startNewConversation') }}</p>
@@ -41,6 +42,7 @@ const emit = defineEmits<{
   retryProcess: [payload: { sessionId: string; processesId: string; messageId: string | null }]
   retryNode: [payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }]
   regenerate: [messageId: string]
+  hitlSubmitted: [payload: { sessionId: string; processesId: string; messageId: string | null }]
 }>()
 
 const chatStore = useChatStore()

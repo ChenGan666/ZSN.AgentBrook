@@ -32,6 +32,11 @@ const STREAM_SILENCE_TIMEOUT_MS = 90_000
 /** After a terminal-status frame, give the server this long to close the
  * stream before we abort on the client. */
 const STREAM_FINAL_CLOSE_TIMEOUT_MS = 15_000
+/** While a HumanInTheLoop node is waiting for user input the server sends no
+ * data at all. Use a much longer silence window in that state so the client
+ * doesn't abort the stream and incorrectly mark the session terminal/error
+ * while the workflow is legitimately paused for human input. */
+const STREAM_HITL_SILENCE_TIMEOUT_MS = 30 * 60_000
 
 function stripMarkdown(text: string): string {
   return text
@@ -379,6 +384,11 @@ export function useChat() {
      * than a natural terminal frame. finalizeStream uses this to mark the session
      * locally terminal (success/0) so its status doesn't hang on "running". */
     let streamAborted = false
+    /** True while the latest ProcessInfo frame contains a HumanInTheLoop /
+     * HumanInTheLoopInput record in Running state (waiting for user input).
+     * The silence timer switches to STREAM_HITL_SILENCE_TIMEOUT_MS in this
+     * state, and finalizeStream avoids flipping the process to 'error'. */
+    let hitlWaiting = false
     /**
      * The message id the SSE stream currently writes to. Starts as the temp
      * ai_<ts> id. After getAssistantMsg re-binds to the real store message
@@ -575,14 +585,23 @@ export function useChat() {
           // forever. The locallyTerminalStatus signal also makes the next
           // heartbeat/fetchSessions respect this terminal decision.
           if (streamAborted && !terminalStatusSeen) {
-            chatStore.markLocallyTerminal(targetSid, 0)
-            const session = chatStore.sessions.find((s) => s.ChatSessionID === targetSid)
-            if (session && session.SessionStatus === 1) session.SessionStatus = 0
-            // Abort without a terminal frame = the workflow didn't complete.
-            // Flip the seeded process status to 'error' so the workflow area
-            // shows an error badge instead of a stuck 'running' state.
-            if (msg.process && String(msg.process.status).toLowerCase() === 'running') {
-              msg.process = { ...msg.process, status: 'error' }
+            // 若存在仍在等待人工输入的 HITL 节点，流程并未失败——只是服务端
+            // 在等待用户操作。此时不标记本地终态、不把流程状态翻为 error，
+            // 保持 running 让 HITL 面板持续可交互。
+            const hitlStillWaiting = (msg.process?.records || []).some((r) => {
+              const n = String(r?.nodeName || '')
+              return n.startsWith('HumanInTheLoop') && String(r?.status || '').toLowerCase() === 'running'
+            })
+            if (!hitlStillWaiting) {
+              chatStore.markLocallyTerminal(targetSid, 0)
+              const session = chatStore.sessions.find((s) => s.ChatSessionID === targetSid)
+              if (session && session.SessionStatus === 1) session.SessionStatus = 0
+              // Abort without a terminal frame = the workflow didn't complete.
+              // Flip the seeded process status to 'error' so the workflow area
+              // shows an error badge instead of a stuck 'running' state.
+              if (msg.process && String(msg.process.status).toLowerCase() === 'running') {
+                msg.process = { ...msg.process, status: 'error' }
+              }
             }
           }
           if (chatStore.currentSessionId === targetSid) {
@@ -766,13 +785,19 @@ export function useChat() {
           ? proc.ExecutionRecordInfos.map(normalizeRecord)
           : []
 
-        // Check for HITL (HumanInTheLoopInput running)
+        // Check for HITL waiting for user input. Covers BOTH modes:
+        // fixed-option "HumanInTheLoop" AND form-input "HumanInTheLoopInput".
         const hasHitlRunning = incomingRecords.some((rec) => {
           if (!rec) return false
           const nodeName = String(rec.nodeName || '')
-          if (!nodeName.startsWith('HumanInTheLoopInput')) return false
+          if (!nodeName.startsWith('HumanInTheLoop')) return false
           return String(rec.status || '').toLowerCase() === 'running'
         })
+        // 记录 HITL 等待状态：等待人工输入期间服务端不推数据，静默计时器
+        // 需要切换到更长的超时，避免把等待中的会话误判为超时/错误。
+        if (incomingRecords.length) {
+          hitlWaiting = hasHitlRunning
+        }
 
         pendingProcess = proc
         pendingTimestamp = messageData.Timestamp ?? null
@@ -973,7 +998,11 @@ export function useChat() {
         if (silenceTimer) clearTimeout(silenceTimer)
         silenceTimer = setTimeout(
           () => abortController.abort(),
-          terminalStatusSeen ? STREAM_FINAL_CLOSE_TIMEOUT_MS : STREAM_SILENCE_TIMEOUT_MS,
+          terminalStatusSeen
+            ? STREAM_FINAL_CLOSE_TIMEOUT_MS
+            : hitlWaiting
+              ? STREAM_HITL_SILENCE_TIMEOUT_MS
+              : STREAM_SILENCE_TIMEOUT_MS,
         )
       }
       armSilenceTimer()
@@ -981,9 +1010,6 @@ export function useChat() {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-
-        // Any received data resets the silence timer.
-        armSilenceTimer()
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
@@ -999,6 +1025,13 @@ export function useChat() {
             } catch { /* ignore parse errors */ }
           }
         }
+
+        // Any received data resets the silence timer. Re-arm AFTER processing
+        // the frames so state changes made by onMessage (terminalStatusSeen /
+        // hitlWaiting) take effect for THIS chunk's timeout window — otherwise
+        // an HITL frame that is the last frame before the server goes quiet
+        // would still be timed with the short non-HITL window.
+        armSilenceTimer()
       }
 
       await finalizeStream()

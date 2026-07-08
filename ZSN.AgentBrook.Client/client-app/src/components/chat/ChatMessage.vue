@@ -77,8 +77,28 @@
       <!-- HITL panels from process records -->
       <template v-if="message.process && message.process.records">
         <template v-for="(rec, idx) in message.process.records" :key="getNodeKey(rec, idx)">
+          <!-- fixed 选项模式：渲染选项按钮 -->
+          <div v-if="showHitl(rec)" class="hitl-panel">
+            <div class="hitl-title">{{ getHITLData(rec).askContent || '请选择' }}</div>
+            <div class="hitl-options">
+              <button
+                v-for="opt in getHITLData(rec).options"
+                :key="opt.id || opt.value || opt.name"
+                class="hitl-btn"
+                type="button"
+                :disabled="submittingSet.has(getNodeKey(rec, idx)) || submittedSet.has(getNodeKey(rec, idx))"
+                @click="submitHitl(rec, idx, opt)"
+              >
+                <span v-if="submittingSet.has(getNodeKey(rec, idx))" class="spinner" />
+                <span>{{ opt.name || opt.value }}</span>
+              </button>
+            </div>
+            <div v-if="submittedSet.has(getNodeKey(rec, idx))" class="hitl-tip">已提交</div>
+            <div v-if="submitErrorKey === getNodeKey(rec, idx) && submitErrorMsg" class="hitl-error">{{ submitErrorMsg }}</div>
+          </div>
+          <!-- 表单输入模式 -->
           <HitlInputPanel
-            v-if="showHitl(rec) || showHitlInput(rec)"
+            v-else-if="showHitlInput(rec)"
             :hitl-data="getHITLData(rec)"
             :node-key="getNodeKey(rec, idx)"
             :is-submitting="submittingSet.has(getNodeKey(rec, idx))"
@@ -142,6 +162,7 @@ const emit = defineEmits<{
   retryProcess: [payload: { sessionId: string; processesId: string; messageId: string | null }]
   retryNode: [payload: { nodeId: string; sessionId: string; processesId: string; taskId: string; messageId: string | null }]
   regenerate: [messageId: string]
+  hitlSubmitted: [payload: { sessionId: string; processesId: string; messageId: string | null }]
 }>()
 
 const chatStore = useChatStore()
@@ -317,7 +338,8 @@ function showHitl(rec: NormalizedRecord): boolean {
   if (!nodeName.startsWith('HumanInTheLoop') || nodeName.startsWith('HumanInTheLoopInput')) return false
   if (String(rec.status || '').toLowerCase() !== 'running') return false
   const d = getHITLData(rec)
-  return !!(d.askContent && d.options && d.options.length && d.reCallUrl)
+  // askContent 可能为空，不作为必要条件
+  return !!(d.options && d.options.length && d.reCallUrl)
 }
 
 function showHitlInput(rec: NormalizedRecord): boolean {
@@ -370,6 +392,43 @@ function handleRetryNode(node: NormalizedRecord) {
   })
 }
 
+async function submitHitl(rec: NormalizedRecord, idx: number, opt: any) {
+  const nodeKey = getNodeKey(rec, idx)
+  const { reCallUrl } = getHITLData(rec)
+  if (!reCallUrl) return
+  if (submittingSet.value.has(nodeKey) || submittedSet.value.has(nodeKey)) return
+
+  submitErrorKey.value = null
+  submitErrorMsg.value = ''
+  submittingSet.value.add(nodeKey)
+  submittingSet.value = new Set(submittingSet.value)
+
+  try {
+    const { sessionID, taskID, recordID } = parseReCallUrl(reCallUrl)
+    const result = await execHumanInTheLoop({
+      sessionID, taskID, recordID,
+      data: opt || {},
+    })
+    if (!result?.data?.Success) {
+      throw new Error(result?.data?.ErrorDesc || '提交失败')
+    }
+    submittedSet.value.add(nodeKey)
+    submittedSet.value = new Set(submittedSet.value)
+    // 通知上层恢复监听：重新拉取该流程的执行记录，继续渲染后续执行。
+    emit('hitlSubmitted', {
+      sessionId: rec.sessionId || sessionID || '',
+      processesId: rec.processesId || '',
+      messageId: props.message?.id || null,
+    })
+  } catch (e: any) {
+    submitErrorKey.value = nodeKey
+    submitErrorMsg.value = e?.message || '提交失败'
+  } finally {
+    submittingSet.value.delete(nodeKey)
+    submittingSet.value = new Set(submittingSet.value)
+  }
+}
+
 async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; inputOptions: any[] }) {
   const { nodeKey, reCallUrl, inputOptions } = payload || {}
   if (!nodeKey || !reCallUrl) return
@@ -390,6 +449,14 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
     }
     submittedSet.value.add(nodeKey)
     submittedSet.value = new Set(submittedSet.value)
+    // 找到对应的 record 以获取 sessionId / processesId，通知上层恢复监听。
+    const records = props.message?.process?.records || []
+    const rec = records.find((r, idx) => getNodeKey(r, idx) === nodeKey)
+    emit('hitlSubmitted', {
+      sessionId: rec?.sessionId || sessionID || '',
+      processesId: rec?.processesId || '',
+      messageId: props.message?.id || null,
+    })
   } catch (e: any) {
     submitErrorKey.value = nodeKey
     submitErrorMsg.value = e?.message || '提交失败'
@@ -711,6 +778,75 @@ async function handleHitlSubmit(payload: { nodeKey: string; reCallUrl: string; i
 
 @keyframes rotating {
   from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// --- HITL fixed-option panel ---
+.hitl-panel {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  background: #fefce8;
+  border: 1px solid #facc15;
+}
+
+.hitl-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #854d0e;
+}
+
+.hitl-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hitl-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #facc15;
+  background: #fff;
+  color: #713f12;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #facc15;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.hitl-tip {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #16a34a;
+}
+
+.hitl-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: rgba(0, 0, 0, 0.5);
+  animation: hitl-spin 0.8s linear infinite;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+
+@keyframes hitl-spin {
   to { transform: rotate(360deg); }
 }
 

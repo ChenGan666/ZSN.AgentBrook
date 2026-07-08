@@ -712,18 +712,19 @@ export const useChatStore = defineStore('chat', {
           }
         })
 
-        // --- 1. Match processes to existing assistant messages by order ---
-        // Apply execution records (authoritative) to messages that don't have
-        // active SSE data. Messages with loading=true are receiving live SSE
-        // updates — keep their richer real-time data.
-        // Messages with loading=false (from cache) may be stale — overwrite them.
+        // --- 1. Match processes to existing assistant messages ---
+        // Prefer matching by ProcessID: a message whose existing process.records
+        // already reference the same processesId is the authoritative owner of
+        // that process. Pure order-based matching (the old behavior) breaks
+        // when a reply spawns extra sub-processes (e.g. ClawAI agent
+        // workflows), assigning process data to the wrong message after a
+        // session switch. Unmatched pairs fall back to order-based matching.
         let filledCount = 0
         let deferredCount = 0
-        const matchCount = Math.min(processList.length, allAssistantIndices.length)
-        for (let i = 0; i < matchCount; i++) {
-          const msgIndex = allAssistantIndices[i]
+
+        // Apply one process's execution records to one message slot.
+        const applyProcToMessage = (msgIndex: number, proc: any) => {
           const msg = this.messages[msgIndex]
-          const proc = processList[i]
           const rawRecords = Array.isArray(proc.ExecutionRecordInfos)
             ? proc.ExecutionRecordInfos
             : []
@@ -738,7 +739,7 @@ export const useChatStore = defineStore('chat', {
           // they are updated by the SSE flush path, not here.
           if (msg.process && msg.loading) {
             deferredCount++
-            continue
+            return
           }
 
           // Apply the authoritative execution-records data IN PLACE (mutate the
@@ -762,17 +763,48 @@ export const useChatStore = defineStore('chat', {
           filledCount++
         }
 
+        // Pass 1: match by processesId.
+        const usedMsgIndices = new Set<number>()
+        const unmatchedProcs: any[] = []
+        for (const proc of processList) {
+          const pid: string = proc.ProcessID || ''
+          let matchedIdx = -1
+          if (pid) {
+            for (const msgIndex of allAssistantIndices) {
+              if (usedMsgIndices.has(msgIndex)) continue
+              const recs = this.messages[msgIndex].process?.records
+              if (Array.isArray(recs) && recs.some((r) => r && r.processesId === pid)) {
+                matchedIdx = msgIndex
+                break
+              }
+            }
+          }
+          if (matchedIdx >= 0) {
+            usedMsgIndices.add(matchedIdx)
+            applyProcToMessage(matchedIdx, proc)
+          } else {
+            unmatchedProcs.push(proc)
+          }
+        }
+
+        // Pass 2: order-based fallback for processes/messages left unmatched.
+        const freeIndices = allAssistantIndices.filter((i) => !usedMsgIndices.has(i))
+        const matchCount = Math.min(unmatchedProcs.length, freeIndices.length)
+        for (let i = 0; i < matchCount; i++) {
+          applyProcToMessage(freeIndices[i], unmatchedProcs[i])
+        }
+
         // --- 2. Create synthetic assistant messages for truly unrepresented processes ---
-        // Only needed when the server returns more processes than we have
-        // non-synthetic assistant messages.
-        if (processList.length > allAssistantIndices.length) {
+        // Only needed when there are more processes than available message slots.
+        const extraProcs = unmatchedProcs.slice(matchCount)
+        if (extraProcs.length > 0) {
           // Remove old synthetic messages for this session
           this.messages = this.messages.filter(
             (m) => !(m.role === 'assistant' && m.id.startsWith('pending_')),
           )
 
-          for (let i = allAssistantIndices.length; i < processList.length; i++) {
-            const proc = processList[i]
+          for (let i = 0; i < extraProcs.length; i++) {
+            const proc = extraProcs[i]
             const rawRecords = Array.isArray(proc.ExecutionRecordInfos)
               ? proc.ExecutionRecordInfos
               : []
@@ -800,7 +832,7 @@ export const useChatStore = defineStore('chat', {
         }
 
         // Persist updated messages back to cache
-        const hasChanges = filledCount > 0 || processList.length > allAssistantIndices.length
+        const hasChanges = filledCount > 0 || extraProcs.length > 0
         if (hasChanges) {
           await messageCache.set(sessionId, [...this.messages])
         }
