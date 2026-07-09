@@ -19,6 +19,42 @@
             <param name="formFile"></param>
             <returns></returns>
         </member>
+        <member name="T:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController">
+            <summary>
+            应用工厂：在管理后台选择平台 App → 定制品牌 → 提交发布任务，
+            由独立的 ZSN.AgentBrook.AutoPublishJob 异步构建打包，产出可下载的独立应用。
+            </summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.index(System.Int32,System.Int32)">
+            <summary>发布任务列表</summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.Create(System.String,System.String)">
+            <summary>新建/编辑发布任务入口：选 App + 选模板 + 填品牌。传 id=任务ID 时为编辑模式</summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.TemplateList">
+            <summary>模板清单(从 appsettings 的 Templates:Items 读取，供前端下拉)</summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.Submit(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.Int32,System.Int32,System.String,System.String,System.String,System.String,System.Boolean,System.String,System.String,System.String)">
+            <summary>提交发布任务(新建)。taskID 非空时为更新已有任务(仅 Pending/Failed 可改)。</summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.Detail(System.String)">
+            <summary>任务详情(进度+日志)</summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.Poll(System.String)">
+            <summary>轮询任务最新状态(前端定时刷新用)</summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.Download(System.String)">
+            <summary>下载产物(目录内首个安装包)</summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.Retry(System.String)">
+            <summary>重新生成(重置为 Pending)：成功(Done)/失败(Failed)/等待(Pending)均可，生成中禁止</summary>
+        </member>
+        <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.Delete(System.String)">
+            <summary>删除任务</summary>
+        </member>
+        <member name="P:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.AppFactoryController.TemplateItem.SubPath">
+            <summary>仓库内子目录(单仓库多模板时用，如 "MeetingApp")</summary>
+        </member>
         <member name="M:ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers.KnowledgeBaseController.GetFileChunks(System.String,System.Int32,System.Int32)">
             <summary>
             获取文件的向量分块数据

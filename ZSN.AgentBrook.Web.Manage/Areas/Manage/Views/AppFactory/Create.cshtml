@@ -1,0 +1,192 @@
+@{
+    var apps = ViewBag.AppList as List<AppInfo>;
+    var templates = ViewBag.Templates as List<dynamic> ?? new List<dynamic>();
+    var sel = ViewBag.SelectedAppID as string ?? "";
+    var edit = ViewBag.EditTask as PublishTaskInfo;        // 编辑模式下的任务对象(新建时为 null)
+    var isEdit = (ViewBag.IsEdit as bool?) ?? false;
+    var ec = edit?.PublishConfig;                          // 编辑模式下的配置(简写)
+}
+@section Css{}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">@(isEdit ? "编辑发布任务" : "新建发布任务")（应用工厂）</div>
+                <div class="layui-card-body">
+                    <form class="layui-form" id="publishForm">
+                        @if (isEdit)
+                        {
+                            <input type="hidden" name="taskID" value="@edit.TaskID" />
+                        }
+                        <fieldset class="layui-elem-field layui-field-title"><legend>选择平台 App 与模板</legend></fieldset>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">目标 App</label>
+                            <div class="layui-input-block">
+                                <select name="appID" lay-verify="required" lay-filter="appSelect">
+                                    <option value="">请选择</option>
+                                    @if (apps != null)
+                                    {
+                                        foreach (var a in apps)
+                                        {
+                                            var targetAppId = isEdit ? edit.AppID : sel;
+                                            if (a.AppID == targetAppId)
+                                            {
+                                                <option value="@a.AppID" selected>@a.Name (@a.AppID)</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@a.AppID">@a.Name (@a.AppID)</option>
+                                            }
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">应用模板</label>
+                            <div class="layui-input-block">
+                                <select name="templateName" lay-verify="required" lay-filter="tplSelect">
+                                    <option value="">请选择</option>
+                                    @foreach (dynamic t in ViewBag.Templates)
+                                    {
+                                        var selectedTpl = isEdit ? edit.TemplateName : "";
+                                        var selAttr = (t.Name == selectedTpl) ? "selected" : "";
+                                        if (t.Name == selectedTpl)
+                                        {
+                                            <option value="@t.Name" data-url="@t.GitUrl" data-ref="@t.DefaultRef" data-subpath="@t.SubPath" selected>@t.DisplayName (@t.Name) — @t.Description</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@t.Name" data-url="@t.GitUrl" data-ref="@t.DefaultRef" data-subpath="@t.SubPath">@t.DisplayName (@t.Name) — @t.Description</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">模板Git地址</label>
+                            <div class="layui-input-inline" style="width:60%;">
+                                <input type="text" name="templateGitUrl" placeholder="留空则用所选模板默认地址；务必用 .git 结尾的可克隆地址" class="layui-input" value="@(isEdit ? edit.TemplateGitUrl : "")" />
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">子目录</label>
+                            <div class="layui-input-inline" style="width:30%;">
+                                <input type="text" name="templateSubPath" placeholder="单仓库多模板时填，如 MeetingApp；留空复制整个仓库" class="layui-input" value="@(isEdit ? (ec?.templateSubPath ?? "") : "")" />
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">模板版本</label>
+                            <div class="layui-input-inline" style="width:30%;">
+                                <input type="text" name="templateRef" placeholder="分支/tag/commit，如 main 或 v1.0.0" class="layui-input" value="@(isEdit ? edit.TemplateRef : "main")" />
+                            </div>
+                        </div>
+
+                        <fieldset class="layui-elem-field layui-field-title"><legend>品牌定制</legend></fieldset>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">应用名称</label>
+                            <div class="layui-input-inline"><input type="text" name="productName" placeholder="如：ZSN会议助手" lay-verify="required" class="layui-input" value="@(isEdit ? ec?.brand?.productName : "")" /></div>
+                            <label class="layui-form-label" style="width:90px;">应用标识</label>
+                            <div class="layui-input-inline"><input type="text" name="identifier" placeholder="com.zsn.xxx" class="layui-input" value="@(isEdit ? ec?.brand?.identifier : "")" /></div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">版本号</label>
+                            <div class="layui-input-inline"><input type="text" name="version" class="layui-input" value="@(isEdit ? ec?.brand?.version : "1.0.0")" /></div>
+                            <label class="layui-form-label" style="width:90px;">窗口标题</label>
+                            <div class="layui-input-inline"><input type="text" name="windowTitle" placeholder="留空则用应用名称" class="layui-input" value="@(isEdit ? ec?.brand?.windowTitle : "")" /></div>
+                        </div>
+
+                        <fieldset class="layui-elem-field layui-field-title"><legend>连接与锁定</legend></fieldset>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">API地址</label>
+                            <div class="layui-input-inline" style="width:60%;"><input type="text" name="apiBaseUrl" placeholder="http://localhost:5003/api" lay-verify="required" class="layui-input" value="@(isEdit ? ec?.connection?.apiBaseUrl : "")" /></div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">连接AppID</label>
+                            <div class="layui-input-inline"><input type="text" name="connAppId" placeholder="留空则用目标AppID" class="layui-input" value="@(isEdit ? ec?.connection?.appId : "")" /></div>
+                            <label class="layui-form-label" style="width:90px;">连接Secret</label>
+                            <div class="layui-input-inline"><input type="text" name="connAppSecret" placeholder="留空则用平台默认" class="layui-input" value="@(isEdit ? ec?.connection?.appSecret : "")" /></div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">锁定AppID</label>
+                            <div class="layui-input-inline"><input type="text" name="lockAppId" placeholder="留空则锁定到目标App" class="layui-input" value="@(isEdit ? ec?.lockApp?.appId : "")" /></div>
+                            @{
+                                // 开关回填：编辑模式下按 hideAppPicker 决定 checked
+                                var switchChecked = isEdit ? (ec?.lockApp?.hideAppPicker ?? true) : true;
+                            }
+                            <input type="checkbox" name="hideAppPicker" lay-skin="switch" lay-text="隐藏App选择器|显示" @(switchChecked ? "checked" : "") />
+                        </div>
+
+                        <fieldset class="layui-elem-field layui-field-title"><legend>构建目标</legend></fieldset>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">目标平台</label>
+                            <div class="layui-input-block">
+                                @{
+                                    var tpStr = isEdit ? edit.TargetPlatforms : "WinX64";
+                                }
+                                <input type="checkbox" name="tp" value="WinX64" title="Windows(nsis)" @(tpStr.Contains("Win") ? "checked" : "") />
+                                <input type="checkbox" name="tp" value="MacArm64" title="macOS(dmg)" @(tpStr.Contains("Mac") ? "checked" : "") />
+                                <input type="checkbox" name="tp" value="Web" title="Web站点" @(tpStr.Contains("Web") ? "checked" : "") />
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">回调URL</label>
+                            <div class="layui-input-inline" style="width:60%;"><input type="text" name="reCallUrl" placeholder="构建完成后回调(可选)" class="layui-input" value="@(isEdit ? edit.ReCallUrl : "")" /></div>
+                        </div>
+
+                        <div class="layui-form-item">
+                            <div class="layui-input-block">
+                                <button type="button" class="layui-btn" lay-submit lay-filter="submitForm">@(isEdit ? "保存修改并重新入队" : "提交发布任务")</button>
+                                <a href="@Url.Action("index","AppFactory",new{area="Manage"})" class="layui-btn layui-btn-primary">返回</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Js{
+<script>
+    layui.use(['form', 'layer'], function () {
+        var form = layui.form, layer = layui.layer, $ = layui.$;
+
+        // 编辑模式下：若模板已选中，按已有值回填 Git 地址/子目录/版本(优先用任务里保存的值，而非模板默认)
+        var isEdit = @(isEdit ? "true" : "false");
+
+        form.on('select(tplSelect)', function (data) {
+            var opt = $(data.elem).find('option:selected');
+            // 仅在对应字段为空(未手动填)时才用模板默认值覆盖
+            if (!$('input[name=templateGitUrl]').val()) $('input[name=templateGitUrl]').val(opt.data('url') || '');
+            if (!$('input[name=templateRef]').val()) $('input[name=templateRef]').val(opt.data('ref') || 'main');
+            if (!$('input[name=templateSubPath]').val()) $('input[name=templateSubPath]').val(opt.data('subpath') || '');
+        });
+
+        form.on('submit(submitForm)', function (data) {
+            var f = data.field;
+            var tp = [];
+            $('input[name=tp]:checked').each(function () { tp.push($(this).val()); });
+            $.post('@Url.Action("Submit","AppFactory",new{area="Manage"})', {
+                taskID: f.taskID || '',            // 编辑模式由隐藏域提供，新建模式为空
+                appID: f.appID, templateName: f.templateName,
+                templateGitUrl: f.templateGitUrl, templateRef: f.templateRef, templateSubPath: f.templateSubPath,
+                productName: f.productName, identifier: f.identifier, version: f.version,
+                appTitle: f.appTitle, windowTitle: f.windowTitle, windowWidth: 1200, windowHeight: 750,
+                apiBaseUrl: f.apiBaseUrl, connAppId: f.connAppId, connAppSecret: f.connAppSecret,
+                lockAppId: f.lockAppId, hideAppPicker: f.hideAppPicker == 'on',
+                targetPlatforms: tp.join(','), reCallUrl: f.reCallUrl
+            }, function (res) {
+                // JsonMsg 字段：Success(bool)/ErrorCode(int)/ErrorDesc(string)/Data
+                if (res.Success) {
+                    layer.msg(isEdit ? '已保存并重新入队...' : '已提交，正在构建...', { icon: 1, time: 1500 }, function () {
+                        location.href = '@Url.Action("index","AppFactory",new{area="Manage"})';
+                    });
+                } else {
+                    layer.msg(res.ErrorDesc || res.Data || '提交失败', { icon: 2 });
+                }
+            });
+            return false;
+        });
+    });
+</script>
+}

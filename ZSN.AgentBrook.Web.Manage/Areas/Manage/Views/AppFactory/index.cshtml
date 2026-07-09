@@ -1,0 +1,146 @@
+@{
+    var lst = ViewBag.List as List<PublishTaskInfo>;
+    var stateText = new Dictionary<PublishTaskState, string>
+    {
+        { PublishTaskState.Pending, "等待中" },
+        { PublishTaskState.Cloning, "克隆中" },
+        { PublishTaskState.Customizing, "定制中" },
+        { PublishTaskState.Building, "构建中" },
+        { PublishTaskState.Verifying, "校验中" },
+        { PublishTaskState.Done, "已完成" },
+        { PublishTaskState.Failed, "失败" }
+    };
+    var stateColor = new Dictionary<PublishTaskState, string>
+    {
+        { PublishTaskState.Pending, "layui-badge-gray" },
+        { PublishTaskState.Cloning, "layui-badge-blue" },
+        { PublishTaskState.Customizing, "layui-badge-blue" },
+        { PublishTaskState.Building, "layui-badge-blue" },
+        { PublishTaskState.Verifying, "layui-badge-blue" },
+        { PublishTaskState.Done, "layui-badge-green" },
+        { PublishTaskState.Failed, "layui-badge-red" }
+    };
+}
+@section Css{
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <div class="layui-input-inline layui-show-xs-block">
+                        <a href="@Url.Action("Create","AppFactory",new{area="Manage"})" class="layui-btn">
+                            <i class="layui-icon">&#xe654;</i>新建发布任务
+                        </a>
+                    </div>
+                    <hr>
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-table">
+                        <colgroup>
+                            <col width="60">
+                            <col width="280">
+                            <col>
+                            <col>
+                            <col width="90">
+                            <col width="110">
+                            <col width="160">
+                            <col width="220">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>任务ID</th>
+                                <th>AppID</th>
+                                <th>模板</th>
+                                <th>进度</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (lst != null)
+                            {
+                                int i = (ViewBag.Index - 1) * ViewBag.Size + 1;
+                                foreach (var t in lst)
+                                {
+                                    <tr data-id="@t.TaskID">
+                                        <td>@(i++)</td>
+                                        <td style="font-size:12px;word-break:break-all;">@t.TaskID</td>
+                                        <td style="font-size:12px;word-break:break-all;">@t.AppID</td>
+                                        <td>@t.TemplateName<br/><span style="font-size:11px;color:#999;">@t.TemplateRef</span></td>
+                                        <td>
+                                            <div class="layui-progress" lay-filter="prog-@t.TaskID" style="margin-top:8px;">
+                                                <div class="layui-progress-bar" lay-percent="@t.Progress%"></div>
+                                            </div>
+                                            <span style="font-size:11px;">@t.Progress%</span>
+                                        </td>
+                                        <td>
+                                            <span class="layui-badge @(stateColor.ContainsKey(t.State) ? stateColor[t.State] : "")">
+                                                @(stateText.ContainsKey(t.State) ? stateText[t.State] : t.State.ToString())
+                                            </span>
+                                            @if (!string.IsNullOrEmpty(t.Stage))
+                                            { <br/><span style="font-size:11px;color:#999;">@t.Stage</span> }
+                                        </td>
+                                        <td style="font-size:12px;">@t.CreateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td>
+                                            <a class="layui-btn layui-btn-xs" href="@Url.Action("Detail","AppFactory",new{area="Manage",id=t.TaskID})">详情</a>
+                                            @if (t.State == PublishTaskState.Pending || t.State == PublishTaskState.Failed)
+                                            { <a class="layui-btn layui-btn-normal layui-btn-xs" href="@Url.Action("Create","AppFactory",new{area="Manage",id=t.TaskID})">编辑</a> }
+                                            @if (t.State == PublishTaskState.Done)
+                                            { <a class="layui-btn layui-btn-normal layui-btn-xs" href="@Url.Action("Download","AppFactory",new{area="Manage",id=t.TaskID})">下载</a> }
+                                            @{
+                                                // 生成中隐藏；成功(Done)/失败(Failed)/等待(Pending) 显示重新生成
+                                                bool isRunning = t.State == PublishTaskState.Cloning || t.State == PublishTaskState.Customizing || t.State == PublishTaskState.Building || t.State == PublishTaskState.Verifying;
+                                                string retryText = t.State == PublishTaskState.Failed ? "重试" : "重新生成";
+                                            }
+                                            @if (!isRunning)
+                                            { <button class="layui-btn layui-btn-warm layui-btn-xs retry-btn" data-id="@t.TaskID">@retryText</button> }
+                                            <button class="layui-btn layui-btn-danger layui-btn-xs delete-btn" data-id="@t.TaskID">删除</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                    <div id="pager"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Js{
+<script>
+    layui.use(['laypage', 'layer', 'element'], function () {
+        var laypage = layui.laypage, layer = layui.layer, $ = layui.$;
+        laypage.render({ elem: 'pager', count: @ViewBag.Total, limit: @ViewBag.Size, curr: @ViewBag.Index, jump: function (o, f) { if (!f) location.href = '?index=' + o.curr + '&size=' + o.limit; } });
+
+        // 列表自动刷新(有非终态任务时)
+        var hasActive = $('tr[data-id]').toArray().some(function (tr) {
+            var s = $(tr).find('.layui-badge').text();
+            return s.indexOf('等待') >= 0 || s.indexOf('克隆') >= 0 || s.indexOf('定制') >= 0 || s.indexOf('构建') >= 0 || s.indexOf('校验') >= 0;
+        });
+        if (hasActive) setTimeout(function () { location.reload(); }, 5000);
+
+        $('.retry-btn').on('click', function () {
+            var id = $(this).data('id');
+            var btnText = $(this).text();
+            layer.confirm(btnText + '会清空当前产物与日志并重新构建，确认？', function (idx) {
+                layer.close(idx);
+                $.post('@Url.Action("Retry","AppFactory",new{area="Manage"})', { id: id }, function (res) {
+                    layer.msg(res.ErrorDesc || res.Data || '已处理', { icon: res.Success ? 1 : 2 }, function () { location.reload(); });
+                });
+            });
+        });
+        $('.delete-btn').on('click', function () {
+            var id = $(this).data('id');
+            layer.confirm('确认删除该任务？', function (idx) {
+                $.post('@Url.Action("Delete","AppFactory",new{area="Manage"})', { id: id }, function (res) {
+                    layer.close(idx); layer.msg(res.ErrorDesc || res.Data || '已删除', { icon: res.Success ? 1 : 2 }, function () { location.reload(); });
+                });
+            });
+        });
+    });
+</script>
+}

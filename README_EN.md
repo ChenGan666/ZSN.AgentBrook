@@ -415,6 +415,30 @@ Connecting to multiple AI providers through a unified `IChatService` interface:
 
 Each workflow node can be independently configured with model, Temperature, TopP, and other parameters.
 
+### 12. App Factory
+
+The App Factory compiles a platform App's configuration (brand, connection, locking) into a **standalone desktop/Web app**, giving each business team its own distributable client without building a frontend project.
+
+**Architecture:**
+- **Admin Console entry** (`ZSN.AgentBrook.Web.Manage` → App Factory pages) — visually create/edit publish tasks, track build progress & logs, download artifacts
+- **Build service** (`ZSN.AgentBrook.AutoPublishJob`) — standalone console app, long-polls `tb_publish_task` and runs Clone template → Customize brand → Build package → Verify
+
+**Workflow:**
+1. Pick a target App + app template (e.g. "Base App", "Meeting Assistant")
+2. Fill in branding (product name, identifier, version, window title/size)
+3. Configure connection (API URL, credentials) and locking (lock to an App, hide App picker)
+4. Choose build targets (Windows nsis / macOS dmg / Web site)
+5. The build service runs asynchronously; the detail page polls progress & logs in real time, then download the artifact when done
+
+**Template config:** templates are listed under `Templates:Items` in `docker/Manage/appsettings.json`, pointing to your own Git template repo (use `SubPath` for multiple templates in one repo); output directory is set by `AppBuild:OutputDirectory`.
+
+**Run the build service:**
+
+```bash
+# Build machine requires Node.js / Rust / MSVC(Windows) / Git preinstalled
+dotnet run --project ZSN.AgentBrook.AutoPublishJob
+```
+
 ---
 
 ## Tech Stack

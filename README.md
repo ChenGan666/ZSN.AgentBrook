@@ -415,6 +415,30 @@ npm run tauri:dev
 
 每个工作流节点可独立配置模型、Temperature、TopP 等参数。
 
+### 12. 应用工厂 (App Factory)
+
+应用工厂把平台上的 App 配置（品牌、连接、锁定）编译成**独立的桌面/Web 应用**，让每个业务方获得专属客户端分发产物，无需自建前端工程。
+
+**架构组成：**
+- **管理后台入口**（`ZSN.AgentBrook.Web.Manage` → 应用工厂页面）— 可视化创建/编辑发布任务、查看构建进度与日志、下载产物
+- **打包服务**（`ZSN.AgentBrook.AutoPublishJob`）— 独立控制台程序，长轮询消费 `tb_publish_task`，执行 克隆模板 → 定制品牌 → 构建打包 → 校验 全流程
+
+**工作流程：**
+1. 后台选择目标 App + 应用模板（如「通用基座应用」「会议助手」）
+2. 填写品牌定制（应用名称、标识、版本、窗口标题/尺寸）
+3. 配置连接（API 地址、连接凭据）与锁定（锁定到指定 App、隐藏 App 选择器）
+4. 选择构建目标（Windows nsis / macOS dmg / Web 站点）
+5. 提交后打包服务异步构建，详情页实时轮询进度与日志，完成后下载产物
+
+**模板配置：** 模板清单在 `docker/Manage/appsettings.json` 的 `Templates:Items` 维护，可指向自有 Git 模板仓库（单仓库多模板用 `SubPath` 区分）；产物输出目录由 `AppBuild:OutputDirectory` 指定。
+
+**运行打包服务：**
+
+```bash
+# 打包机需预装 Node.js / Rust / MSVC(Windows) / Git
+dotnet run --project ZSN.AgentBrook.AutoPublishJob
+```
+
 ---
 
 ## 技术栈

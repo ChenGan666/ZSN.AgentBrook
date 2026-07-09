@@ -1,0 +1,97 @@
+@{
+    var t = ViewBag.Task as PublishTaskInfo;
+}
+@section Css{
+<style>
+    .log-box { background:#1e1e1e; color:#d4d4d4; padding:12px; height:480px; overflow-y:auto; font-family:Consolas,monospace; font-size:12px; line-height:1.6; border-radius:4px; white-space:pre-wrap; word-break:break-all; }
+    .log-line-err { color:#f56c6c; }
+</style>
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    发布任务详情
+                    <span style="margin-left:12px;font-size:12px;color:#999;">@t?.TaskID</span>
+                </div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">状态</label>
+                        <div class="layui-input-block" style="padding-top:8px;">
+                            <span id="stateBadge" class="layui-badge layui-badge-gray">@t?.State</span>
+                            <span id="stageText" style="margin-left:12px;color:#666;">@t?.Stage</span>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">进度</label>
+                        <div class="layui-input-block" style="padding-top:8px;">
+                            <div class="layui-progress layui-progress-big" lay-filter="progress" lay-showpercent="true">
+                                <div class="layui-progress-bar" lay-percent="@t?.Progress%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">App / 模板</label>
+                        <div class="layui-input-block" style="padding-top:8px;font-size:12px;">
+                            <div>AppID: @t?.AppID</div>
+                            <div>模板: @t?.TemplateName (@t?.TemplateRef) &nbsp; @t?.TemplateGitUrl</div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(t?.ErrorMsg))
+                    {
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">错误</label>
+                            <div class="layui-input-block" style="padding-top:8px;">
+                                <span style="color:#f56c6c;">@t.ErrorMsg</span>
+                            </div>
+                        </div>
+                    }
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">构建日志</label>
+                        <div class="layui-input-block">
+                            <div id="logBox" class="log-box">@(t?.Logs ?? "（暂无日志）")</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <div class="layui-input-block">
+                            @if (t?.State == PublishTaskState.Done)
+                            { <a class="layui-btn layui-btn-normal" href="@Url.Action("Download","AppFactory",new{area="Manage",id=t.TaskID})"><i class="layui-icon">&#xe601;</i>下载产物</a> }
+                            <a href="@Url.Action("index","AppFactory",new{area="Manage"})" class="layui-btn layui-btn-primary">返回列表</a>
+                            <button class="layui-btn" id="refreshLogBtn">刷新</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Js{
+<script>
+    var taskId = '@t?.TaskID';
+    var isTerminal = false;
+    layui.use(['layer', 'element'], function () {
+        var $ = layui.$, element = layui.element;
+        function scrollLogBottom() { var b = $('#logBox'); b.scrollTop(b[0].scrollHeight); }
+        function poll() {
+            if (isTerminal) return;
+            $.post('@Url.Action("Poll","AppFactory",new{area="Manage"})', { id: taskId }, function (res) {
+                if (res.Success && res.Data) {
+                    var d = res.Data;
+                    $('#stateBadge').text(d.State);
+                    $('#stageText').text(d.Stage || '');
+                    $('#logBox').text(d.Logs || '（暂无日志）');
+                    element.progress('progress', (d.Progress || 0) + '%');
+                    if (d.State == 'Done' || d.State == 'Failed') {
+                        isTerminal = true;
+                        setTimeout(function () { location.reload(); }, 1500); // 终态刷新页面以显示下载按钮
+                    }
+                }
+            });
+        }
+        $('#refreshLogBtn').on('click', poll);
+        scrollLogBottom();
+        setInterval(poll, 3000);
+    });
+</script>
+}
