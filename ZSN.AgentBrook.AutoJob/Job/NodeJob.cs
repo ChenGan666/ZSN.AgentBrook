@@ -12,8 +12,8 @@ using ZSN.Utils.Core.Helpers;
 namespace ZSN.AgentBrook.AutoJob
 {
     /// <summary>
-    /// NodeJob - 生产者：快速获取任务并入队 Redis，不执行实际任务处理
-    /// 通过 Redis 队列解耦任务获取与执行，避免 [DisallowConcurrentExecution] 导致的堵塞
+    /// NodeJob - 补偿扫描：任务创建时已由 TaskInfoBussiness.Add 直推 Redis 队列（事件驱动），
+    /// 本 Job 仅作为兜底：扫描直推失败回退/异常恢复后处于 Waiting 状态的任务，低频入队 Redis
     /// </summary>
     public class NodeJob : JobBase, IJob
     {
@@ -21,9 +21,9 @@ namespace ZSN.AgentBrook.AutoJob
         private const int NodeExcutionErrorLogID = 308;
 
         /// <summary>
-        /// Redis 队列 Key，NodeTaskQueueConsumer 从此队列消费
+        /// Redis 队列 Key，NodeTaskQueueConsumer 从此队列消费（与 BLL 直推队列共用）
         /// </summary>
-        public const string QUEUE_KEY = "nodejob:taskqueue";
+        public const string QUEUE_KEY = TaskInfoBussiness.NodeTaskQueueKey;
 
         Task IJob.Execute(IJobExecutionContext context)
         {

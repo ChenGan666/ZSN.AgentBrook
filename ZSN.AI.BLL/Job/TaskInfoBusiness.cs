@@ -8,12 +8,32 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using Senparc.CO2NET.Extensions;
+using ZSN.Utils.Core.Helpers;
 namespace ZSN.AI.BLL
 {
     public partial class TaskInfoBussiness
     {
         #region 基础信息
         private const string ConnectionName = "JobDb";
+
+        /// <summary>
+        /// 节点任务Redis队列Key（与NodeTaskQueueConsumer消费的队列一致）
+        /// </summary>
+        public const string NodeTaskQueueKey = "nodejob:taskqueue";
+
+        /// <summary>
+        /// 支持事件驱动直推Redis队列的节点类型（与NodeJob补偿扫描的类型列表保持一致）
+        /// </summary>
+        private static readonly HashSet<NodeType> DirectDispatchNodeTypes = new HashSet<NodeType>
+        {
+            NodeType.Start, NodeType.AgentStart, NodeType.End, NodeType.AgentEnd,
+            NodeType.LargeModel, NodeType.Agent, NodeType.Plugins, NodeType.MainAI,
+            NodeType.Selector, NodeType.KnowledgeBase, NodeType.Merge, NodeType.MCP,
+            NodeType.FileToMarkdown, NodeType.HumanInTheLoop, NodeType.IntentionRecognition,
+            NodeType.HumanInTheLoopInput, NodeType.SkillAgent, NodeType.ImageGeneration,
+            NodeType.VideoGeneration, NodeType.ClawAI, NodeType.ServiceDesk,
+            NodeType.Research, NodeType.Voice
+        };
         #endregion
 
         #region tb_task_info
@@ -51,10 +71,59 @@ namespace ZSN.AI.BLL
         }
         /// <summary>
         /// 增加一条数据
+        /// 事件驱动优化：符合条件的节点任务以Processing状态入库并直推Redis队列，
+        /// 避免NodeJob高频轮询MySQL造成锁竞争；Redis推送失败时回退Waiting，由NodeJob补偿扫描兜底
         /// </summary>
         public static string Add(TaskInfo model)
         {
-            return DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_Add(model);
+            bool directDispatch = CanDirectDispatch(model);
+            if (directDispatch)
+            {
+                model.State = TaskState.Processing;
+            }
+
+            string id = DatabaseProvider.GetTaskInfo(ConnectionName).TaskInfo_Add(model);
+
+            if (directDispatch && !string.IsNullOrEmpty(id))
+            {
+                if (!TryEnqueueNodeTask(model))
+                {
+                    // Redis入队失败，回退为Waiting，由NodeJob补偿扫描处理
+                    model.State = TaskState.Waiting;
+                    updateTask(model.TaskID, TaskState.Waiting, model.Results);
+                }
+            }
+            return id;
+        }
+
+        /// <summary>
+        /// 判断任务是否符合直推Redis队列的条件
+        /// </summary>
+        private static bool CanDirectDispatch(TaskInfo model)
+        {
+            return model != null
+                && model.State == TaskState.Waiting
+                && model.LoopType == LoopType.NOLoop
+                && DirectDispatchNodeTypes.Contains(model.TaskType);
+        }
+
+        /// <summary>
+        /// 将任务直推到Redis节点任务队列
+        /// </summary>
+        private static bool TryEnqueueNodeTask(TaskInfo model)
+        {
+            try
+            {
+                var redis = new RedisHelper().GetConnectionRedisMultiplexer().GetDatabase();
+                redis.ListLeftPush(NodeTaskQueueKey, JsonConvert.SerializeObject(model));
+                Console.WriteLine($"[TaskInfoBusiness] 任务直推队列 - TaskID: {model.TaskID}, Type: {model.TaskType}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[TaskInfoBusiness-Error] 任务直推Redis失败，回退Waiting - TaskID: {model.TaskID}: {ex.Message}");
+                return false;
+            }
         }
         /// <summary>
         /// 更新一条数据
