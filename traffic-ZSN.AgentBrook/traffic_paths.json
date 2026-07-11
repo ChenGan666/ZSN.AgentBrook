@@ -2,19 +2,19 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 70,
-    "uniques": 25
+    "count": 65,
+    "uniques": 23
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulse",
     "title": "/pulse",
-    "count": 12,
+    "count": 13,
     "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
-    "count": 10,
+    "count": 12,
     "uniques": 1
   },
   {
@@ -24,16 +24,16 @@
     "uniques": 4
   },
   {
+    "path": "/ChenGan666/ZSN.AgentBrook/blob/main/README.md",
+    "title": "/blob/main/README.md",
+    "count": 5,
+    "uniques": 3
+  },
+  {
     "path": "/ChenGan666/ZSN.AgentBrook/stargazers",
     "title": "/stargazers",
     "count": 5,
     "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/blob/main/README.md",
-    "title": "/blob/main/README.md",
-    "count": 4,
-    "uniques": 2
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/blob/main/README_EN.md",
