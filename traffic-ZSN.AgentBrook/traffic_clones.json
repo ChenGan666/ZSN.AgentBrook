@@ -218,14 +218,14 @@
       "uniques": 9
     },
     {
-      "timestamp": "2026-07-02T00:00:00Z",
-      "count": 21,
-      "uniques": 13
-    },
-    {
       "timestamp": "2026-07-03T00:00:00Z",
       "count": 21,
       "uniques": 11
+    },
+    {
+      "timestamp": "2026-07-02T00:00:00Z",
+      "count": 21,
+      "uniques": 13
     },
     {
       "timestamp": "2026-07-04T00:00:00Z",
