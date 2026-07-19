@@ -2,19 +2,13 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 50,
-    "uniques": 24
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/tree/main",
-    "title": "/tree/main",
-    "count": 12,
-    "uniques": 5
+    "count": 43,
+    "uniques": 23
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
-    "count": 9,
+    "count": 8,
     "uniques": 1
   },
   {
@@ -24,10 +18,10 @@
     "uniques": 4
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
-    "title": "/pulse",
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/main",
+    "title": "/tree/main",
     "count": 7,
-    "uniques": 1
+    "uniques": 2
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulls",
@@ -36,15 +30,15 @@
     "uniques": 2
   },
   {
+    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
+    "title": "/pulse",
+    "count": 5,
+    "uniques": 1
+  },
+  {
     "path": "/ChenGan666/ZSN.AgentBrook/blob/main/README_EN.md",
     "title": "/blob/main/README_EN.md",
     "count": 3,
-    "uniques": 2
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/tree/dev",
-    "title": "/tree/dev",
-    "count": 2,
     "uniques": 2
   },
   {
@@ -57,6 +51,12 @@
     "path": "/ChenGan666/ZSN.AgentBrook/tree/main/docker",
     "title": "/tree/main/docker",
     "count": 2,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/actions",
+    "title": "/actions",
+    "count": 1,
     "uniques": 1
   }
 ]
