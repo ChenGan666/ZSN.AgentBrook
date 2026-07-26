@@ -2,8 +2,8 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 37,
-    "uniques": 23
+    "count": 29,
+    "uniques": 20
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/tree/main",
@@ -12,27 +12,21 @@
     "uniques": 2
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues",
-    "title": "/issues",
-    "count": 4,
-    "uniques": 3
+    "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
+    "title": "/graphs/traffic",
+    "count": 2,
+    "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulls",
     "title": "/pulls",
-    "count": 3,
-    "uniques": 2
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
-    "title": "/graphs/traffic",
-    "count": 3,
+    "count": 2,
     "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulse",
     "title": "/pulse",
-    "count": 3,
+    "count": 2,
     "uniques": 1
   },
   {
@@ -42,20 +36,26 @@
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/actions",
-    "title": "/actions",
-    "count": 1,
-    "uniques": 1
-  },
-  {
     "path": "/ChenGan666/ZSN.AgentBrook/blob/main/.gitattributes",
     "title": "/blob/main/.gitattributes",
     "count": 1,
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/blob/main/LICENSE",
-    "title": "/blob/main/LICENSE",
+    "path": "/ChenGan666/ZSN.AgentBrook/issues",
+    "title": "/issues",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/stargazers",
+    "title": "/stargazers",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/dev",
+    "title": "/tree/dev",
     "count": 1,
     "uniques": 1
   }
