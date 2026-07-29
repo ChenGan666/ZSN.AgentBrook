@@ -2,24 +2,18 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 28,
-    "uniques": 20
+    "count": 23,
+    "uniques": 16
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/tree/main",
     "title": "/tree/main",
-    "count": 5,
-    "uniques": 2
+    "count": 4,
+    "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
-    "count": 2,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
-    "title": "/pulls",
     "count": 2,
     "uniques": 1
   },
@@ -36,12 +30,6 @@
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/blob/main/.gitattributes",
-    "title": "/blob/main/.gitattributes",
-    "count": 1,
-    "uniques": 1
-  },
-  {
     "path": "/ChenGan666/ZSN.AgentBrook/issues",
     "title": "/issues",
     "count": 1,
@@ -54,8 +42,14 @@
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/tree/dev",
-    "title": "/tree/dev",
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/LitJSON",
+    "title": "/tree/main/LitJSON",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/publish",
+    "title": "/tree/main/publish",
     "count": 1,
     "uniques": 1
   }
