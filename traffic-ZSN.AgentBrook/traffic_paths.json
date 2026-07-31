@@ -2,54 +2,30 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 19,
-    "uniques": 14
+    "count": 12,
+    "uniques": 9
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/tree/main",
-    "title": "/tree/main",
-    "count": 4,
+    "path": "/ChenGan666/ZSN.AgentBrook/discussions",
+    "title": "/discussions",
+    "count": 1,
     "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
-    "count": 2,
+    "count": 1,
     "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulse",
     "title": "/pulse",
-    "count": 2,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/ZSN.AgentBrook.MessageGateway",
-    "title": "/tree/main/ZSN.AgentBrook.MessageGateway",
-    "count": 2,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues",
-    "title": "/issues",
-    "count": 1,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/stargazers",
-    "title": "/stargazers",
     "count": 1,
     "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/tree/main/LitJSON",
     "title": "/tree/main/LitJSON",
-    "count": 1,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/publish",
-    "title": "/tree/main/publish",
     "count": 1,
     "uniques": 1
   }
