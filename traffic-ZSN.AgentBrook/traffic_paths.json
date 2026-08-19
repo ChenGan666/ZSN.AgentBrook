@@ -2,20 +2,8 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 7,
-    "uniques": 4
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
-    "title": "/graphs/traffic",
-    "count": 2,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
-    "title": "/pulse",
-    "count": 2,
-    "uniques": 1
+    "count": 8,
+    "uniques": 6
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/blob/fbb9d25883921a02e10a7fa0804799c5bbaaf7cd/LitJSON/JsonMockWrapper.cs",
@@ -26,6 +14,24 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook/blob/fbb9d25883921a02e10a7fa0804799c5bbaaf7cd/LitJSON/OrderedDictionaryEnumerator.cs",
     "title": "/blob/fbb9d25883921a02e10a7fa0804799c5bbaaf7cd/LitJSON/OrderedDictionaryEnumerator.cs",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
+    "title": "/graphs/traffic",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/issues",
+    "title": "/issues",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
+    "title": "/pulse",
     "count": 1,
     "uniques": 1
   }
