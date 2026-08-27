@@ -204,9 +204,30 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
             {
                 Workflow = WorkflowInfoBussiness.GetModel(id);
             }
-            else
+
+            // 如果工作流不存在于数据库中（id为空或GetModel返回null），
+            // 调用initWorkFlow创建带默认节点的工作流并立即持久化
+            if (Workflow == null || id.IsNullOrEmpty())
             {
-                id = Workflow.WorkflowID;
+                WorkFlow newWorkflow = Node.initWorkFlow(MainID, (MainType)MainType);
+                // 将Config对象序列化为JSON字符串，MySQL JSON列需要有效JSON文本
+                foreach (var node in newWorkflow.Nodes)
+                {
+                    if (node.Config != null)
+                    {
+                        node.Config = JsonConvert.SerializeObject(node.Config);
+                    }
+                }
+                foreach (var edge in newWorkflow.Edges)
+                {
+                    if (edge.Config != null)
+                    {
+                        edge.Config = JsonConvert.SerializeObject(edge.Config);
+                    }
+                }
+                string savedId = WorkflowInfoBussiness.Save(newWorkflow);
+                Workflow = WorkflowInfoBussiness.GetModel(savedId);
+                id = savedId;
             }
             WorkflowTester workflowTester = WorkflowTester.Config;
 

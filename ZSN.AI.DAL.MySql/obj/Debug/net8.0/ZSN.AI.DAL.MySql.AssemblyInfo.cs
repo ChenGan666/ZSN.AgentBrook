@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZSN.AI.DAL.MySql")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e6428bf12a37661f74f337e5ea4caf1067a7743c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fbb9d25883921a02e10a7fa0804799c5bbaaf7cd")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZSN.AI.DAL.MySql")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZSN.AI.DAL.MySql")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
