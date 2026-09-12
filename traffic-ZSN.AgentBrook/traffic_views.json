@@ -503,14 +503,14 @@
       "uniques": 2
     },
     {
-      "timestamp": "2026-08-28T00:00:00Z",
-      "count": 6,
-      "uniques": 3
-    },
-    {
       "timestamp": "2026-08-29T00:00:00Z",
       "count": 0,
       "uniques": 0
+    },
+    {
+      "timestamp": "2026-08-28T00:00:00Z",
+      "count": 6,
+      "uniques": 3
     },
     {
       "timestamp": "2026-08-30T00:00:00Z",
