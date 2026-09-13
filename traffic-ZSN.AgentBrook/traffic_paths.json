@@ -2,26 +2,14 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 20,
-    "uniques": 13
+    "count": 19,
+    "uniques": 11
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/discussions",
     "title": "/discussions",
-    "count": 10,
-    "uniques": 5
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues",
-    "title": "/issues",
-    "count": 2,
-    "uniques": 2
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
-    "title": "/pulls",
-    "count": 2,
-    "uniques": 2
+    "count": 8,
+    "uniques": 4
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
@@ -36,8 +24,20 @@
     "uniques": 1
   },
   {
+    "path": "/ChenGan666/ZSN.AgentBrook/issues",
+    "title": "/issues",
+    "count": 1,
+    "uniques": 1
+  },
+  {
     "path": "/ChenGan666/ZSN.AgentBrook/projects",
     "title": "/projects",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
+    "title": "/pulls",
     "count": 1,
     "uniques": 1
   }
