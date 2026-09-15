@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ZSN.AI.DAL")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fbb9d25883921a02e10a7fa0804799c5bbaaf7cd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0377ca0e38ee0f489d4a8aadf94f7e341b131528")]
 [assembly: System.Reflection.AssemblyProductAttribute("ZSN.AI.DAL")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ZSN.AI.DAL")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

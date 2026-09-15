@@ -1,0 +1,373 @@
+@{
+    var channel = ViewBag.Channel as ChannelConfigInfo;
+    var appList = ViewBag.AppList as List<AppInfo>;
+}
+@section Css{
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+        .provider-config {
+            display: none;
+        }
+        .provider-config.active {
+            display: block;
+        }
+        .receive-config {
+            display: none;
+        }
+        .receive-config.active {
+            display: block;
+        }
+    </style>
+}
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="ChannelID" value="@channel.ChannelID" />
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>渠道名称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="ChannelName" lay-verify="required" value="@channel.ChannelName"
+                                   autocomplete="off" class="layui-input" placeholder="请输入渠道名称">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>平台类型
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <select name="ProviderType" lay-verify="required" lay-filter="ProviderType">
+                                <option value="">请选择平台</option>
+                                <option value="1">企业微信</option>
+                                <option value="2">WhatsApp</option>
+                                <option value="3">钉钉</option>
+                                <option value="4">飞书</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 企业微信配置 -->
+                <div class="provider-config provider-1">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">CorpId</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="CorpId" class="layui-input config-field" placeholder="企业ID" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">CorpSecret</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="password" data-field="CorpSecret" class="layui-input config-field" placeholder="应用Secret" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">AgentId</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="AgentId" class="layui-input config-field" placeholder="应用AgentId" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">Token</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="Token" class="layui-input config-field" placeholder="回调Token" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">EncodingAESKey</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="EncodingAESKey" class="layui-input config-field" placeholder="消息加解密密钥" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WhatsApp配置 -->
+                <div class="provider-config provider-2">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">PhoneNumberId</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="PhoneNumberId" class="layui-input config-field" placeholder="电话号码ID" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">AccessToken</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="password" data-field="AccessToken" class="layui-input config-field" placeholder="访问令牌" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">VerifyToken</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="VerifyToken" class="layui-input config-field" placeholder="Webhook验证令牌" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">AppSecret</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="password" data-field="AppSecret" class="layui-input config-field" placeholder="应用密钥" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 钉钉配置 -->
+                <div class="provider-config provider-3">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">AppKey</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="AppKey" class="layui-input config-field" placeholder="应用AppKey" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">AppSecret</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="password" data-field="AppSecret" class="layui-input config-field" placeholder="应用AppSecret" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">AgentId</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="AgentId" class="layui-input config-field" placeholder="应用AgentId" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 飞书配置 -->
+                <div class="provider-config provider-4">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">AppId</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="AppId" class="layui-input config-field" placeholder="应用AppId" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">AppSecret</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="password" data-field="AppSecret" class="layui-input config-field" placeholder="应用AppSecret" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">VerificationToken</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="VerificationToken" class="layui-input config-field" placeholder="事件验证Token" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">EncryptKey</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" data-field="EncryptKey" class="layui-input config-field" placeholder="消息加解密密钥" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="ConfigJson" id="ConfigJson" value="" />
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>流向
+                    </label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="FlowDirection" value="1" title="仅发送">
+                        <input type="radio" name="FlowDirection" value="2" title="仅接收">
+                        <input type="radio" name="FlowDirection" value="3" title="双向">
+                    </div>
+                </div>
+
+                <!-- 接收配置（仅接收/双向时显示） -->
+                <div class="receive-config">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">
+                            <span class="x-red">*</span>目标应用
+                        </label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <select name="TargetAppID" lay-filter="TargetAppID">
+                                    <option value="">请选择应用</option>
+                                    @foreach (var app in appList)
+                                    {
+                                        <option value="@app.AppID">@app.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">会话超时(分)</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="number" name="SessionTimeoutMinutes" value="@channel.SessionTimeoutMinutes"
+                                       autocomplete="off" class="layui-input" placeholder="默认30分钟">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="Enabled" value="1" title="启用">
+                        <input type="radio" name="Enabled" value="0" title="禁用">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn save" lay-filter="save" lay-submit>保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(function () {
+            var form = layui.form,
+                layer = layui.layer;
+            form.render();
+
+            var channelData = {
+                ProviderType: @channel.ProviderType,
+                FlowDirection: @channel.FlowDirection,
+                Enabled: @channel.Enabled,
+                TargetAppID: '@channel.TargetAppID'
+            };
+
+            var configJson = '@Html.Raw(string.IsNullOrEmpty(channel.ConfigJson) ? "" : channel.ConfigJson.Replace("'", "\\'"))';
+            var configData = {};
+            if (configJson) {
+                try { configData = JSON.parse(configJson); } catch (e) { }
+            }
+
+            // JS设值（避免option tag helper问题）
+            $('[name="ProviderType"]').val(channelData.ProviderType);
+            $('[name="FlowDirection"][value="' + channelData.FlowDirection + '"]').prop('checked', true);
+            $('[name="Enabled"][value="' + channelData.Enabled + '"]').prop('checked', true);
+            $('[name="TargetAppID"]').val(channelData.TargetAppID);
+            form.render();
+
+            // 填充ConfigJson字段值
+            function loadConfigFields(providerType) {
+                var data = configData || {};
+                var $container = $('.provider-' + providerType);
+                $container.find('.config-field').each(function () {
+                    var field = $(this).data('field');
+                    if (data[field] !== undefined) {
+                        $(this).val(data[field]);
+                    }
+                });
+            }
+
+            // 初始化当前Provider的字段值和显示
+            function showProvider(providerType) {
+                $('.provider-config').removeClass('active');
+                if (providerType) {
+                    $('.provider-' + providerType).addClass('active');
+                    loadConfigFields(providerType);
+                }
+            }
+
+            showProvider(channelData.ProviderType);
+
+            // 初始化流向显示
+            function showReceiveConfig(flowDirection) {
+                if (flowDirection === 2 || flowDirection === 3) {
+                    $('.receive-config').addClass('active');
+                } else {
+                    $('.receive-config').removeClass('active');
+                }
+            }
+            showReceiveConfig(channelData.FlowDirection);
+
+            // 收集ConfigJson
+            function collectConfigJson() {
+                var providerType = $('[name="ProviderType"]').val();
+                var data = {};
+                $('.provider-' + providerType + ' .config-field').each(function () {
+                    var field = $(this).data('field');
+                    var val = $(this).val();
+                    if (field && val) {
+                        data[field] = val;
+                    }
+                });
+                return JSON.stringify(data);
+            }
+
+            // 切换平台类型
+            form.on('select(ProviderType)', function (data) {
+                showProvider(data.value);
+            });
+
+            // 切换流向
+            form.on('radio(FlowDirection)', function (data) {
+                showReceiveConfig(parseInt(data.value));
+            });
+
+            // 提交保存
+            form.on('submit(save)', function (obj) {
+                $('#ConfigJson').val(collectConfigJson());
+                layer.load(0);
+                $.ajax({
+                    url: '@Url.Action("ChannelSave")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: 1 });
+                            if (rst.Status) {
+                                if (parent) {
+                                    parent.location.reload();
+                                } else {
+                                    location.reload();
+                                }
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}

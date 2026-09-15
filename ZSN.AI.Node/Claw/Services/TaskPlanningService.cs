@@ -145,7 +145,7 @@ namespace ZSN.AI.Node.Claw.Services
             catch (Exception ex)
             {
                 LoggerHelper.LogError(_logger, ClawLogModules.TASK_PLANNING, " 规划创建失败,回退到简单计划");
-                
+
                 // 失败时回退到简单计划
                 var planning = CreateSimplePlan(originalTask, availableWorkflows, AppID, SessionID, MemberID, NodeID, ProcessesID);
                 await SavePlanningAsync(planning);
@@ -287,12 +287,12 @@ namespace ZSN.AI.Node.Claw.Services
             catch (Exception ex)
             {
                 LoggerHelper.LogError(_logger, ClawLogModules.TASK_PLANNING, $" 重新规划失败 - PlanningID: {currentPlanning.PlanningID}");
-                
+
                 // 失败时简单增加修订计数
                 currentPlanning.Metadata.RevisionCount++;
                 currentPlanning.LastUpdateTime = DateTime.Now;
                 await SavePlanningAsync(currentPlanning);
-                
+
                 return currentPlanning;
             }
         }

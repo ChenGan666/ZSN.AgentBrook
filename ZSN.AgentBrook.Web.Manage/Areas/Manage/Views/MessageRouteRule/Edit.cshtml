@@ -1,0 +1,313 @@
+@{
+    var rule = ViewBag.Rule as MessageRouteRuleInfo;
+    var channelList = ViewBag.ChannelList as List<ChannelConfigInfo>;
+    var appList = ViewBag.AppList as List<AppInfo>;
+}
+@section Css{
+    <style>
+        .layui-form-label {
+            width: 120px;
+        }
+        .match-condition {
+            display: none;
+        }
+        .match-condition.active {
+            display: block;
+        }
+        .autoreply-config {
+            display: none;
+        }
+        .autoreply-config.active {
+            display: block;
+        }
+    </style>
+}
+<div class="layui-row">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form class="layui-form">
+                <input type="hidden" name="RuleID" value="@rule.RuleID" />
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>规则名称
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="text" name="RuleName" lay-verify="required" value="@rule.RuleName"
+                                   autocomplete="off" class="layui-input" placeholder="请输入规则名称">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">关联渠道</label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <select name="ChannelID" lay-filter="ChannelID">
+                                <option value="">所有渠道</option>
+                                @foreach (var ch in channelList)
+                                {
+                                    <option value="@ch.ChannelID">@ch.ChannelName</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>匹配类型
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <select name="MatchType" lay-verify="required" lay-filter="MatchType">
+                                <option value="">请选择匹配类型</option>
+                                <option value="All">全部匹配</option>
+                                <option value="Keyword">关键词</option>
+                                <option value="Regex">正则表达式</option>
+                                <option value="Intent">意图识别</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 关键词匹配条件 -->
+                <div class="match-condition match-Keyword">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">
+                            <span class="x-red">*</span>关键词列表
+                        </label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <textarea name="Keywords" placeholder="每行一个关键词" class="layui-textarea" id="KeywordsArea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">匹配逻辑</label>
+                        <div class="layui-input-inline">
+                            <input type="radio" name="KeywordLogic" value="OR" title="任一匹配(OR)">
+                            <input type="radio" name="KeywordLogic" value="AND" title="全部匹配(AND)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 正则匹配条件 -->
+                <div class="match-condition match-Regex">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">
+                            <span class="x-red">*</span>正则表达式
+                        </label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" name="RegexPattern" autocomplete="off" class="layui-input" placeholder="正则表达式，如：^你好">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 意图识别条件 -->
+                <div class="match-condition match-Intent">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">意图描述</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <input type="text" name="IntentDesc" autocomplete="off" class="layui-input" placeholder="描述要匹配的意图（开发中）" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="MatchCondition" id="MatchCondition" value="" />
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>目标应用
+                    </label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <select name="TargetAppID" lay-verify="required">
+                                <option value="">请选择应用</option>
+                                @foreach (var app in appList)
+                                {
+                                    <option value="@app.AppID">@app.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">会话超时(分)</label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="number" name="SessionTimeoutMinutes" value="@rule.SessionTimeoutMinutes"
+                                   autocomplete="off" class="layui-input" placeholder="默认30分钟，0=每次新建">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">自动回复</label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="EnableAutoReply" value="1" title="启用" lay-filter="EnableAutoReply">
+                        <input type="radio" name="EnableAutoReply" value="0" title="禁用" lay-filter="EnableAutoReply">
+                    </div>
+                </div>
+
+                <div class="autoreply-config">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">自动回复内容</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md9">
+                                <textarea name="AutoReplyContent" placeholder="未匹配规则时的自动回复内容" class="layui-textarea">@rule.AutoReplyContent</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">优先级</label>
+                    <div class="layui-input-block">
+                        <div class="layui-col-md9">
+                            <input type="number" name="Priority" value="@rule.Priority"
+                                   autocomplete="off" class="layui-input" placeholder="数字越大优先级越高">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-inline">
+                        <input type="radio" name="Enabled" value="1" title="启用">
+                        <input type="radio" name="Enabled" value="0" title="禁用">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn save" lay-filter="save" lay-submit>保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(function () {
+            var form = layui.form,
+                layer = layui.layer;
+            form.render();
+
+            var ruleData = {
+                ChannelID: '@rule.ChannelID',
+                MatchType: '@rule.MatchType',
+                TargetAppID: '@rule.TargetAppID',
+                EnableAutoReply: @rule.EnableAutoReply,
+                Enabled: @rule.Enabled,
+                MatchCondition: '@Html.Raw(string.IsNullOrEmpty(rule.MatchCondition) ? "" : rule.MatchCondition.Replace("'", "\\'").Replace("\r", "").Replace("\n", "\\n"))'
+            };
+
+            // JS设值（避免option tag helper问题）
+            $('[name="ChannelID"]').val(ruleData.ChannelID);
+            $('[name="MatchType"]').val(ruleData.MatchType);
+            $('[name="TargetAppID"]').val(ruleData.TargetAppID);
+            $('[name="EnableAutoReply"][value="' + ruleData.EnableAutoReply + '"]').prop('checked', true);
+            $('[name="Enabled"][value="' + ruleData.Enabled + '"]').prop('checked', true);
+            form.render();
+
+            // 解析已有的MatchCondition
+            var condData = {};
+            if (ruleData.MatchCondition) {
+                try { condData = JSON.parse(ruleData.MatchCondition); } catch (e) { }
+            }
+
+            // 显示匹配条件区域
+            function showMatchCondition(matchType) {
+                $('.match-condition').removeClass('active');
+                if (matchType) {
+                    $('.match-' + matchType).addClass('active');
+
+                    // 回填已有值
+                    if (matchType === 'Keyword' && condData.Keywords) {
+                        $('#KeywordsArea').val(condData.Keywords.join('\n'));
+                        var logic = condData.Logic || 'OR';
+                        $('[name="KeywordLogic"][value="' + logic + '"]').prop('checked', true);
+                        form.render();
+                    }
+                    if (matchType === 'Regex' && condData.Pattern) {
+                        $('[name="RegexPattern"]').val(condData.Pattern);
+                    }
+                }
+            }
+            showMatchCondition(ruleData.MatchType);
+
+            // 自动回复区域
+            function showAutoReply(val) {
+                if (val === 1 || val === '1') {
+                    $('.autoreply-config').addClass('active');
+                } else {
+                    $('.autoreply-config').removeClass('active');
+                }
+            }
+            showAutoReply(ruleData.EnableAutoReply);
+
+            // 切换匹配类型
+            form.on('select(MatchType)', function (data) {
+                showMatchCondition(data.value);
+            });
+
+            // 切换自动回复
+            form.on('radio(EnableAutoReply)', function (data) {
+                showAutoReply(parseInt(data.value));
+            });
+
+            // 收集MatchCondition JSON
+            function collectMatchCondition() {
+                var matchType = $('[name="MatchType"]').val();
+                if (matchType === 'All') return '{}';
+                if (matchType === 'Keyword') {
+                    var kwText = $('#KeywordsArea').val().trim();
+                    var keywords = kwText ? kwText.split('\n').map(function (s) { return s.trim(); }).filter(function (s) { return s; }) : [];
+                    var logic = $('[name="KeywordLogic"]:checked').val() || 'OR';
+                    return JSON.stringify({ Keywords: keywords, Logic: logic });
+                }
+                if (matchType === 'Regex') {
+                    return JSON.stringify({ Pattern: $('[name="RegexPattern"]').val() || '' });
+                }
+                if (matchType === 'Intent') {
+                    return JSON.stringify({ Intent: $('[name="IntentDesc"]').val() || '' });
+                }
+                return '{}';
+            }
+
+            // 提交保存
+            form.on('submit(save)', function (obj) {
+                $('#MatchCondition').val(collectMatchCondition());
+                layer.load(0);
+                $.ajax({
+                    url: '@Url.Action("RuleSave")',
+                    type: 'POST',
+                    data: obj.field,
+                    success: function (rst) {
+                        layer.closeAll();
+                        if (rst) {
+                            layer.msg(rst.ErrorDesc, { icon: 1 });
+                            if (rst.Status) {
+                                if (parent) {
+                                    parent.location.reload();
+                                } else {
+                                    location.reload();
+                                }
+                            }
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}

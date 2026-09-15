@@ -5,6 +5,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
+using ZSN.AI.BLL;
+using ZSN.AI.Entity;
 
 namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
 {

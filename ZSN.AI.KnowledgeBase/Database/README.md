@@ -137,7 +137,7 @@ psql -U postgres -d ClawAI -f 001_create_vector_indexes.sql
 {
   "DbConnectionStrings": {
     "KnowledgeBaseDb": {
-      "Connection": "Host=localhost;Port=5432;Database=ClawAI;Username=postgres;Password=Q1w2e3r4t5y6",
+      "Connection": "Host=localhost;Port=5432;Database=ClawAI;Username=postgres;Password=your_password",
       "GraphName": "knowledge_graph"
     }
   },

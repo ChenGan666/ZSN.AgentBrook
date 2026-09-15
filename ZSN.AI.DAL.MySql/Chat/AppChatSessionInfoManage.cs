@@ -399,13 +399,15 @@ namespace ZSN.AI.DAL.MySql
             StringBuilder strSql = new StringBuilder();
             strSql.Append("update ");
             strSql.Append(AppChatSessionInfoTableName);
-            strSql.Append(" set SessionStatus=@SessionStatus where ChatSessionID=@ChatSessionID");
+            strSql.Append(" set SessionStatus=@SessionStatus,CreateTime=@CreateTime where ChatSessionID=@ChatSessionID");
             MySqlParameter[] parameters = {
                 new MySqlParameter("@SessionStatus", MySqlDbType.Int32, 10),
+                new MySqlParameter("@CreateTime", MySqlDbType.DateTime),
                 new MySqlParameter("@ChatSessionID", MySqlDbType.VarChar, 64)
             };
             parameters[0].Value = sessionStatus;
-            parameters[1].Value = chatSessionID;
+            parameters[1].Value = DateTime.Now;
+            parameters[2].Value = chatSessionID;
             int rows = DbHelper.ExecuteNonQuery(DbConfig.GetDbInfo(AppChatSessionInfoConnectionName), CommandType.Text, strSql.ToString(), parameters);
             return rows > 0;
         }

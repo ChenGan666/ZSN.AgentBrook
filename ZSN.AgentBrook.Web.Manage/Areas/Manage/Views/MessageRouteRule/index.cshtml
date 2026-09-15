@@ -1,0 +1,183 @@
+@{
+    var lst = ViewBag.RuleList as List<MessageRouteRuleInfo>;
+}
+@section Css{
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <div class="layui-input-inline layui-show-xs-block">
+                        <button class="layui-btn add_bt">
+                            <i class="layui-icon"></i>新建规则
+                        </button>
+                    </div>
+                    <div class="layui-input-inline layui-show-xs-block">
+                        <button class="layui-btn layui-btn-danger delete-selected_bt">删除选中</button>
+                    </div>
+                    <hr>
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-table layui-form">
+                        <colgroup>
+                            <col width="60">
+                            <col>
+                            <col width="100">
+                            <col>
+                            <col>
+                            <col width="80">
+                            <col width="80">
+                            <col width="160">
+                            <col width="160">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" class="check-all" lay-skin="primary" lay-filter="check-all" />
+                                </th>
+                                <th>规则名称</th>
+                                <th>匹配类型</th>
+                                <th>关联渠道</th>
+                                <th>目标应用</th>
+                                <th>优先级</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in lst)
+                            {
+                                var matchText = item.MatchType switch
+                                {
+                                    "All" => "全部匹配",
+                                    "Keyword" => "关键词",
+                                    "Regex" => "正则表达式",
+                                    "Intent" => "意图识别",
+                                    _ => item.MatchType
+                                };
+                                <tr data-mid="@item.RuleID">
+                                    <td>
+                                        <input type="checkbox" class="check-item" value="@item.RuleID" lay-skin="primary" lay-filter="check-item" />
+                                    </td>
+                                    <td>@item.RuleName</td>
+                                    <td>@matchText</td>
+                                    <td>@(string.IsNullOrEmpty(item.ChannelID) ? "所有渠道" : item.ChannelID)</td>
+                                    <td>@(string.IsNullOrEmpty(item.TargetAppID) ? "-" : item.TargetAppID)</td>
+                                    <td>@item.Priority</td>
+                                    <td>
+                                        <input type="checkbox" name="switch" lay-text="启用|禁用" lay-skin="switch" lay-filter="status" @(item.Enabled == 1 ? "checked" : "")>
+                                    </td>
+                                    <td>@item.CreateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>
+                                        <div style="white-space: nowrap;">
+                                            <button class="layui-btn layui-btn-sm edit_bt">编辑</button>
+                                            <button class="layui-btn layui-btn-danger layui-btn-sm del_bt">删除</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="layui-card-body">
+                    <div class="pagination" id="pageId"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(function () {
+            var form = layui.form;
+            var laypage = layui.laypage;
+            form.render();
+
+            laypage.render({
+                elem: 'pageId',
+                count: @ViewBag.Total,
+                limit: @ViewBag.Size,
+                curr: @ViewBag.Index,
+                layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip'],
+                jump: function (obj, f) {
+                    if (f) return;
+                    location.href = "@Url.Action("index")?index=" + obj.curr + "&size=" + obj.limit;
+                }
+            });
+
+            /* 新增 */
+            $('.add_bt').click(function () {
+                layer.open({
+                    type: 2,
+                    title: '新建路由规则',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['100%', '100%'],
+                    content: '@Url.Action("Edit")'
+                });
+            });
+
+            /* 编辑 */
+            $('.edit_bt').click(function () {
+                var mid = $(this).parents("tr").data('mid');
+                layer.open({
+                    type: 2,
+                    title: '编辑路由规则',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['100%', '100%'],
+                    content: '@Url.Action("Edit")?mid=' + mid
+                });
+            });
+
+            /* 删除 */
+            $('.del_bt').click(function () {
+                var mid = $(this).parents("tr").data('mid');
+                layer.confirm("确认要删除吗,删除后不能恢复!", { title: "删除确认" }, function (index) {
+                    $.ajax({
+                        url: '@Url.Action("RuleDel")',
+                        type: 'POST',
+                        data: { mid: mid },
+                        success: function (res) {
+                            layer.msg(res.ErrorDesc, { icon: 1, time: 1000 }, function () { location.reload(); });
+                        }
+                    });
+                });
+            });
+
+            /* 批量删除 */
+            $('.delete-selected_bt').on('click', function () {
+                var ids = $('.check-item:checked').map(function () { return $(this).val(); }).get();
+                if (ids.length === 0) {
+                    layer.msg('请先选择要删除的记录');
+                    return;
+                }
+                layer.confirm("确认要删除吗,删除后不能恢复!", { title: "删除确认" }, function (index) {
+                    $.ajax({
+                        url: '@Url.Action("RuleDel")',
+                        type: 'POST',
+                        data: { mid: ids.join(',') },
+                        success: function (res) {
+                            layer.msg(res.ErrorDesc, { icon: 1, time: 1000 }, function () { location.reload(); });
+                        }
+                    });
+                });
+            });
+
+            /* 全选/反选 */
+            form.on('checkbox(check-all)', function (data) {
+                $('.check-item').prop('checked', data.elem.checked);
+                form.render('checkbox');
+            });
+            form.on('checkbox(check-item)', function (data) {
+                var all = $('.check-item').length;
+                var selected = $('.check-item:checked').length;
+                $('.check-all').prop('checked', all > 0 && all === selected);
+                form.render('checkbox');
+            });
+        });
+    </script>
+}

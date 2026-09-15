@@ -59,6 +59,8 @@ namespace ZSN.AgentBrook.AutoJob
             catch (Exception e)
             {
                 num = -1;
+                Console.WriteLine($"[MarkdownJob] Auto 轮询异常: {e}");
+                _logger.LogError(e, $"[MarkdownJob] Auto 轮询异常");
                 DefaultLogService.AddOperationLog(ErrorId, e.Message);
             }
             return await Task.FromResult(num);
@@ -123,13 +125,16 @@ namespace ZSN.AgentBrook.AutoJob
                         }
                         catch (Exception callbackEx)
                         {
-                            _logger.LogError($"发送结果到回调URL时出错: {callbackEx.Message}");
+                            Console.WriteLine($"[MarkdownJob] 回调URL发送失败 - TaskID: {task.TaskID}, Url: {fileChunkConfig.reCallUrl}, Error: {callbackEx}");
+                            _logger.LogError(callbackEx, $"[MarkdownJob] 回调URL发送失败 - TaskID: {task.TaskID}, Url: {fileChunkConfig.reCallUrl}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[MarkdownJob] 文件转换失败 - TaskID: {task.TaskID}, Error: {ex}");
+                _logger.LogError(ex, $"[MarkdownJob] 文件转换失败 - TaskID: {task.TaskID}");
                 task.Results = new Results() { Data = ex };
                 task.State = TaskState.Failure;
                 DefaultLogService.AddOperationLog(ErrorId, ex.Message);

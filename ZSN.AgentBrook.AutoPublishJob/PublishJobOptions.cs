@@ -143,6 +143,9 @@ namespace ZSN.AgentBrook.AutoPublishJob
 
         /// <summary>
         /// 探测 MSVC 工具链(vcvarsall.bat + clang 目录)。
+        /// 完整复刻 ZSN.AgentBrook.Client/publish-win.bat 的 :find_msvc 子程序：
+        ///   - 遍历 VS 安装根下各 edition，找 vcvarsall.bat 和 VC\Tools\Llvm\x64\bin\clang.exe
+        ///   - clang 兜底：独立安装的 C:\Program Files\LLVM\bin
         /// tauri 编译 native 代码：vcvarsall 提供 cl.exe/link.exe；clang 是 cc-rs 的必需工具
         /// (否则报 "failed to find tool clang")。
         /// </summary>
@@ -156,7 +159,7 @@ namespace ZSN.AgentBrook.AutoPublishJob
             if (!string.IsNullOrWhiteSpace(VcVarsPath) && File.Exists(VcVarsPath)) vcvarsAll = VcVarsPath;
             if (!OperatingSystem.IsWindows()) return new MsvcToolchain(null, null, null);
 
-            // 2. 遍历 VS 安装根
+            // 2. 遍历 VS 安装根(publish-win.bat 用 %ProgramFiles%\Microsoft Visual Studio\*)
             var vsRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Microsoft Visual Studio");
             if (Directory.Exists(vsRoot))
             {

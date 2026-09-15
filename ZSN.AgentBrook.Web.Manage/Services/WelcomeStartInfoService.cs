@@ -51,18 +51,18 @@ namespace ZSN.AgentBrook.Web.Manage.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("[WelcomeStartInfo] 提交失败: {StatusCode}", response.StatusCode);
+                    _logger.LogWarning("[WelcomeStartInfo] 提交失败: {StatusCode}, {Response}", response.StatusCode, responseText);
                     return null;
                 }
 
                 var result = JsonConvert.DeserializeObject<StartInfoResponse>(responseText);
                 if (result?.Success == true && !string.IsNullOrWhiteSpace(result.InstallationId))
                 {
-                    _logger.LogInformation("[WelcomeStartInfo] 提交成功");
+                    _logger.LogInformation("[WelcomeStartInfo] 提交成功，InstallationId={InstallationId}", result.InstallationId);
                     return result.InstallationId;
                 }
 
-                _logger.LogWarning("[WelcomeStartInfo] 提交响应异常");
+                _logger.LogWarning("[WelcomeStartInfo] 提交响应异常: {Response}", responseText);
                 return null;
             }
             catch (Exception ex)
@@ -91,7 +91,7 @@ namespace ZSN.AgentBrook.Web.Manage.Services
         {
             var os = GetOperatingSystem();
             var ip = GetClientIp();
-            var country = "CN";
+            var country = "CN"; // 本地服务暂不解析 IP，默认 CN
             var firstRunTime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
             return new StartInfoRequest

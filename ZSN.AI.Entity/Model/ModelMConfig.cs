@@ -7,7 +7,7 @@ namespace ZSN.AI.Entity
     /// <summary>
     /// tb_large_model_info.MConfig 的结构化解析模型。
     /// MConfig 列以 JSON 字符串存储，用于承载模型的预设配置（含 Agent 模式编排大脑的系统提示词）。
-    /// 兼容空值 / 非 JSON 旧数据：解析失败时视为"无预设"，不报错。
+    /// 兼容空值 / 非 JSON 旧数据：解析失败时视为“无预设”，不报错。
     /// </summary>
     public partial class ModelMConfig
     {
@@ -57,7 +57,7 @@ namespace ZSN.AI.Entity
             }
             catch
             {
-                // 存量数据可能为非 JSON 的纯文本，按"无预设"处理（不报错）。
+                // 存量数据可能为非 JSON 的纯文本，按“无预设”处理（不报错）。
                 return new ModelMConfig();
             }
         }

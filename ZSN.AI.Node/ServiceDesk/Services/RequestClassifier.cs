@@ -93,7 +93,7 @@ namespace ZSN.AI.Node.ServiceDesk.Services
             foreach (var rule in intentRules)
             {
                 double score = CalculateMatchScore(message, rule);
-                if (score > 0.3)
+                if (score * 100 > 30)
                 {
                     matchedIntents.Add((rule, score));
                 }
@@ -200,16 +200,16 @@ namespace ZSN.AI.Node.ServiceDesk.Services
             // 策略1：直接回复（问候语、闲聊 — 在外层已处理）
 
             // 策略2：知识库检索（简单问答，意图置信度高）
-            if (complexity == MessageComplexity.Simple && intentResult.Confidence >= 0.7)
+            if (complexity == MessageComplexity.Simple && intentResult.Confidence * 100 >= 70)
                 return ProcessingStrategy.KnowledgeRetrieval;
 
             // 策略3：RAG 增强（中等复杂度，或置信度中等）
             if (complexity == MessageComplexity.Medium ||
-                (complexity == MessageComplexity.Simple && intentResult.Confidence >= 0.4))
+                (complexity == MessageComplexity.Simple && intentResult.Confidence * 100 >= 40))
                 return ProcessingStrategy.RAGEnhanced;
 
             // 策略4：升级到 ClawAI（复杂问题，或置信度低）
-            if (complexity == MessageComplexity.Complex || intentResult.Confidence < 0.4)
+            if (complexity == MessageComplexity.Complex || intentResult.Confidence * 100 < 40)
             {
                 if (config?.EnableEscalation == true)
                     return ProcessingStrategy.EscalateToClawAI;

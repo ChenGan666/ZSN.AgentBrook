@@ -71,8 +71,8 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
                 // 用短哈希(任务ID前12位)做子目录名，避免完整 GUID 导致 Rust 编译路径超 Windows MAX_PATH(260)
                 string shortId = taskID.Replace("-", "").Substring(0, Math.Min(12, taskID.Replace("-", "").Length));
                 // 关键：Path.GetFullPath 规范化路径分隔符。
-                // appsettings 里路径可能用正斜杠(W:/AP/WS)，Path.Combine 后会变成正反斜杠混用
-                // (W:/AP/WS\tg_xxx)。Rust/cargo 在 Windows 上对混合分隔符路径调用 RemoveDirectory
+                // appsettings 里路径可能用正斜杠(./data/WS)，Path.Combine 后会变成正反斜杠混用
+                // (./data/WS\tg_xxx)。Rust/cargo 在 Windows 上对混合分隔符路径调用 RemoveDirectory
                 // 会报 "参数错误 (os error 87)"，导致构建脚本清理 out/probe 等目录失败。
                 // GetFullPath 统一为反斜杠，从根源消除该问题。
                 string taskWorkspace = Path.GetFullPath(Path.Combine(_options.WorkspaceRoot, shortId));
@@ -99,6 +99,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
                 Environment.SetEnvironmentVariable("CARGO_TARGET_DIR", cargoTargetDir);
                 // 桌面构建带 --target x86_64-pc-windows-msvc，cargo 产物路径会多一层 target：
                 //   <CARGO_TARGET_DIR>/<target>/release/bundle  (而非 <CARGO_TARGET_DIR>/release/bundle)
+                // 见 publish-win.bat 第 170-186 行的产物复制路径。
                 const string desktopTarget = "x86_64-pc-windows-msvc";
                 string bundleDir = Path.Combine(cargoTargetDir, desktopTarget, "release", "bundle");
                 TimeSpan buildTimeout = TimeSpan.FromSeconds(Math.Max(60, _options.BuildTimeoutSeconds));
@@ -147,7 +148,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
                 if (wantDesktop)
                 {
                     // Tauri 桌面构建需要 Rust + MSVC C++ 工具链。
-                    // 关键点:
+                    // 关键点(从主项目 publish-win.bat 移植):
                     //   1) ARM64 Windows(rustc host=aarch64)上默认 target 是 ARM64,需强制 x86_64-pc-windows-msvc
                     //   2) cc-rs 编译 native C 代码需要 MSVC 的 cl.exe,它不在 PATH,必须先加载 vcvars64.bat 环境
                     await RunDesktopBuild(clientAppDir, buildTimeout, onLog, ct);
@@ -192,7 +193,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
             task.Stage = stage;
             task.UpdateTime = DateTime.Now;
             PublishTaskInfoBusiness.Update(task);
-            _logger.LogInformation("[PublishJob] 阶段切换: {Stage}", stage);
+            _logger.LogInformation("[PublishJob] TaskID={TaskID} → {Stage} ({Progress}%)", task.TaskID, stage, progress);
         }
 
         private void AppendFinalLog(string taskID, string line)
@@ -287,6 +288,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
 
         /// <summary>
         /// 桌面构建(tauri build)：强制 x86_64 target + 在 cmd 里加载 MSVC 环境 + 注入 Clang PATH 后执行。
+        /// 完整复刻 ZSN.AgentBrook.Client/publish-win.bat 的构建流程：
         ///   1) rustup target add x86_64-pc-windows-msvc (ARM64 Windows 上必须显式 x64)
         ///   2) call vcvarsall.bat x64 (加载 MSVC: cl.exe/link.exe)
         ///   3) 把 VS 自带的 Llvm\bin 加入 PATH (cc-rs 需要 clang，否则报 "failed to find tool clang")
@@ -299,7 +301,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
             try { await _runner.RunAsync("rustup", "target add x86_64-pc-windows-msvc", workDir, TimeSpan.FromMinutes(3), onLog, ct); }
             catch (Exception ex) { onLog?.Invoke(new LogEntry { Line = $"[Build] rustup target add 跳过(可能已装): {ex.Message}", IsError = true }); }
 
-            // 2. 探测 MSVC 工具链(vcvarsall.bat + clang 目录)
+            // 2. 探测 MSVC 工具链(vcvarsall.bat + clang 目录)，照 publish-win.bat 的 find_msvc
             var msvc = _tools.ResolveMsvc();
             if (string.IsNullOrEmpty(msvc.VcVarsAll))
             {
@@ -314,7 +316,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
             else
                 onLog?.Invoke(new LogEntry { Line = "[Build] 警告: 未找到 clang，cc-rs 编译 C 代码可能失败(需 VS C++ 工作负载含 LLVM 组件)", IsError = true });
 
-            // 3. 用 cmd.exe 串联：
+            // 3. 用 cmd.exe 串联(照 publish-win.bat)：
             //    call vcvarsall.bat x64  &&  set PATH=<clang>;%PATH%  &&  node npm-cli.js run tauri:build -- --target x86_64-pc-windows-msvc
             string cliJs = _tools.NpmArgsPrefix.Trim('"');
             string nodeExe = _tools.Npm.TrimStart('"').TrimEnd('"');
@@ -374,11 +376,11 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
                 var payload = new { taskID = task.TaskID, state = task.State.ToString(), success, artifactPath = task.ArtifactPath };
                 var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
                 var resp = await http.PostAsync(task.ReCallUrl, content);
-                _logger.LogInformation("[PublishJob] ReCall 已通知");
+                _logger.LogInformation("[PublishJob] ReCall {Url} → {Status}", task.ReCallUrl, resp.StatusCode);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "[PublishJob] ReCall 失败(忽略)");
+                _logger.LogWarning(ex, "[PublishJob] ReCall 失败(忽略) {Url}", task.ReCallUrl);
             }
         }
     }

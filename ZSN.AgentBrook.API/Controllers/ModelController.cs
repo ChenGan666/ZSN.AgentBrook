@@ -13,14 +13,15 @@ using ZSN.AI.Entity.Model.Enum;
 using ZSN.AI.Service.Controllers;
 using ZSN.Utils.Core.Extensions;
 using ZSN.Utils.Core.Helpers;
+using AuthorRole = Microsoft.SemanticKernel.ChatCompletion.AuthorRole;
 using ChatHistory = Microsoft.SemanticKernel.ChatCompletion.ChatHistory;
 using ErrorCode = ZSN.AI.Entity.ErrorCode;
 
 namespace ZSN.AgentBrook.API.Controllers
 {
     /// <summary>
-    /// Agent 模式服务端"暴露层"。仅 2 个新增接口 + 只读复用：
-    ///  N1 GetList    —— 暴露脱敏的大模型列表，供客户端选择"编排大脑"模型；
+    /// Agent 模式服务端“暴露层”。仅 2 个新增接口 + 只读复用：
+    ///  N1 GetList    —— 暴露脱敏的大模型列表，供客户端选择“编排大脑”模型；
     ///  N2 Completion —— 裸 LLM 代理（SSE），客户端用它驱动 Plan-Act-Reflect。
     /// 设计原则：密钥仅在服务端使用、不下发；预设系统提示词按 MConfig 配置注入、不回显；
     ///           完全不触碰 Chat / App 控制器与业务表（Chat 零侵入）。
@@ -40,7 +41,7 @@ namespace ZSN.AgentBrook.API.Controllers
         }
 
         /// <summary>
-        /// N1：获取可用的"编排大脑"模型列表（脱敏）。
+        /// N1：获取可用的“编排大脑”模型列表（脱敏）。
         /// 入参：PostData（经 ApiBaseController 解密为 JsonObj）。
         /// 出参：AgentModelDTO 列表，绝不包含 ModelKey/EndPoint/MConfig 等敏感字段。
         /// 数据源：SystemStatus=Normal(0) 且 TypeCode=Chat(1) 的模型。
@@ -57,6 +58,7 @@ namespace ZSN.AgentBrook.API.Controllers
                 return JsonMsg<List<AgentModelDTO>>.Error(null, ErrorCode.DataFormatError);
             }
 
+            // 仅暴露已启用、Chat 类型的模型。strWhere 为原始 SQL 片段（沿用 AppController.GetList 既有用法）。
             List<LargeModelInfo> models = LargeModelInfoBussiness.GetList(" SystemStatus=0 AND TypeCode=1 ");
 
             string previewHost = ConfigHelper.GetString("previewHost");
@@ -69,6 +71,7 @@ namespace ZSN.AgentBrook.API.Controllers
                     LargeModelID = m.LargeModelID,
                     Name = m.Name,
                     ModelName = m.ModelName,
+                    // 图标拼接 previewHost（与 AppController.GetList 处理 AICON 一致）。
                     MICON = string.IsNullOrEmpty(m.MICON) ? string.Empty : string.Format(previewHost, m.MICON),
                     TypeCode = m.TypeCode,
                     Thinking = m.Thinking,
@@ -103,6 +106,7 @@ namespace ZSN.AgentBrook.API.Controllers
             int modelID = jObject.JsonGetValue<int>("modelID", 0);
             List<GptMsg> messages = jObject.JsonGetValue<List<GptMsg>>("messages") ?? new List<GptMsg>();
             bool stream = jObject.JsonGetValue<bool>("stream", true);
+            // 沿用现有 0~100 语义（LargeModelConfig.Temperature 内部 /100）。
             double temperature = jObject.JsonGetValue<double?>("temperature") ?? 70d;
             double topP = jObject.JsonGetValue<double?>("topP") ?? 90d;
             string responseFormat = jObject.JsonGetValue<string>("responseFormat", "text");
@@ -134,6 +138,7 @@ namespace ZSN.AgentBrook.API.Controllers
 
                 try
                 {
+                    // 直接调用 SK 流式 API，逐 token 顺序推送 SSE。
                     var kernel = _kernelService.GetKernel(model);
                     var chat = kernel.GetRequiredService<IChatCompletionService>();
                     var settings = PromptExecutionSettingsFactory.Create(config);
@@ -165,6 +170,7 @@ namespace ZSN.AgentBrook.API.Controllers
             }
             else
             {
+                // 非流式：SendChatAsync(enableStreamingObservation=false) 一次性 yield 完整结果。
                 var sb = new StringBuilder();
                 await foreach (var chunk in _chatService.SendChatAsync(
                     config, history,
@@ -185,7 +191,7 @@ namespace ZSN.AgentBrook.API.Controllers
         ///   prepend(默认)：preset 作为首条 system，其后接调用方 messages；
         ///   override：仅用 preset 作为 system，丢弃调用方传入的 system（保留 user/assistant）；
         ///   append：调用方 system 在前，preset 追加其后。
-        /// 空或非 JSON 的 MConfig 视为"无预设"，记 warn 后继续（不报错）。
+        /// 空或非 JSON 的 MConfig 视为“无预设”，记 warn 后继续（不报错）。
         /// </summary>
         private static ChatHistory BuildHistoryWithPreset(LargeModelInfo model, List<GptMsg> messages)
         {
@@ -199,6 +205,7 @@ namespace ZSN.AgentBrook.API.Controllers
             {
                 if (strategy == "override")
                 {
+                    // 仅用预设 system，丢弃调用方 system。
                     history.AddSystemMessage(preset);
                     foreach (var msg in messages)
                     {
@@ -212,6 +219,7 @@ namespace ZSN.AgentBrook.API.Controllers
 
                 if (strategy == "append")
                 {
+                    // 调用方 system 在前，preset 追加其后。
                     foreach (var msg in messages)
                     {
                         AppendMessage(history, msg);

@@ -1,6 +1,7 @@
 using MySql.Data.MySqlClient;
 using StackExchange.Redis;
 using System.Data;
+using System.Runtime.InteropServices;
 using ZSN.AgentBrook.Web.Manage.Models.Welcome;
 using ZSN.Utils.Core.Helpers;
 
@@ -41,7 +42,8 @@ namespace ZSN.AgentBrook.Web.Manage.Services
             result.RedisMessage = redisMsg;
             result.AllOk = dbOk && apiOk && redisOk;
 
-            _logger.LogInformation("[WelcomeEnvironment] 环境检测完成");
+            _logger.LogInformation("[WelcomeEnvironment] 检测结果: Database={Db}, Api={Api}, Redis={Redis}",
+                result.DatabaseOk, result.ApiOk, result.RedisOk);
 
             return result;
         }

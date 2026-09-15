@@ -86,7 +86,7 @@ namespace ZSN.AgentBrook.Plugins.Functions
             _logger.LogInformation($"当前系统类型: {(_isWindows ? "Windows" : "Linux/Unix")}");
 
             // 从配置中读取临时目录名称，如果未配置则使用默认值
-            string tempDirName = _configuration.GetValue<string>("FileConversion:TempDirectory", "ZSN.Knowbase.FileConversions");
+            string tempDirName = _configuration.GetValue<string>("FileConversion:TempDirectory", "ZSN.AgentBrook.FileConversions");
             _tempDirectory = Path.Combine(Path.GetTempPath(), tempDirName);
 
             // 从配置中读取图片输出目录配置，如果未配置则使用默认值

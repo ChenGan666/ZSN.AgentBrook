@@ -64,9 +64,9 @@ layui.use(function () {
                 updateCheckItem('redis', result.RedisOk, result.RedisMessage);
 
                 if (result.AllOk) {
-                    $('.check-result-msg').addClass('success').text('环境检测通过，点击"下一步"继续。').show();
+                    $('.check-result-msg').addClass('success').text('环境检测通过，点击“下一步”继续。').show();
                 } else {
-                    var msg = '部分环境检测未通过，您仍可点击"下一步"继续，但部分功能可能无法使用。';
+                    var msg = '部分环境检测未通过，您仍可点击“下一步”继续，但部分功能可能无法使用。';
                     $('.check-result-msg').addClass('error').text(msg).show();
                 }
 

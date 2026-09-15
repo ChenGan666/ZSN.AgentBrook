@@ -1,0 +1,145 @@
+@{
+    var lst = ViewBag.RecordList as List<MessageSendRecordInfo>;
+}
+@section Css{
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <form class="layui-form" id="searchForm">
+                        <div class="layui-form-item">
+                            <div class="layui-input-inline">
+                                <input type="text" name="keyword" value="@ViewBag.Keyword" placeholder="内容/目标用户" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-input-inline">
+                                <input type="text" name="sessionID" value="@ViewBag.SessionID" placeholder="SessionID" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-input-inline">
+                                <input type="text" name="channelID" value="@ViewBag.ChannelID" placeholder="渠道ID" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-input-inline">
+                                <button class="layui-btn" lay-submit lay-filter="search">查询</button>
+                                <button type="reset" class="layui-btn layui-btn-primary" id="resetBtn">重置</button>
+                            </div>
+                        </div>
+                    </form>
+                    <hr>
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-table">
+                        <colgroup>
+                            <col>
+                            <col>
+                            <col width="80">
+                            <col>
+                            <col width="80">
+                            <col width="80">
+                            <col width="160">
+                            <col width="160">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>渠道ID</th>
+                                <th>SessionID</th>
+                                <th>消息类型</th>
+                                <th>内容</th>
+                                <th>发送状态</th>
+                                <th>重试</th>
+                                <th>发送时间</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in lst)
+                            {
+                                var statusText = item.SendStatus switch
+                                {
+                                    0 => "待发送",
+                                    1 => "成功",
+                                    -1 => "失败",
+                                    _ => "未知"
+                                };
+                                var statusColor = item.SendStatus switch
+                                {
+                                    1 => "color:green",
+                                    -1 => "color:red",
+                                    _ => ""
+                                };
+                                <tr data-mid="@item.RecordID">
+                                    <td>@(item.ChannelID ?? "-")</td>
+                                    <td>
+                                        @{
+                                            var sid = item.SessionID ?? "-";
+                                            if (sid.Length > 8) { sid = sid.Substring(0, 8) + "..."; }
+                                        }
+                                        <span title="@item.SessionID">@sid</span>
+                                    </td>
+                                    <td>@item.MessageType</td>
+                                    <td>
+                                        @{
+                                            var content = item.Content ?? "";
+                                            if (content.Length > 50) { content = content.Substring(0, 50) + "..."; }
+                                        }
+                                        <span title="@item.Content">@content</span>
+                                    </td>
+                                    <td style="@statusColor">@statusText</td>
+                                    <td>@item.RetryCount</td>
+                                    <td>@(item.SendTime?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                                    <td>@item.CreateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="layui-card-body">
+                    <div class="pagination" id="pageId"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(function () {
+            var form = layui.form;
+            var laypage = layui.laypage;
+            form.render();
+
+            laypage.render({
+                elem: 'pageId',
+                count: @ViewBag.Total,
+                limit: @ViewBag.Size,
+                curr: @ViewBag.Index,
+                layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip'],
+                jump: function (obj, f) {
+                    if (f) return;
+                    var params = 'index=' + obj.curr + '&size=' + obj.limit;
+                    var keyword = $('[name="keyword"]').val();
+                    var sessionID = $('[name="sessionID"]').val();
+                    var channelID = $('[name="channelID"]').val();
+                    if (keyword) params += '&keyword=' + encodeURIComponent(keyword);
+                    if (sessionID) params += '&sessionID=' + encodeURIComponent(sessionID);
+                    if (channelID) params += '&channelID=' + encodeURIComponent(channelID);
+                    location.href = "@Url.Action("SendList")?" + params;
+                }
+            });
+
+            form.on('submit(search)', function (obj) {
+                var p = obj.field;
+                var params = 'index=1&size=' + @ViewBag.Size;
+                if (p.keyword) params += '&keyword=' + encodeURIComponent(p.keyword);
+                if (p.sessionID) params += '&sessionID=' + encodeURIComponent(p.sessionID);
+                if (p.channelID) params += '&channelID=' + encodeURIComponent(p.channelID);
+                location.href = "@Url.Action("SendList")?" + params;
+                return false;
+            });
+
+            $('#resetBtn').click(function () {
+                location.href = "@Url.Action("SendList")";
+            });
+        });
+    </script>
+}

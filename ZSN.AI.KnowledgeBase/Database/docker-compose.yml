@@ -14,7 +14,7 @@ services:
     environment:
       POSTGRES_DB: ClawAI
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Q1w2e3r4t5y6
+      POSTGRES_PASSWORD: your_password
       POSTGRES_INITDB_ARGS: "-E UTF8"
       # 允许 pgvector 和 age 扩展
       POSTGRES_SHARED_PRELOAD_LIBRARIES: 'age.so'
@@ -81,7 +81,7 @@ networks:
 #    Port: 5432
 #    Database: ClawAI
 #    Username: postgres
-#    Password: Q1w2e3r4t5y6
+#    Password: your_password
 #
 # 6. 访问 pgAdmin：
 #    URL: http://localhost:5050

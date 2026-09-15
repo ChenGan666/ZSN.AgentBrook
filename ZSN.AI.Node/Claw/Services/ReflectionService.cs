@@ -320,7 +320,7 @@ namespace ZSN.AI.Node.Claw.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"[Reflection] 评估步骤质量失败 - StepIndex: {step.StepIndex}");
-                
+
                 // 失败时使用简单规则判断
                 return CalculateFallbackQualityScore(step);
             }
@@ -896,7 +896,7 @@ namespace ZSN.AI.Node.Claw.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[Reflection] 动态任务分析失败");
-                
+
                 // 降级到标准反思
                 return await ReflectOnExecutionAsync(
                     nodeData, reflectionModelConfig, taskPlanning,

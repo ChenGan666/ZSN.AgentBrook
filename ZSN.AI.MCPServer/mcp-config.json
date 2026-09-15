@@ -205,7 +205,7 @@
     "默认监听端口: 5008 (HTTP), 5009 (HTTPS)",
     "支持CORS跨域访问",
     "文件转换依赖Pandoc、LibreOffice和Ghostscript",
-    "临时文件存储在系统临时目录下的ZSN.Knowbase.FileConversions文件夹",
+    "临时文件存储在系统临时目录下的ZSN.AgentBrook.FileConversions文件夹",
     "媒体文件默认保存在FileConversions/Media目录"
   ]
 }

@@ -114,7 +114,7 @@ services:
     container_name: zsn_knowledge_base
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1q2w3e
+      POSTGRES_PASSWORD: your_password
       TZ: Asia/Shanghai
     ports:
       - "5432:5432"

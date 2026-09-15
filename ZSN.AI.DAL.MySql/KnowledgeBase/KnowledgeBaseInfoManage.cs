@@ -122,7 +122,7 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
 
             strSql.Append(" where KnowledgeBaseID=@KnowledgeBaseID");
             MySqlParameter[] parameters = {
-				 new MySqlParameter("@KnowledgeBaseID", MySqlDbType.VarChar,64),
+ new MySqlParameter("@KnowledgeBaseID", MySqlDbType.VarChar,64),
  new MySqlParameter("@Name", MySqlDbType.VarChar,128),
  new MySqlParameter("@DicIDList", MySqlDbType.VarChar,512),
  new MySqlParameter("@DicNameList", MySqlDbType.VarChar,1024),
@@ -139,7 +139,9 @@ strSql.Append("LastUpdateTime=@LastUpdateTime,");
  new MySqlParameter("@LastUpdateTime", MySqlDbType.DateTime,16),
  new MySqlParameter("@PreprocessModelName", MySqlDbType.VarChar,128),
  new MySqlParameter("@VectorModelName", MySqlDbType.VarChar,128),
-
+ new MySqlParameter("@EnableImageProcessing", MySqlDbType.Int16,1),
+ new MySqlParameter("@VisionModelID", MySqlDbType.Int32,10),
+ new MySqlParameter("@VisionModelName", MySqlDbType.VarChar,128),
             };
 			 parameters[0].Value = model.KnowledgeBaseID;
  parameters[1].Value = model.Name;

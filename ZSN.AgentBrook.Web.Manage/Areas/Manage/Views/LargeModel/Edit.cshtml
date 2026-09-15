@@ -135,8 +135,13 @@
                     </label>
                     <div class="layui-input-block">
                         <div class="layui-col-md9">
-                            <textarea type="text" name="MConfig" lay-verify="required"
+                            <textarea type="text" name="MConfig" lay-verify="required" rows="4"
                                       autocomplete="off" class="layui-input MConfig">@LargeModel.MConfig</textarea>
+                            <div class="layui-form-tips" style="color:#999;font-size:12px;line-height:1.8;margin-top:4px;">
+                                Agent 编排大脑预设提示词，填写 JSON，例：<br/>
+                                <code>{"systemPrompt":"你是任务编排器，根据目标与可用App清单决定下一步…","mergeStrategy":"prepend"}</code><br/>
+                                字段说明：<code>systemPrompt</code> 预设系统提示词（Agent 模式必注入）；<code>agentSystemPrompt</code> 可选，Agent 模式专用（优先于 systemPrompt）；<code>mergeStrategy</code> 合并策略 <code>prepend</code>（默认，预设在前）/ <code>override</code>（仅用预设）/ <code>append</code>（预设在后）。留空或非 JSON 视为无预设。
+                            </div>
                         </div>
                     </div>
                 </div>

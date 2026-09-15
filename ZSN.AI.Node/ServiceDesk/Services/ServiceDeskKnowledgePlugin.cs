@@ -47,8 +47,8 @@ namespace ZSN.AI.Node.ServiceDesk.Services
 
             var searchOptions = new HybridSearchOptions
             {
-                VectorWeight = _config.VectorSearchWeight,
-                GraphWeight = _config.FullTextSearchWeight,
+                VectorWeight = _config.VectorSearchWeight / 100f,
+                GraphWeight = _config.FullTextSearchWeight / 100f,
                 MaxVectorResults = _config.TopK * 2,
                 EnableRerank = true,
             };

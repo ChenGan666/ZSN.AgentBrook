@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using ZSN.AgentBrook.Web.Manage.Attributes;
+using ZSN.AgentBrook.Web.Manage.Models.Welcome;
 using ZSN.AgentBrook.Web.Manage.Services;
 using ZSN.Utils.Core.Helpers;
 
@@ -67,7 +69,7 @@ namespace ZSN.AgentBrook.Web.Manage.Areas.Manage.Controllers
                     ConfigHelper.SetConfigurationValue("Welcome:InstallationId", installationId);
                 }
 
-                _logger.LogInformation("[Welcome] 首次运行向导完成");
+                _logger.LogInformation("[Welcome] 首次运行向导完成，consent={Consent}, installationId={InstallationId}", consent, installationId);
 
                 return Json(new { success = true, installationId });
             }

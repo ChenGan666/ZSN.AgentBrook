@@ -1,6 +1,6 @@
 # ZSN.AgentBrook.Web.Manage — 项目说明
 
-> 路径：`w:\AI\ZSN.Knowbase\ZSN.Knowbase.Core\ZSN.AgentBrook.Web.Manage`
+> 路径：`./data/ZSN.AgentBrook.Web.Manage`
 > 主要功能位于：`Areas/Manage/`
 
 ## 项目概览

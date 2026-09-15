@@ -1,0 +1,139 @@
+@{
+    var lst = ViewBag.RecordList as List<MessageReceiveRecordInfo>;
+}
+@section Css{
+}
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body">
+                    <form class="layui-form" id="searchForm">
+                        <div class="layui-form-item">
+                            <div class="layui-input-inline">
+                                <input type="text" name="keyword" value="@ViewBag.Keyword" placeholder="内容/发送者" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-input-inline">
+                                <input type="text" name="channelID" value="@ViewBag.ChannelID" placeholder="渠道ID" autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-input-inline">
+                                <button class="layui-btn" lay-submit lay-filter="search">查询</button>
+                                <button type="reset" class="layui-btn layui-btn-primary" id="resetBtn">重置</button>
+                            </div>
+                        </div>
+                    </form>
+                    <hr>
+                </div>
+                <div class="layui-card-body">
+                    <table class="layui-table">
+                        <colgroup>
+                            <col>
+                            <col>
+                            <col>
+                            <col width="80">
+                            <col>
+                            <col width="80">
+                            <col>
+                            <col width="160">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>渠道ID</th>
+                                <th>发送者</th>
+                                <th>发送者名称</th>
+                                <th>消息类型</th>
+                                <th>内容</th>
+                                <th>路由状态</th>
+                                <th>任务ID</th>
+                                <th>接收时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in lst)
+                            {
+                                var routeText = item.RouteStatus switch
+                                {
+                                    0 => "待路由",
+                                    1 => "已路由",
+                                    -1 => "未匹配",
+                                    _ => "未知"
+                                };
+                                var routeColor = item.RouteStatus switch
+                                {
+                                    1 => "color:green",
+                                    -1 => "color:red",
+                                    _ => ""
+                                };
+                                <tr data-mid="@item.RecordID">
+                                    <td>@(item.ChannelID ?? "-")</td>
+                                    <td>@(item.FromUser ?? "-")</td>
+                                    <td>@(item.FromUserName ?? "-")</td>
+                                    <td>@item.MessageType</td>
+                                    <td>
+                                        @{
+                                            var content = item.Content ?? "";
+                                            if (content.Length > 50) { content = content.Substring(0, 50) + "..."; }
+                                        }
+                                        <span title="@item.Content">@content</span>
+                                    </td>
+                                    <td style="@routeColor">@routeText</td>
+                                    <td>
+                                        @{
+                                            var tid = item.RoutedTaskID ?? "-";
+                                            if (tid.Length > 8) { tid = tid.Substring(0, 8) + "..."; }
+                                        }
+                                        <span title="@item.RoutedTaskID">@tid</span>
+                                    </td>
+                                    <td>@(item.ReceiveTime?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="layui-card-body">
+                    <div class="pagination" id="pageId"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Js{
+    <script>
+        layui.use(function () {
+            var form = layui.form;
+            var laypage = layui.laypage;
+            form.render();
+
+            laypage.render({
+                elem: 'pageId',
+                count: @ViewBag.Total,
+                limit: @ViewBag.Size,
+                curr: @ViewBag.Index,
+                layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip'],
+                jump: function (obj, f) {
+                    if (f) return;
+                    var params = 'index=' + obj.curr + '&size=' + obj.limit;
+                    var keyword = $('[name="keyword"]').val();
+                    var channelID = $('[name="channelID"]').val();
+                    if (keyword) params += '&keyword=' + encodeURIComponent(keyword);
+                    if (channelID) params += '&channelID=' + encodeURIComponent(channelID);
+                    location.href = "@Url.Action("ReceiveList")?" + params;
+                }
+            });
+
+            form.on('submit(search)', function (obj) {
+                var p = obj.field;
+                var params = 'index=1&size=' + @ViewBag.Size;
+                if (p.keyword) params += '&keyword=' + encodeURIComponent(p.keyword);
+                if (p.channelID) params += '&channelID=' + encodeURIComponent(p.channelID);
+                location.href = "@Url.Action("ReceiveList")?" + params;
+                return false;
+            });
+
+            $('#resetBtn').click(function () {
+                location.href = "@Url.Action("ReceiveList")";
+            });
+        });
+    </script>
+}

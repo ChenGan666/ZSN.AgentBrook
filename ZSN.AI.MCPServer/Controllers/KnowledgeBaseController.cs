@@ -176,7 +176,7 @@ namespace ZSN.AI.MCPServer.Controllers
                             if (request.Text.Length > 1000)
                             {
                                 //将文本保存到文件
-                                string tempDirName = _configuration.GetValue<string>("FileConversion:TempDirectory", "ZSN.Knowbase.FileConversions");
+                                string tempDirName = _configuration.GetValue<string>("FileConversion:TempDirectory", "ZSN.AgentBrook.FileConversions");
                                 string _tempDirectory = Path.Combine(Path.GetTempPath(), tempDirName);
 
                                 // 从配置中读取图片输出目录配置，如果未配置则使用默认值

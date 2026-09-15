@@ -34,7 +34,7 @@ namespace ZSN.AgentBrook.AutoPublishJob
             _concurrencyGate = new SemaphoreSlim(concurrency, concurrency);
             int intervalMs = Math.Max(1, _options.Value.PullIntervalSeconds) * 1000;
 
-            _logger.LogInformation("[PublishHostedService] 启动");
+            _logger.LogInformation("[PublishHostedService] 启动，并发={Concurrency}，轮询间隔={Interval}ms", concurrency, intervalMs);
 
             while (!stoppingToken.IsCancellationRequested)
             {

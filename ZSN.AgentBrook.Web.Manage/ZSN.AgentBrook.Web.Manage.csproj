@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>favicon.ico</ApplicationIcon>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <DocumentationFile>W:\AI\ZSN.AI\ZSN.AgentBrook.Web.Manage\ZSN.AgentBrook.Web.Manage.xml</DocumentationFile>
+    <DocumentationFile>./data/ZSN.AgentBrook.Web.Manage\ZSN.AgentBrook.Web.Manage.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

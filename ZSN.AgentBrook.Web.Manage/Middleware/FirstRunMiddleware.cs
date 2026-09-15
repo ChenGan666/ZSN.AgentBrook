@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Primitives;
+
 namespace ZSN.AgentBrook.Web.Manage.Middleware
 {
     /// <summary>

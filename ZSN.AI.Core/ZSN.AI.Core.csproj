@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <DocumentationFile>W:\AI\ZSN.AI\ZSN.AI.Core\ZSN.AI.Core.xml</DocumentationFile>
+    <DocumentationFile>./data/ZSN.AI.Core\ZSN.AI.Core.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

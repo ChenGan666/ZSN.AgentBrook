@@ -261,7 +261,7 @@ namespace ZSN.AI.Node.ResearchNode
                     throttler.MarkDirty();
 
                     // [d] 检查是否满足
-                    if (analysis.IsSatisfied || completenessScore >= nodeData.CompletionThreshold)
+                    if (analysis.IsSatisfied || completenessScore * 100 >= nodeData.CompletionThreshold)
                     {
                         batchWriter.Append("  ✓ 研究目标已满足\n");
                         Logs.Enqueue($"[Done] 研究目标已满足，完整度={completenessScore:F2}");

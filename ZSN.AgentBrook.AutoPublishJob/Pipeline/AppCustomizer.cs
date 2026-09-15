@@ -13,6 +13,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
     /// 1) 占位符替换：扫描模板内的约定占位符文件，按 PublishConfig 替换为真实值；
     /// 2) 资源注入：图标/logo 等二进制资源按约定路径覆盖。
     ///
+    /// 占位符约定见 APP_FACTORY_PLAN.md 第四节。
     /// 设计为"幂等文本替换"，不依赖任何模板专属逻辑，通用基座与会议模板共用。
     ///
     /// 前端根自适应：模板仓库可能把前端放在子目录(如主仓库的 client-app/)，

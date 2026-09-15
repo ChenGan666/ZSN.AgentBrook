@@ -1,6 +1,6 @@
 # ZSN.AgentBrook.AutoJob — 项目说明
 
-> 路径：`w:\AI\ZSN.Knowbase\ZSN.Knowbase.Core\ZSN.AgentBrook.AutoJob`
+> 路径：`./data/ZSN.AgentBrook.AutoJob`
 
 ## 项目概览
 
@@ -11,7 +11,7 @@
 
 ## 技术栈与依赖
 
-- **框架**：.NET 8（`net8.0`）
+- **框架**：.NET 10.0（`net10.0`）
 - **关键包**（见 `ZSN.AgentBrook.AutoJob.csproj`）：
   - `Quartz`、`Quartz.Extensions.DependencyInjection`
   - `Microsoft.Extensions.Hosting`
@@ -80,6 +80,9 @@ ZSN.AgentBrook.AutoJob.exe uninstall
   - `FileToMarkdownReCallUrl`
   - `HumanOperationReCallUrl`
 - **Jobs 配置**：`Job` 数组（默认启用 `Node`，每 1 秒轮询）
+- **ClawAI 配置**：`ClawAI` 节（问候检测/记忆/规划/相似度阈值/任务复杂度/反思/记忆整理等）
+- **ResearchNode 配置**：`ResearchNode` 节（SearXNG 搜索地址/超时/并发/Playwright 无头模式/浏览器 UA/域名黑名单/Redis 缓存等）
+- **VoiceNode 配置**：`VoiceNodeOptions` 节（默认服务商/最大文件/超时/FFmpeg 路径/熔断器）、`FunASROptions` 节（FunASR Server 地址/分片大小/连接超时）
 
 > 注意：该配置文件包含真实连接信息，建议在生产中改为环境变量或机密管理并在仓库中使用占位值。
 
@@ -88,7 +91,12 @@ ZSN.AgentBrook.AutoJob.exe uninstall
 - **自动扫描注册**：`services.AddServicesFromAssemblies("ZSN.AI.Core" | "ZSN.AI.Plugins" | "ZSN.AI.Functions" | "ZSN.AgentBrook.Plugins" | "ZSN.AgentBrook.AutoJob")`
 - **函数服务**：两次注入 `FunctionService`，分别载入 `ZSN.AI.Plugins.BasePlugin` 与 `ZSN.AI.Plugins.Functions.HttpPlugin` 程序集
 - **注册 Jobs 到 DI**：`AIDispatcher`、`TimeTrigger`、`FileChunkJob`、`NodeJob`、`SessionTopicJob`、`MarkdownJob`、`CleanerJob`
-- **启动 HostedService**：`QuartzHostedService`
+- **ClawAI 服务注册**：`ITaskPlanningService`、`IMemoryService`、`IReflectionService`、`IAgentOrchestrationService`、`IPersonalityService`、`IMasterControlService`、`IBackgroundPostProcessingQueue` 等，配置绑定 `ClawAIOptions`
+- **ServiceDesk 服务注册**：`IRequestClassifier`、`IResponseGenerator`、`ISessionStateManager`
+- **ResearchNode 服务注册**：`ResearchNodeOptions` 配置绑定、`IWebSearchService`（HttpClient）、`PlaywrightBrowserPool`（Singleton）、`IContentCache`（Redis）、`IContentFetcherService`、`IResearchEngineService`
+- **VoiceNode 服务注册**：`AddVoiceNodeServices(configuration)` 扩展方法，注册 `VoiceNodeOptions`/`FunASROptions` 配置绑定、`IVoiceProviderFactory`（Singleton）、`IAudioPreprocessor`（Singleton）、`IVoiceTranscriptionProvider` → `FunASRProvider`（Singleton）、`ExecutionVoice`（Transient）
+- **知识库服务注册**：`ISemanticChunkerService`、`IGraphRepository`、`IKnowledgeGraphService`、`IHybridSearchService`、`IEmbeddingService`、`IVectorRepository`、`IDocumentProcessingService`
+- **启动 HostedService**：`NodeTaskQueueConsumer`（Redis 队列消费者）、`QuartzHostedService`
 
 ## Job 说明（`Job/`）
 
@@ -114,9 +122,9 @@ ZSN.AgentBrook.AutoJob.exe uninstall
   - 结果集合写入 `task.Results` 并置 `Completed`；如配置 `reCallUrl`，以 HTTP POST 回调结果（含日志记录）。
 
 - **Node（工作流节点执行）** — `Job/NodeJob.cs`
-  - 拉取多种节点类型任务：`Start/AgentStart/End/AgentEnd/LargeModel/Agent/Plugins/MainAI/Selector/KnowledgeBase/Merge/MCP/FileToMarkdown/HumanInTheLoop/IntentionRecognition`
-  - 并发控制：全局 `_semaphore` 控制取任务，内部 `SemaphoreSlim(100)` 控制并行处理上限。
-  - 调用 `ZSN.AI.Node.Excution` 各节点处理方法，成功置 `Completed`，失败写 `Results=Exception` 并日志。
+  - 拉取多种节点类型任务：`Start/AgentStart/End/AgentEnd/LargeModel/Agent/Plugins/MainAI/Selector/KnowledgeBase/Merge/MCP/FileToMarkdown/HumanInTheLoop/IntentionRecognition/ClawAI/ServiceDesk/Research/Voice`
+  - 生产者-消费者模式：`NodeJob` 快速获取任务并入队 Redis，`NodeTaskQueueConsumer` 多线程消费执行（最大并发 20）。
+  - 调用 `ZSN.AI.Node.Execution` 各节点处理方法，成功置 `Completed`，失败写 `Results=Exception` 并日志。
   - **并发安全（2026-04-11 修复）**：同一 Session 下并发执行多个相同工作流时，各流程实例通过 `ProcessesID` 隔离数据。ClawAI 步骤级 WorkFlow 调用使用 `$"{ProcessesID}_{step.StepID}"` 子任务 ID，防止步骤间数据污染。详见 `ZSN.AI.Node/KNOWLEDGE_BASE_HYBRID_SEARCH_SUMMARY.md` 中的并发修复章节。
 
 - **SessionTopic（会话主题生成）** — `Job/SessionTopicJob.cs`
@@ -140,6 +148,7 @@ ZSN.AgentBrook.AutoJob.exe uninstall
 - **任务找不到依赖**：AutoJob 依赖其他项目（Core/BLL/Entity/Node 等），需确保解决方案整体可编译。
 - **文件转换失败**：检查 `FileConversion.PandocPath` 与多模态模型配置 `VLLLMConfig` 可用性；查看 `MarkdownJob` 的回调日志。
 - **回调不通**：确认 API 项目已启动，`TaskController.ReCall` 路径与查询字符串参数正确。
+- **Voice 语音转写失败**：检查 FunASR Server 是否启动（`ws://host:10095` 可达）；检查 FFmpeg 是否安装（非 WAV/PCM 格式必需）；检查 `VoiceNodeOptions` 和 `FunASROptions` 配置是否正确。
 
 ## 安全与配置建议
 

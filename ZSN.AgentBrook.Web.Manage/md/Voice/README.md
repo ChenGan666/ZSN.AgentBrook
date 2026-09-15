@@ -186,7 +186,7 @@ services:
 
 ```json
 "FunASROptions": {
-  "ServerUrl": "ws://10.10.10.2:10095",
+  "ServerUrl": "ws://localhost:10095",
   "ChunkSize": 9600,
   "ConnectTimeoutSeconds": 5,
   "TranscribeTimeoutMinutes": 10

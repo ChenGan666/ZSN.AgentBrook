@@ -8,7 +8,7 @@
 
 # ZSN.AI.Node — 项目说明
 
-> 路径：`w:\AI\ZSN.Knowbase\ZSN.Knowbase.Core\ZSN.AI.Node`
+> 路径：`./data/ZSN.AI.Node`
 
 ## 项目概览
 # Claw AI 节点

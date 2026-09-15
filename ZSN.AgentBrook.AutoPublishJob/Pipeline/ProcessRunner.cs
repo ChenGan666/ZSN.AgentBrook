@@ -30,7 +30,8 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
     /// <summary>
     /// 通用外部进程执行器。
     /// 逐行流式读取 stdout/stderr 并通过回调输出，避免长时间构建(几十分钟)只看到最终结果。
-    /// 流式输出 + CancellationToken 超时 + process.Kill(true) 整树清理。
+    /// 设计参考 ZSN.AI.Node\VoiceNode\Services\AudioPreprocessor.RunProcessAsync，
+    /// 升级为：流式输出 + CancellationToken 超时 + process.Kill(true) 整树清理。
     /// </summary>
     public class ProcessRunner
     {
@@ -111,7 +112,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
                 try { if (!process.HasExited) process.Kill(entireProcessTree: true); } catch { }
             });
 
-            _logger.LogInformation("[ProcessRunner] 启动子进程");
+            _logger.LogInformation("[ProcessRunner] 启动: {File} {Args} (cwd={Cwd})", fileName, arguments, workingDirectory ?? "(inherit)");
 
             try
             {
@@ -135,7 +136,7 @@ namespace ZSN.AgentBrook.AutoPublishJob.Pipeline
             string output = stdoutBuilder.ToString();
             string error = stderrBuilder.ToString();
 
-            _logger.LogInformation("[ProcessRunner] 子进程结束");
+            _logger.LogInformation("[ProcessRunner] 结束: ExitCode={ExitCode} {File}", process.ExitCode, fileName);
 
             if (linkedCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
             {

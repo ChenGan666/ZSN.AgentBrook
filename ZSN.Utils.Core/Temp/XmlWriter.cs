@@ -727,7 +727,7 @@ namespace Yannyo.Common
     //        ConcreteComponent c = new ConcreteComponent("This is the RSS component");
 
     //        DataSet ds = new DataSet();
-    //        SqlConnection sc = new SqlConnection("server=192.168.2.198;database=RSS;uid=sa;pwd=;");
+    //        SqlConnection sc = new SqlConnection("server=localhost;database=RSS;uid=sa;pwd=;");
     //        new SqlDataAdapter("Select  *  From Rss_ChannelItem",sc).Fill(ds);
     //        ds.Tables[0].TableName = "xml";//不要使用数字来定义该项
     //        c.SourceDataTable = ds.Tables[0];

@@ -35,14 +35,16 @@ namespace ZSN.AgentBrook.AutoJob
         }
         private async Task Cleaner()
         {
+            var cutoff = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd HH:mm:ss");
+
             //删除30天的系统日志
-            LogRecordBusiness.DeleteByWhere($" CreateTime<='{DateTime.Now.AddDays(-30)}'");
+            LogRecordBusiness.DeleteByWhere($" CreateTime<='{cutoff}'");
 
             //删除30天的Node执行记录
-            WorkflowNodeExecutionRecordInfoBussiness.DeleteByWhere($" EndTime<='{DateTime.Now.AddDays(-30)}'");
+            WorkflowNodeExecutionRecordInfoBussiness.DeleteByWhere($" EndTime<='{cutoff}'");
 
             //删除30天的任务记录
-            TaskInfoBussiness.DeleteByWhere($" LoopType=0 and UpdateTime<='{DateTime.Now.AddDays(-30)}'");
+            TaskInfoBussiness.DeleteByWhere($" LoopType=0 and UpdateTime<='{cutoff}'");
         }
     }
 }

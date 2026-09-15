@@ -131,6 +131,10 @@ $RECYCLE.BIN/
 ## Claude Code (本地开发工具，不纳入开源仓库)
 .claude/
 
+## 本地 Agent 工具目录（可能含内部路径与密钥，不纳入开源仓库）
+.agents/
+.zcode/
+
 ## 数据库文件
 *.mdf
 *.ldf

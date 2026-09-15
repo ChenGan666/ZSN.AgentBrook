@@ -89,7 +89,7 @@ namespace ZSN.AI.MCPServer.Controllers
             _pandocPath = _configuration.GetValue<string>("FileConversion:PandocPath", "pandoc");
 
             // 从配置中读取临时目录名称，如果未配置则使用默认值
-            string tempDirName = _configuration.GetValue<string>("FileConversion:TempDirectory", "ZSN.Knowbase.FileConversions");
+            string tempDirName = _configuration.GetValue<string>("FileConversion:TempDirectory", "ZSN.AgentBrook.FileConversions");
             _tempDirectory = Path.Combine(Path.GetTempPath(), tempDirName);
 
             // 从配置中读取图片输出目录配置，如果未配置则使用默认值
@@ -164,7 +164,7 @@ Filename (string, 必填):
   ""FileSize"": 12458,
   ""DateFolder"": ""20250111"",
   ""Message"": ""Markdown转换为docx成功"",
-  ""DownloadUrl"": ""http://192.168.18.28:5008/MarkdownToDoc/Download?dateFolder=20250111&fileName=%E9%A1%B9%E7%9B%AE%E6%A6%82%E8%BF%B0%E6%96%87%E6%A1%A3.docx""
+  ""DownloadUrl"": ""http://localhost:5008/MarkdownToDoc/Download?dateFolder=20250111&fileName=%E9%A1%B9%E7%9B%AE%E6%A6%82%E8%BF%B0%E6%96%87%E6%A1%A3.docx""
 }
 
 示例2 - 包含代码块和表格：
@@ -181,7 +181,7 @@ Filename (string, 必填):
   ""FileSize"": 18920,
   ""DateFolder"": ""20250111"",
   ""Message"": ""Markdown转换为docx成功"",
-  ""DownloadUrl"": ""http://192.168.18.28:5008/MarkdownToDoc/Download?dateFolder=20250111&fileName=API%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3.docx""
+  ""DownloadUrl"": ""http://localhost:5008/MarkdownToDoc/Download?dateFolder=20250111&fileName=API%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3.docx""
 }
 
 示例3 - 会议纪要：
@@ -198,7 +198,7 @@ Filename (string, 必填):
   ""FileSize"": 14567,
   ""DateFolder"": ""20250111"",
   ""Message"": ""Markdown转换为docx成功"",
-  ""DownloadUrl"": ""http://192.168.18.28:5008/MarkdownToDoc/Download?dateFolder=20250111&fileName=meeting_notes_20250111.docx""
+  ""DownloadUrl"": ""http://localhost:5008/MarkdownToDoc/Download?dateFolder=20250111&fileName=meeting_notes_20250111.docx""
 }
 
 === 错误处理 ===

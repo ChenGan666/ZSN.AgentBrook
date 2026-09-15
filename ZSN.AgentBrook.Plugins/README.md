@@ -1,6 +1,6 @@
 # ZSN.AgentBrook.Plugins — 项目说明
 
-> 路径：`w:\AI\ZSN.Knowbase\ZSN.Knowbase.Core\ZSN.AgentBrook.Plugins`
+> 路径：`./data/ZSN.AgentBrook.Plugins`
 
 ## 项目概览
 
@@ -44,7 +44,7 @@
       - 若提供 `delimiter`，按分隔符拆分；否则整体作为一个条目保存。
       - 对每段文本：
         - 长度 > 1000 时，自动落盘为临时 `.txt` 文件并改为 `ImportType=File`。
-          - 目录：`Path.GetTempPath()/[FileConversion:TempDirectory]/TextMDOutputs/text_file/`（默认 TempDirectory=`ZSN.Knowbase.FileConversions`）。
+          - 目录：`Path.GetTempPath()/[FileConversion:TempDirectory]/TextMDOutputs/text_file/`（默认 TempDirectory=`ZSN.AgentBrook.FileConversions`）。
         - 填充 `KnowledgeBaseFileInfo` 基本信息。
         - 调用 `_importKMSService.ImportKMSTask(request)` 完成入库。
         - `KnowledgeBaseFileInfoBussiness.Add(...)` 落库文件记录。
@@ -65,7 +65,7 @@
 
 ## 配置项（由宿主提供）
 
-- `FileConversion:TempDirectory`：长文本自动落盘时的临时目录名，默认 `ZSN.Knowbase.FileConversions`。
+- `FileConversion:TempDirectory`：长文本自动落盘时的临时目录名，默认 `ZSN.AgentBrook.FileConversions`。
 - 其它知识库导入相关配置（数据库、服务地址等）由 `IImportKMSService` 的实现与 BLL 层处理。
 
 ## 宿主集成与调用

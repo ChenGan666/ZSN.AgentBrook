@@ -1,6 +1,6 @@
 # ZSN.AI.Plugins — 项目说明
 
-> 路径：`w:\AI\ZSN.Knowbase\ZSN.Knowbase.Core\ZSN.AI.Plugins`
+> 路径：`./data/ZSN.AI.Plugins`
 
 ## 项目概览
 

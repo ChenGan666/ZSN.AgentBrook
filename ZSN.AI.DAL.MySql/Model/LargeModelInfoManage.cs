@@ -49,7 +49,7 @@ namespace ZSN.AI.DAL.MySql
  new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16),
 
              new MySqlParameter("@MICON", MySqlDbType.VarChar,64),
-             new MySqlParameter("@MConfig", MySqlDbType.VarChar,512),
+             new MySqlParameter("@MConfig", MySqlDbType.Text),
  new MySqlParameter("@ModelOrganizationID", MySqlDbType.Int32,10),
  new MySqlParameter("@ModelOrganizationName", MySqlDbType.VarChar,128),
 
@@ -126,7 +126,7 @@ strSql.Append("UpdateTime=@UpdateTime,");
  new MySqlParameter("@CreateTime", MySqlDbType.DateTime,16),
  new MySqlParameter("@UpdateTime", MySqlDbType.DateTime,16),
  new MySqlParameter("@MICON", MySqlDbType.VarChar,64),
- new MySqlParameter("@MConfig", MySqlDbType.VarChar,512),
+ new MySqlParameter("@MConfig", MySqlDbType.Text),
  new MySqlParameter("@ModelOrganizationID", MySqlDbType.Int32,10),
  new MySqlParameter("@ModelOrganizationName", MySqlDbType.VarChar,128),
 

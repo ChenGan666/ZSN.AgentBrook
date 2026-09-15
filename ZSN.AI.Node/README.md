@@ -1,6 +1,6 @@
 # ZSN.AI.Node — 项目说明
 
-> 快速导航: [`READ_ME_FIRST.md`](./READ_ME_FIRST.md) | ClawAI 模块: [`Claw/README.md`](./Claw/README.md) | 功能迭代记录: [`MD/README.md`](./MD/README.md)
+> 快速导航: [`READ_ME_FIRST.md`](./READ_ME_FIRST.md) | ClawAI 模块: [`Claw/README.md`](./Claw/README.md) | ServiceDesk 模块: [`ServiceDesk/Implementation/README.md`](./ServiceDesk/Implementation/README.md) | Research 模块: [`ResearchNode/ResearchNode设计方案.md`](./ResearchNode/ResearchNode设计方案.md) | 功能迭代记录: [`MD/README.md`](./MD/README.md)
 
 ## 项目概览
 
@@ -37,6 +37,22 @@ ZSN.AI.Node/
 │   ├── Utils/                 ← 工具类（日志/正则/问候语检测）
 │   ├── Helpers/               ← 辅助类（记忆去重/记忆工具）
 │   └── Analysis/              ← 分析器（任务复杂度/文本相似度/WorkFlow匹配）
+├── ServiceDesk/               ← ServiceDesk 客服节点模块
+│   ├── ExecutionServiceDesk.cs ← ServiceDesk 核心执行器
+│   ├── Interfaces/            ← 服务接口（IRequestClassifier/IResponseGenerator/ISessionStateManager）
+│   ├── Services/              ← 业务服务（请求分类/响应生成/会话状态管理）
+│   ├── Models/                ← 数据模型
+│   └── Implementation/        ← 实施方案文档
+├── ResearchNode/              ← Research 研究节点模块
+│   ├── ExecutionResearch.cs   ← Research 核心执行器（搜索-抓取-分析-反思循环）
+│   ├── ResearchNodeOptions.cs ← IOptions 配置类（SearXNG/Playwright/缓存/超时等）
+│   ├── PlaywrightBrowserPool.cs ← Playwright 浏览器池（Singleton）
+│   ├── Services/              ← 业务服务
+│   │   ├── IWebSearchService.cs / WebSearchService.cs         ← SearXNG 搜索
+│   │   ├── IContentFetcherService.cs / ContentFetcherService.cs ← Playwright 网页抓取
+│   │   ├── IResearchEngineService.cs / ResearchEngineService.cs ← LLM 分析引擎
+│   │   └── IContentCache.cs / RedisContentCache.cs             ← Redis 内容缓存
+│   └── Models/                ← 数据模型（SearchPlan/ResearchResult/SourceInfo 等）
 └── MD/
     └── README.md              ← 功能迭代完整记录
 ```
@@ -44,7 +60,7 @@ ZSN.AI.Node/
 ## 核心类型与概念（源于 `ZSN.AI.Entity`，本库进行使用）
 
 - **工作流结构**：`WorkFlow`（`Info` + `Nodes` + `Edges` + `Config`）、`WorkflowNodeInfo`、`WorkflowEdgeInfo`、`NodeConfig`（`id/mainid/workflowid/type/data/position...`）
-- **常见节点数据结构**：`StartData`、`EndData`、`MainAIData`、`LargeModelData`、`AgentData`、`ReporterData`、`KnowledgeBaseData`、`SelectorData`、`MergeData`、`MCPData`、`TimeTriggerData`、`FileToMarkdownData`、`HumanInTheLoopData`、`IntentionRecognitionData`、`Inputs`、`Output`
+- **常见节点数据结构**：`StartData`、`EndData`、`MainAIData`、`LargeModelData`、`AgentData`、`ReporterData`、`KnowledgeBaseData`、`SelectorData`、`MergeData`、`MCPData`、`TimeTriggerData`、`FileToMarkdownData`、`HumanInTheLoopData`、`IntentionRecognitionData`、`ServiceDeskData`、`ResearchNodeData`、`Inputs`、`Output`
 - **任务与执行**：`TaskInfo`、`TaskConfig`（`NodeConfig` 或 `NotNodeConfig` + `TaskData`）、`LoopType/TaskState` 等；执行记录：`WorkflowNodeExecutionRecordInfo`
 
 ## 默认工作流与节点构造（`Utils.cs`）
@@ -73,6 +89,7 @@ ZSN.AI.Node/
 - `EndNodeAsync`、`AgentEndNodeAsync`
 - `LargeModelNodeAsync`、`MainAINodeAsync`
 - `ClawAINodeAsync`（ClawAI 智能体节点，详见 [`Claw/README.md`](./Claw/README.md)）
+- `ServiceDeskNodeAsync`（ServiceDesk 客服节点，详见 [`ServiceDesk/Implementation/README.md`](./ServiceDesk/Implementation/README.md)）
 - `AgentNodeAsync`、`PluginsNodeAsync`、`KnowledgeBaseNodeAsync`
 - `SelectorNodeAsync`、`MergeNodeAsync`、`MCPNodeAsync`
 - `FileToMarkdownNode`、`HumanInTheLoopNode`、`IntentionRecognitionNodeAsync`
@@ -93,6 +110,8 @@ ZSN.AgentBrook.API 创建任务（写 TaskInfo）
 - **Start/AgentStart**：标准化输入（`input/attachments/additionalOptions/currentTime` 等）。
 - **MainAI/LargeModel**：根据模型与提示词执行对话/补全。
 - **ClawAI**：智能体节点 — 智能主控判断 → 任务规划 → 并行执行 → 反思评估 → 动态重规划（详见 [`Claw/README.md`](./Claw/README.md)）。
+- **ServiceDesk**：客服节点 — 请求分类 → FunctionCall 知识库检索 + 生成回答，支持多轮对话、意图识别与信息收集（详见 [`ServiceDesk/Implementation/README.md`](./ServiceDesk/Implementation/README.md)）。
+- **Research**：研究节点 — 搜索规划 → SearXNG 搜索 → Playwright 网页抓取 → LLM 分析反思 → 迭代循环，支持 Snippet 降级模式与 Redis 内容缓存（详见 [`ResearchNode/ResearchNode设计方案.md`](./ResearchNode/ResearchNode设计方案.md)）。
 - **Agent**：运行 Agent 能力（输出 `agentName/currentTime` 等）。
 - **Reporter**：会话摘要抽取（与 `AutoJob.AIDispatcher` 配合）。
 - **FileToMarkdown**：配合 `AutoJob.MarkdownJob` 或 `MCPServer` 做文件→Markdown 与图片抽取。

@@ -786,31 +786,31 @@ namespace ZSN.AI.Entity
         /// <summary>融合后的最终结果数</summary>
         public int FusedResultTopN { get; set; } = 5;
 
-        /// <summary>相似度阈值</summary>
-        public float SimilarityThreshold { get; set; } = 0.3f;
+        /// <summary>相似度阈值（0-100）</summary>
+        public int SimilarityThreshold { get; set; } = 30;
 
-        /// <summary>向量检索权重</summary>
-        public float VectorSearchWeight { get; set; } = 0.7f;
+        /// <summary>向量检索权重（0-100，与全文检索权重之和建议为100）</summary>
+        public int VectorSearchWeight { get; set; } = 70;
 
-        /// <summary>全文检索权重</summary>
-        public float FullTextSearchWeight { get; set; } = 0.3f;
+        /// <summary>全文检索权重（0-100，与向量检索权重之和建议为100）</summary>
+        public int FullTextSearchWeight { get; set; } = 30;
 
-        /// <summary>最低检索分数阈值</summary>
-        public float MinRetrievalScore { get; set; } = 0.3f;
+        /// <summary>最低检索分数阈值（0-100）</summary>
+        public int MinRetrievalScore { get; set; } = 30;
 
         /// <summary>最大上下文分块数（RAG Prompt 中使用的检索结果数）</summary>
         public int? MaxContextChunks { get; set; }
 
         // ── 置信度阈值配置 ──
 
-        /// <summary>高置信度阈值（直接回复）</summary>
-        public float HighConfidenceThreshold { get; set; } = 0.85f;
+        /// <summary>高置信度阈值（直接回复，0-100）</summary>
+        public int HighConfidenceThreshold { get; set; } = 85;
 
-        /// <summary>中置信度阈值（RAG 增强）</summary>
-        public float MediumConfidenceThreshold { get; set; } = 0.5f;
+        /// <summary>中置信度阈值（RAG 增强，0-100）</summary>
+        public int MediumConfidenceThreshold { get; set; } = 50;
 
-        /// <summary>低置信度阈值（兜底/升级）</summary>
-        public float LowConfidenceThreshold { get; set; } = 0.3f;
+        /// <summary>低置信度阈值（兜底/升级，0-100）</summary>
+        public int LowConfidenceThreshold { get; set; } = 30;
 
         /// <summary>置信度计算权重配置</summary>
         public ConfidenceWeightConfig ConfidenceWeights { get; set; } = new ConfidenceWeightConfig();
@@ -902,7 +902,9 @@ namespace ZSN.AI.Entity
 
         // 预算控制
         public int MaxLLMCalls { get; set; } = 6;
-        public double CompletionThreshold { get; set; } = 0.8;
+
+        /// <summary>研究完成度阈值（0-100）</summary>
+        public int CompletionThreshold { get; set; } = 80;
     }
 
     /// <summary>
@@ -953,14 +955,14 @@ namespace ZSN.AI.Entity
         public int MaxAudioDurationSeconds { get; set; } = 0;
     }
 
-    /// <summary>置信度计算权重配置</summary>
+    /// <summary>置信度计算权重配置（0-100，各项之和建议为100）</summary>
     public class ConfidenceWeightConfig
     {
-        public float SimilarityWeight { get; set; } = 0.35f;
-        public float SourceWeight { get; set; } = 0.25f;
-        public float QualityWeight { get; set; } = 0.15f;
-        public float RecencyWeight { get; set; } = 0.15f;
-        public float FeedbackWeight { get; set; } = 0.10f;
+        public int SimilarityWeight { get; set; } = 35;
+        public int SourceWeight { get; set; } = 25;
+        public int QualityWeight { get; set; } = 15;
+        public int RecencyWeight { get; set; } = 15;
+        public int FeedbackWeight { get; set; } = 10;
     }
 
     /// <summary>意图规则配置</summary>

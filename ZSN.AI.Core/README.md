@@ -1,6 +1,6 @@
 # ZSN.AI.Core — 项目说明
 
-> 路径：`w:\AI\ZSN.Knowbase\ZSN.Knowbase.Core\ZSN.AI.Core`
+> 路径：`./data/ZSN.AI.Core`
 
 ## 项目概览
 
@@ -15,7 +15,7 @@
   - 记忆/向量库：`Microsoft.KernelMemory.*`（Core、OpenAI、Ollama、Postgres MemoryDb）
   - 大模型/编排：`Microsoft.SemanticKernel*`
   - 协议：`ModelContextProtocol`
-  - 数据/工具：`SqlSugarCore`、`Newtonsoft.Json`、`RestSharp`、`SharpZipLib`、`pythonnet`
+  - 数据/工具：`SqlSugarCore`（遗留依赖，仅用 `Snowflake` 雪花 ID，非 ORM，实际数据访问走 `ZSN.AI.DAL` 自研 ADO.NET）、`Newtonsoft.Json`、`RestSharp`、`SharpZipLib`、`pythonnet`
 - **项目引用**：`ZSN.AI.BLL`、`ZSN.AI.MCPClient`、`ZSN.AI.Plugins`、`ZSN.Utils.Core`
 
 ## 目录结构
@@ -25,7 +25,7 @@
   - `Excel/`：Excel 相关通用处理。
   - `Bge/`：BGE 模型/词表等资源（构建时剔除）。
 - `Interface/`：核心接口定义（服务/能力抽象，供上层注入与实现）。
-- `Repositories/`：仓储层实现（基于 `SqlSugarCore` 的数据访问封装）。
+- `Repositories/`：**遗留空壳仓储层**（基于 `SqlSugarCore` 的 `SimpleClient<T>`，但子类无任何方法实现，也从未实例化 `ISqlSugarClient`）。实际数据访问全部走 `ZSN.AI.DAL` 的自研 ADO.NET 封装（`DbHelper` + `IDbProvider`），与本目录无关。
 - `Service/`：服务层（对外暴露的核心能力与业务编排）。
 - `Utils/`：通用工具（时间/JSON/文件/转换等）与扩展适配。
 - `Handler/`：处理器/钩子（如事件、消息、回调相关）。

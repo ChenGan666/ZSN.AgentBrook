@@ -1,6 +1,6 @@
 # ZSN.AgentBrook.API — 项目说明
 
-> 路径：`w:\AI\ZSN.Knowbase\ZSN.Knowbase.Core\ZSN.AgentBrook.API`
+> 路径：`./data/ZSN.AgentBrook.API`
 
 ## 项目概览
 
@@ -61,7 +61,7 @@
   - `CheckSign`、`CheckTimestamp`、`AccessTokenTimeOut`、`TimestampTimeOut`、`SignInStepTimeOut`、`AccessStepTimeOut`
   - `SSE_TimeOut`
   - `RedisConnectionString`、`Redis.DefaultKey`
-  - `FilePath`（文件上传根目录，例如 `W:/AI/ZSN.AI/publish/file`）
+  - `FilePath`（文件上传根目录，例如 `./data/publish/file`）
   - `UploadFileType`、`previewHost`
 - 注意：`appsettings.json` 中含真实连接字符串与凭据，请勿在公共环境泄露。建议使用环境变量或 User Secrets 覆盖，并在仓库中改为占位值。
 

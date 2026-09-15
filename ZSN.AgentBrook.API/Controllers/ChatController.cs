@@ -444,10 +444,13 @@ namespace ZSN.AgentBrook.API.Controllers
         /// <summary>
         /// 重新生成整轮对话(Regenerate):以原始用户输入重新跑工作流,
         /// 结果通过 SSE 流式回传。与 completions 的关键差异:
-        ///   1) 不重复写入 User 日志(completions 每次都会 Add 一条 User);
+        ///   1) 不重复写入 User 日志(completions 第 215 行每次都会 Add 一条 User);
         ///   2) 先删除旧轮的最后一条 Assistant 日志 + 旧 ProcessesID 的执行记录与任务,
         ///      避免历史重复;新轮的 Assistant 日志由 End 节点自动写入;
         ///   3) 复用现有 Session,不新建。
+        /// 入参:SessionID、AppID、ProcessesID(旧轮,用于删旧记录)、
+        ///      messages(GptMsg:原始用户 content+Attachments+AdditionalOptions)、
+        ///      stream、SSE_TimeOut。
         /// </summary>
         [ApiExplorerSettings(GroupName = "V1-Member")]
         [HttpPost]
@@ -464,6 +467,7 @@ namespace ZSN.AgentBrook.API.Controllers
                 string SessionID = jObject.JsonGetValue<string>("sessionID", "");
                 string MemberID = memberSetting.FullMember.Member.MemberID;
                 string AppID = jObject.JsonGetValue<string>("appid", "");
+                // 旧轮 ProcessesID,仅用于删旧记录(可空)
                 string OldProcessesID = jObject.JsonGetValue<string>("processesID", "");
 
                 int SSE_TimeOut = jObject.JsonGetValue<int>("SSE_TimeOut", ConfigHelper.GetInt("SSE_TimeOut"));
@@ -489,6 +493,7 @@ namespace ZSN.AgentBrook.API.Controllers
                 }
 
                 // --- 1. 删旧轮产物,避免历史重复(不删 User 日志) ---
+                // 1a. 删最后一条 Assistant 日志(新轮会由 End 节点自动写一条)
                 List<AppChatLogInfo> oldLogs = AppChatLogInfoBussiness.GetListBySessionID(AppID, SessionID);
                 if (oldLogs != null && oldLogs.Count > 0)
                 {
@@ -500,6 +505,7 @@ namespace ZSN.AgentBrook.API.Controllers
                         AppChatLogInfoBussiness.Delete(lastAssistantLog.ChatLogID);
                     }
                 }
+                // 1b. 删旧 ProcessesID 的执行记录与任务(若提供了 OldProcessesID)
                 if (!OldProcessesID.IsNullOrEmpty())
                 {
                     try
@@ -519,6 +525,8 @@ namespace ZSN.AgentBrook.API.Controllers
                 // --- 3. 新建任务并跑(镜像 completions,但不再写 User 日志) ---
                 string ProcessesID = Guid.NewGuid().ToString();
                 string ChannelCode = Guid.NewGuid().ToString();
+
+                //AppChatSessionInfo appChatSession = AppChatSessionInfoBussiness.GetModel(SessionID);
 
                 MessageData messageData = new MessageData();
                 messageData.AppID = AppID;
@@ -566,6 +574,7 @@ namespace ZSN.AgentBrook.API.Controllers
                 }
                 else
                 {
+                    // 直接将用户输入发送给等待处理的 HumanInTheLoop 任务
                     ErrorCode errorCode = ErrorCode.None;
                     TaskController _taskController = new TaskController();
                     _taskController.execHumanInTheLoopByUserInput(_HumanTasksRecords, Inputs, data, SessionID, out errorCode);

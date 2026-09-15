@@ -2,7 +2,7 @@ namespace ZSN.AI.Node.ResearchNode
 {
     public class ResearchNodeOptions
     {
-        public string SearXNGBaseUrl { get; set; } = "http://10.10.10.2:8800";
+        public string SearXNGBaseUrl { get; set; } = "http://localhost:8800";
         public int SearchTimeoutSeconds { get; set; } = 10;
         public int MaxResultsPerQuery { get; set; } = 10;
         public int MaxConcurrentFetches { get; set; } = 3;
@@ -14,7 +14,7 @@ namespace ZSN.AI.Node.ResearchNode
         public int DefaultMaxFetchUrls { get; set; } = 5;
         public string DefaultSearchLanguage { get; set; } = "zh-CN";
         public int DefaultMaxLLMCalls { get; set; } = 6;
-        public double DefaultCompletionThreshold { get; set; } = 0.8;
+        public int DefaultCompletionThreshold { get; set; } = 80;
         public string BrowserUserAgent { get; set; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
         public List<string> BlockedDomains { get; set; } = new();
 

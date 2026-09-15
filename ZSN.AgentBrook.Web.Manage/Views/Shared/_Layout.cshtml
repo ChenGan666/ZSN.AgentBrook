@@ -11,6 +11,10 @@
     <link rel="stylesheet" href="/layui/css/layui.css" media="all">
     <link rel="stylesheet" href="/layuiadmin/style/admin.css" media="all">
     <link rel="stylesheet" href="/layuiadmin/style/login.css" media="all">
+    @if (IsSectionDefined("Css"))
+    {
+        @RenderSection("Css", false)
+    }
 </head>
 <body>
     

@@ -64,7 +64,7 @@ namespace ZSN.AI.MCPServer.Controllers
             _pandocPath = _configuration.GetValue<string>("FileConversion:PandocPath", "pandoc");
             
             // 从配置中读取临时目录名称，如果未配置则使用默认值
-            string tempDirName = _configuration.GetValue<string>("FileConversion:TempDirectory", "ZSN.Knowbase.FileConversions");
+            string tempDirName = _configuration.GetValue<string>("FileConversion:TempDirectory", "ZSN.AgentBrook.FileConversions");
             _tempDirectory = Path.Combine(Path.GetTempPath(), tempDirName);
             
             // 从配置中读取媒体目录配置，如果未配置则使用默认值
