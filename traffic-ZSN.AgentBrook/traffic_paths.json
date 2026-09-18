@@ -2,8 +2,8 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 21,
-    "uniques": 9
+    "count": 26,
+    "uniques": 12
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/discussions",
@@ -12,16 +12,28 @@
     "uniques": 4
   },
   {
+    "path": "/ChenGan666/ZSN.AgentBrook/issues",
+    "title": "/issues",
+    "count": 5,
+    "uniques": 2
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
+    "title": "/pulse",
+    "count": 4,
+    "uniques": 2
+  },
+  {
     "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
     "title": "/graphs/traffic",
     "count": 3,
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
-    "title": "/pulse",
-    "count": 3,
-    "uniques": 1
+    "path": "/ChenGan666/ZSN.AgentBrook/projects",
+    "title": "/projects",
+    "count": 2,
+    "uniques": 2
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/blob/0377ca0e38ee0f489d4a8aadf94f7e341b131528/ZSN.Utils.Core/Helpers/QiniuHelper.cs",
@@ -30,20 +42,20 @@
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues",
-    "title": "/issues",
+    "path": "/ChenGan666/ZSN.AgentBrook/issues/views",
+    "title": "/issues/views",
     "count": 1,
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/projects",
-    "title": "/projects",
+    "path": "/ChenGan666/ZSN.AgentBrook/labels",
+    "title": "/labels",
     "count": 1,
     "uniques": 1
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
-    "title": "/pulls",
+    "path": "/ChenGan666/ZSN.AgentBrook/milestones",
+    "title": "/milestones",
     "count": 1,
     "uniques": 1
   }
