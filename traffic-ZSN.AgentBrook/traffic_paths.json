@@ -2,19 +2,19 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 18,
-    "uniques": 12
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues",
-    "title": "/issues",
-    "count": 6,
-    "uniques": 3
+    "count": 14,
+    "uniques": 9
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/discussions",
     "title": "/discussions",
-    "count": 6,
+    "count": 9,
+    "uniques": 3
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/issues",
+    "title": "/issues",
+    "count": 2,
     "uniques": 2
   },
   {
@@ -24,38 +24,8 @@
     "uniques": 2
   },
   {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulse",
-    "title": "/pulse",
-    "count": 2,
-    "uniques": 2
-  },
-  {
     "path": "/ChenGan666/ZSN.AgentBrook/blob/main/.github/workflows/traffic2badge.yml",
     "title": "/blob/main/.github/workflows/traffic2badge.yml",
-    "count": 1,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/graphs/traffic",
-    "title": "/graphs/traffic",
-    "count": 1,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/issues/views",
-    "title": "/issues/views",
-    "count": 1,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/labels",
-    "title": "/labels",
-    "count": 1,
-    "uniques": 1
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/milestones",
-    "title": "/milestones",
     "count": 1,
     "uniques": 1
   }
