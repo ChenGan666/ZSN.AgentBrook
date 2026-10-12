@@ -2,24 +2,54 @@
   {
     "path": "/ChenGan666/ZSN.AgentBrook",
     "title": "Overview",
-    "count": 13,
+    "count": 11,
     "uniques": 8
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/discussions",
     "title": "/discussions",
-    "count": 7,
-    "uniques": 3
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
-    "title": "/pulls",
-    "count": 3,
+    "count": 6,
     "uniques": 3
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/issues",
     "title": "/issues",
+    "count": 3,
+    "uniques": 2
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/pulls",
+    "title": "/pulls",
+    "count": 2,
+    "uniques": 2
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/branches",
+    "title": "/branches",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/ZSN.AgentBrook.Client",
+    "title": "/tree/main/ZSN.AgentBrook.Client",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/ZSN.AgentBrook.Client/client-app",
+    "title": "/tree/main/ZSN.AgentBrook.Client/client-app",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/ZSN.AgentBrook.Client/client-app/src",
+    "title": "/tree/main/ZSN.AgentBrook.Client/client-app/src",
+    "count": 1,
+    "uniques": 1
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook/tree/main/ZSN.AgentBrook.Client/client-app/src/views",
+    "title": "/tree/main/ZSN.AgentBrook.Client/client-app/src/views",
     "count": 1,
     "uniques": 1
   }
