@@ -12,20 +12,20 @@
     "uniques": 2
   },
   {
+    "path": "/ChenGan666/ZSN.AgentBrook/branches",
+    "title": "/branches",
+    "count": 1,
+    "uniques": 1
+  },
+  {
     "path": "/ChenGan666/ZSN.AgentBrook/discussions",
     "title": "/discussions",
-    "count": 2,
-    "uniques": 2
+    "count": 1,
+    "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/pulls",
     "title": "/pulls",
-    "count": 2,
-    "uniques": 2
-  },
-  {
-    "path": "/ChenGan666/ZSN.AgentBrook/branches",
-    "title": "/branches",
     "count": 1,
     "uniques": 1
   },
