@@ -1,15 +1,15 @@
 [
   {
-    "path": "/ChenGan666/ZSN.AgentBrook",
-    "title": "Overview",
-    "count": 3,
-    "uniques": 2
-  },
-  {
     "path": "/ChenGan666/ZSN.AgentBrook/discussions",
     "title": "/discussions",
     "count": 2,
     "uniques": 2
+  },
+  {
+    "path": "/ChenGan666/ZSN.AgentBrook",
+    "title": "Overview",
+    "count": 2,
+    "uniques": 1
   },
   {
     "path": "/ChenGan666/ZSN.AgentBrook/actions",
